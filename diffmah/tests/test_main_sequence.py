@@ -1,7 +1,7 @@
 """
 """
 import numpy as np
-from ..main_sequence import main_sequence_sfr_median_halo_growth
+from ..main_sequence import main_sequence_sfr_vs_logmpeak_at_z0_and_redshift
 from ..main_sequence import main_sequence_sfr_vs_mpeak_and_redshift
 
 
@@ -10,7 +10,7 @@ COSMIC_TIME = np.array((13.8, 3.3, 1.5, 0.9, 0.6, 0.47)).astype("f4")
 
 
 def test_main_sequence_median_growth_is_non_negative():
-    sfh = main_sequence_sfr_median_halo_growth(12, REDSHIFT, COSMIC_TIME)
+    sfh = main_sequence_sfr_vs_logmpeak_at_z0_and_redshift(12, REDSHIFT, COSMIC_TIME)
     assert np.all(sfh > 0)
 
 
