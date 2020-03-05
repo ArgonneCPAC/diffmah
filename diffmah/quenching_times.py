@@ -19,6 +19,26 @@ DEFAULT_PARAMS = OrderedDict(
 )
 
 
+def quenching_function(t, qt):
+    """Sigmoid function smoothly dropping SFR from 1 to 0 at t = qt.
+
+    Parameters
+    ----------
+    t : ndarray of shape (n, )
+        Cosmic time
+
+    qt : float or ndarray of shape (n, )
+        Time of quenching
+
+    Returns
+    -------
+    f : ndarray of shape (n, )
+        Fraction of SFR remaining before/after the quenching event
+
+    """
+    return np.array(_jax_sigmoid(t, qt, 5, 1, 0))
+
+
 def central_quenching_time(logm0, percentile, **kwargs):
     """Quenching time of central galaxies.
 
