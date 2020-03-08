@@ -36,6 +36,7 @@ def quenching_function(t, qt):
         Fraction of SFR remaining before/after the quenching event
 
     """
+    t, qt = _get_1d_arrays(t, qt)
     return np.array(_jax_sigmoid(t, qt, 5, 1, 0))
 
 
