@@ -18,3 +18,4 @@ def test_main_sequence_sfr_vs_mpeak_and_redshift():
     mpeak = np.linspace(10, 15, 100)
     redshift = np.linspace(0, 10, 100)
     sfh = main_sequence_sfr_vs_mpeak_and_redshift(mpeak, redshift)
+    assert np.all(sfh > 0)
