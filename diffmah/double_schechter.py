@@ -11,6 +11,8 @@ DEFAULT_PARAMS = OrderedDict(
 def double_schechter_smf(
     log10m, logphi1=None, logphi2=None, log10mstar=None, alpha1=None, alpha2=None,
 ):
+    """Some docstring.
+    """
     if logphi1 is None:
         logphi1 = DEFAULT_PARAMS["logphi1"]
     if logphi2 is None:
