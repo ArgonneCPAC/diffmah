@@ -18,7 +18,7 @@ def mstar_vs_mhalo_at_zobs(
     tobs : float
         Age of the Universe in Gyr at zobs
 
-    logmh_at_zobs : float
+    logmh_at_zobs : float or ndarray of shape (n, )
         Base-10 log of halo mass at zobs
 
     qtime : float, optional
@@ -39,14 +39,14 @@ def mstar_vs_mhalo_at_zobs(
 
     Returns
     -------
-    mstar_at_zobs_ms : float
+    mstar_at_zobs_ms : float or ndarray of shape (n, )
         M* at zobs for main-sequence galaxies
 
-    mstar_at_zobs_median : float
+    mstar_at_zobs_median : float or ndarray of shape (n, )
         Weighted-average of main-sequence and quenched M*,
         weighting by the probability the galaxy is quenched.
 
-    mstar_at_zobs_q : float
+    mstar_at_zobs_q : float or ndarray of shape (n, )
         M* at zobs for quenched galaxies
 
     """
