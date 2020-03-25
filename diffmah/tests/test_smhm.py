@@ -3,6 +3,7 @@
 import numpy as np
 from astropy.cosmology import Planck15
 from ..smhm import mstar_vs_mhalo_at_zobs
+from ..sigmoid_mah import logm0_from_logm_at_logt
 
 
 EPSILON = 1e-4
@@ -37,3 +38,15 @@ def test_mstar_vs_mhalo_at_zobs_has_reasonable_z_dependence():
         _x, __, __ = mstar_vs_mhalo_at_zobs(zobs, tobs, logmh)
         logsm[i] = _x
     assert np.all(np.diff(logsm) > 0)
+
+
+def test_mstar_vs_mhalo_has_reasonable_mah_dependence():
+    """
+    """
+    zobs = 1
+    tobs = Planck15.age(zobs).value
+    logmh_at_zobs = 12
+    mstar1, __, __ = mstar_vs_mhalo_at_zobs(zobs, tobs, logmh_at_zobs, logtc=-0.2)
+    mstar2, __, __ = mstar_vs_mhalo_at_zobs(zobs, tobs, logmh_at_zobs, logtc=0.2)
+
+    assert mstar1[0] != mstar2[0]
