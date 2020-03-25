@@ -53,6 +53,7 @@ def mstar_vs_mhalo_at_zobs(
     assert np.shape(zobs) == (), "zobs should be a scalar"
     assert np.shape(tobs) == (), "tobs should be a scalar"
     logtobs = np.log10(tobs)
+    logmh_at_zobs = np.atleast_1d(logmh_at_zobs)
 
     mah_params, sfr_params = _parse_args(**kwargs)
 
