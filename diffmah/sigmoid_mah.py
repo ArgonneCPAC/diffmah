@@ -195,8 +195,8 @@ def _mah_sigmoid_params_logm_at_logt(
     logt, logm_at_logt = _get_1d_arrays(logt, logm_at_logt)
     n = logm_at_logt.size
 
-    logtc = np.zeros(n)
     if logtc is None:
+        logtc = np.zeros(n)
         for i in range(n):
             logtc[i] = logtc_from_logm_at_logt(logt[i], logm_at_logt[i], **mah_params)
     else:
