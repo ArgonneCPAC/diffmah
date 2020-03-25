@@ -102,3 +102,11 @@ def test_logtc_from_logm_at_logt_changes_with_params():
         logtc3 = logtc_from_logm_at_logt(logtobs, logm_at_logt, dlogm_height=3)
         assert not np.allclose(logtc, logtc2)
         assert np.allclose(logtc, logtc3)
+
+
+def test_mah_sigmoid_params_logm_at_logt():
+    logt, logm_at_logt = 0.75, 12
+    logtc, logtk, dlogm_height, logm0 = _mah_sigmoid_params_logm_at_logt(
+        logt, logm_at_logt, logtc=-0.25
+    )
+    assert np.allclose(logtc, -0.25)
