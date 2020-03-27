@@ -4,10 +4,18 @@ import numpy as np
 from .in_situ_smh_kernel import in_situ_mstar_at_zobs
 from .sigmoid_mah import LOGT0, DEFAULT_MAH_PARAMS
 from .sigmoid_mah import _mah_sigmoid_params_logm_at_logt
+from .utils import get_1d_arrays
 
 
 def mstar_vs_mhalo_at_zobs(
-    zobs, tobs, logmh_at_zobs, qtime=None, logt0=LOGT0, logtc=None, **kwargs,
+    zobs,
+    tobs,
+    logmh_at_zobs,
+    qtime=None,
+    logt0=LOGT0,
+    logtc=None,
+    mah_percentile=0.5,
+    **kwargs,
 ):
     """Calculate in-situ M* for a halo with mass logmh_at_zobs at redshift zobs.
 
@@ -33,6 +41,13 @@ def mstar_vs_mhalo_at_zobs(
         Base-10 log of the critical time in Gyr.
         Smaller values of logtc produce halos with earlier formation times.
         Default value is set by halo MAH parameters defined in the sigmoid_mah module.
+
+    mah_percentile : float, optional
+        Value in the interval [0, 1] specifying whether
+        the halo is early-forming or late-forming for its mass.
+        mah_percentile = 0 <==> early-forming halo
+        mah_percentile = 1 <==> late-forming halo
+        Default is 0.5 for a halo with a typical assembly history.
 
     **model_params : float, optional
         Any parameter regulating main-sequence SFR or quenching is accepted.
@@ -61,7 +76,7 @@ def mstar_vs_mhalo_at_zobs(
         logtobs, logmh_at_zobs, logtc=logtc, **mah_params
     )
 
-    _arrs = _get_1d_arrays(logmh_at_zobs, logtc, logtk, dlogm_height, logm0)
+    _arrs = get_1d_arrays(logmh_at_zobs, logtc, logtk, dlogm_height, logm0)
     logmh_at_zobs, logtc, logtk, dlogm_height, logm0 = _arrs
     n = logm0.size
 
@@ -104,13 +119,3 @@ def _parse_args(**kwargs):
         [(key, val) for key, val in kwargs.items() if key not in mah_params]
     )
     return mah_params, sfr_params
-
-
-def _get_1d_arrays(*args):
-    """Return a list of ndarrays of the same length."""
-    results = [np.atleast_1d(arg) for arg in args]
-    sizes = [arr.size for arr in results]
-    npts = max(sizes)
-    msg = "All input arguments should be either a float or ndarray of shape ({0}, )"
-    assert set(sizes) <= set((1, npts)), msg.format(npts)
-    return [np.zeros(npts).astype(arr.dtype) + arr for arr in results]

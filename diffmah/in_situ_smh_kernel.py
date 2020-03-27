@@ -36,6 +36,7 @@ def in_situ_mstar_at_zobs(
     logtc=None,
     logtk=None,
     dlogm_height=None,
+    mah_percentile=0.5,
     **model_params,
 ):
     """Integrate star formation history to calculate M* at zobs.
@@ -79,6 +80,13 @@ def in_situ_mstar_at_zobs(
         Total gain in logmpeak until logt0.
         Default is set by DEFAULT_MAH_PARAMS.
 
+    mah_percentile : float, optional
+        Value in the interval [0, 1] specifying whether
+        the halo is early-forming or late-forming for its mass.
+        mah_percentile = 0 <==> early-forming halo
+        mah_percentile = 1 <==> late-forming halo
+        Default is 0.5 for a halo with a typical assembly history.
+
     **model_params : float, optional
         Any parameter regulating main-sequence SFR or quenching is accepted.
 
@@ -89,10 +97,19 @@ def in_situ_mstar_at_zobs(
     """
 
     res = _process_args(
-        zobs, logm0, z_table, t_table, logtc, logtk, dlogm_height, model_params, qtime
+        zobs,
+        logm0,
+        z_table,
+        t_table,
+        logtc,
+        logtk,
+        dlogm_height,
+        model_params,
+        qtime,
+        mah_percentile,
     )
     zarr, logtarr, logtc, logtk, dlogm_height = res[:5]
-    ms_params, qprob_params, qtime = res[5:]
+    ms_params, qprob_params, qtime, mah_percentile = res[5:]
 
     mah = 10 ** logmpeak_from_logt(logtarr, logtc, logtk, dlogm_height, logm0, logt0)
 
@@ -117,7 +134,16 @@ def in_situ_mstar_at_zobs(
 
 
 def _process_args(
-    zobs, logm0, z_table, t_table, logtc, logtk, dlogm_height, model_params, qtime
+    zobs,
+    logm0,
+    z_table,
+    t_table,
+    logtc,
+    logtk,
+    dlogm_height,
+    model_params,
+    qtime,
+    mah_percentile,
 ):
     assert np.shape(zobs) == (), "zobs should be a float"
     assert np.shape(logm0) == (), "logm0 should be a float"
@@ -140,9 +166,19 @@ def _process_args(
     ms_params, qprob_params, qtime_params = param_list
 
     if qtime is None:
-        qtime = central_quenching_time(logm0, 0.5, **qtime_params)
+        qtime = central_quenching_time(logm0, mah_percentile, **qtime_params)
 
-    return zarr, logtarr, logtc, logtk, dlogm_height, ms_params, qprob_params, qtime
+    return (
+        zarr,
+        logtarr,
+        logtc,
+        logtk,
+        dlogm_height,
+        ms_params,
+        qprob_params,
+        qtime,
+        mah_percentile,
+    )
 
 
 def _get_model_param_dictionaries(*default_param_dicts, **input_model_params):

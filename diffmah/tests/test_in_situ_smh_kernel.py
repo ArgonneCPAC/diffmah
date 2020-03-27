@@ -58,3 +58,10 @@ def test2_in_situ_stellar_mass_at_zobs_is_monotonic_in_mass():
             assert mstar_ms > mstar_ms_last
             assert mstar_med > mstar_med_last
             mstar_ms_last, mstar_med_last = mstar_ms, mstar_med
+
+
+def test_in_situ_stellar_mass_at_zobs_accepts_quenching_percentile():
+    __, __, mstar_q0 = in_situ_mstar_at_zobs(0, 12, mah_percentile=0)
+    __, __, mstar_q1 = in_situ_mstar_at_zobs(0, 12)
+    __, __, mstar_q2 = in_situ_mstar_at_zobs(0, 12, mah_percentile=1)
+    assert mstar_q0 < mstar_q1 < mstar_q2
