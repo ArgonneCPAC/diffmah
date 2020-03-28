@@ -5,6 +5,7 @@ from ..sigmoid_mah import median_logmpeak_from_logt, logmpeak_from_logt
 from ..sigmoid_mah import logm0_from_logm_at_logt
 from ..sigmoid_mah import _median_mah_sigmoid_params, logtc_from_logm_at_logt
 from ..sigmoid_mah import _mah_sigmoid_params_logm_at_logt
+from ..sigmoid_mah import _logtc_from_mah_percentile
 
 
 def test1_mah_sigmoid_params_logm_at_logt():
@@ -110,3 +111,37 @@ def test_mah_sigmoid_params_logm_at_logt():
         logt, logm_at_logt, logtc=-0.25
     )
     assert np.allclose(logtc, -0.25)
+
+
+def test_logtc_from_mah_percentile_fiducial_model():
+    logm0, p = 12, 0.5
+    logtc_med = _logtc_from_mah_percentile(logm0, p)
+    logtc_med_correct, __, __ = _median_mah_sigmoid_params(logm0)
+    assert np.allclose(logtc_med, logtc_med_correct)
+
+
+def test_logtc_from_mah_percentile_varies_with_params():
+    logm0, p = 12, 0.25
+    params = dict(logtc_scatter_dwarfs=1, logtc_scatter_clusters=1)
+    logtc_med_fid = _logtc_from_mah_percentile(logm0, p)
+    logtc_med_alt = _logtc_from_mah_percentile(logm0, p, **params)
+    assert not np.allclose(logtc_med_fid, logtc_med_alt)
+
+
+def test_logtc_from_mah_percentile_varies_with_percentile_correctly():
+    logm0, p = 12, 0.25
+    params = dict(logtc_scatter_dwarfs=1, logtc_scatter_clusters=1)
+    logtc_lo = _logtc_from_mah_percentile(logm0, 0, **params)
+    logtc_hi = _logtc_from_mah_percentile(logm0, 1, **params)
+    logtc_med, __, __ = _median_mah_sigmoid_params(logm0, **params)
+    assert logtc_lo == logtc_med - 1
+    assert logtc_hi == logtc_med + 1
+
+
+def test2_logtc_from_mah_percentile_varies_with_percentile_correctly():
+    params = dict(logtc_scatter_dwarfs=0.1)
+    logtc_lo = _logtc_from_mah_percentile(0, 0, **params)
+    logtc_med = _logtc_from_mah_percentile(0, 0.5, **params)
+    logtc_hi = _logtc_from_mah_percentile(0, 1, **params)
+    assert np.allclose(logtc_lo, logtc_med - params["logtc_scatter_dwarfs"], rtol=1e-3)
+    assert np.allclose(logtc_hi, logtc_med + params["logtc_scatter_dwarfs"], rtol=1e-3)
