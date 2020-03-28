@@ -60,8 +60,16 @@ def test2_in_situ_stellar_mass_at_zobs_is_monotonic_in_mass():
             mstar_ms_last, mstar_med_last = mstar_ms, mstar_med
 
 
-def test_in_situ_stellar_mass_at_zobs_accepts_quenching_percentile():
-    __, __, mstar_q0 = in_situ_mstar_at_zobs(0, 12, mah_percentile=0)
-    __, __, mstar_q1 = in_situ_mstar_at_zobs(0, 12)
-    __, __, mstar_q2 = in_situ_mstar_at_zobs(0, 12, mah_percentile=1)
-    assert mstar_q0 < mstar_q1 < mstar_q2
+def test_in_situ_stellar_mass_at_zobs_accepts_mah_percentile():
+    """Earlier-forming halos have greater M* today."""
+    zobs = 0
+    mstar_ms_1, __, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=0)
+    mstar_ms_2, __, __ = in_situ_mstar_at_zobs(zobs, 12)
+    mstar_ms_3, __, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=1)
+    assert mstar_ms_1 > mstar_ms_2 > mstar_ms_3
+
+
+def test_in_situ_mstar_at_zobs_mah_percentile_behavior():
+    zobs, logm0 = 0, 12
+    with pytest.raises(ValueError):
+        in_situ_mstar_at_zobs(zobs, logm0, mah_percentile=1, logtc=1)

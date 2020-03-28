@@ -5,6 +5,7 @@ from scipy.integrate import trapz
 from astropy.cosmology import Planck15
 from .moster17_efficiency import sfr_efficiency_function
 from .sigmoid_mah import logmpeak_from_logt, _median_mah_sigmoid_params, LOGT0
+from .sigmoid_mah import _logtc_from_mah_percentile, DEFAULT_MAH_PARAMS
 from .moster17_efficiency import DEFAULT_PARAMS as DEFAULT_SFR_PARAMS
 from .quenching_times import DEFAULT_PARAMS as DEFAULT_QTIME_PARAMS
 from .quenching_probability import DEFAULT_PARAM_VALUES as DEFAULT_QPROB_PARAMS
@@ -36,7 +37,7 @@ def in_situ_mstar_at_zobs(
     logtc=None,
     logtk=None,
     dlogm_height=None,
-    mah_percentile=0.5,
+    mah_percentile=None,
     **model_params,
 ):
     """Integrate star formation history to calculate M* at zobs.
@@ -130,7 +131,7 @@ def in_situ_mstar_at_zobs(
     qprob_at_z0 = quenching_prob_cens(logm0, **qprob_params)
     mstar_med = (qprob_at_z0 * mstar_q) + (1 - qprob_at_z0) * mstar_ms
 
-    return mstar_ms, mstar_med, mstar_q
+    return mstar_ms, mstar_med[0], mstar_q
 
 
 def _process_args(
@@ -153,17 +154,41 @@ def _process_args(
     tarr = np.interp(zarr, z_table[::-1], t_table[::-1])
     logtarr = np.log10(tarr)
 
+    defaults = list(
+        (
+            DEFAULT_MAH_PARAMS,
+            DEFAULT_SFR_PARAMS,
+            DEFAULT_QPROB_CENS_PARAMS,
+            DEFAULT_QTIME_PARAMS,
+        )
+    )
+    param_list = _get_model_param_dictionaries(*defaults, **model_params)
+    mah_params, ms_params, qprob_params, qtime_params = param_list
+
+    inconsistent = (mah_percentile is not None) & (logtc is not None)
+    try:
+        assert not inconsistent
+    except AssertionError:
+        msg = "Do not pass both mah_percentile and logtc"
+        raise ValueError(msg)
+
     logtc_med, logtk_med, dlogm_height_med = _median_mah_sigmoid_params(logm0)
     if logtc is None:
-        logtc = logtc_med
+        if mah_percentile is None:
+            logtc = logtc_med
+            mah_percentile = 0.5
+        else:
+            logtc = _logtc_from_mah_percentile(logm0, mah_percentile, **mah_params)
+    else:
+        logtc_lo = _logtc_from_mah_percentile(logm0, 0.5, **mah_params)
+        logtc_med = _logtc_from_mah_percentile(logm0, 0.5, **mah_params)
+        logtc_hi = _logtc_from_mah_percentile(logm0, 1, **mah_params)
+        mah_percentile = (logtc - logtc_lo) / (logtc_hi - logtc_lo)
+
     if logtk is None:
         logtk = logtk_med
     if dlogm_height is None:
         dlogm_height = dlogm_height_med
-
-    defaults = [DEFAULT_SFR_PARAMS, DEFAULT_QPROB_CENS_PARAMS, DEFAULT_QTIME_PARAMS]
-    param_list = _get_model_param_dictionaries(*defaults, **model_params)
-    ms_params, qprob_params, qtime_params = param_list
 
     if qtime is None:
         qtime = central_quenching_time(logm0, mah_percentile, **qtime_params)
