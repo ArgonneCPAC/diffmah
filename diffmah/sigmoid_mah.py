@@ -14,6 +14,10 @@ DEFAULT_MAH_PARAMS = OrderedDict(
     logtc_k=0.4,
     logtc_ymin=1.635,
     logtc_ymax=-0.365,
+    logtc_scatter_dwarfs=0.3,
+    logtc_scatter_clusters=0.3,
+    logtc_scatter_logmc=12,
+    logtc_scatter_logmc_k=1,
 )
 LOGT0 = 1.14
 
@@ -214,6 +218,42 @@ def _mah_sigmoid_params_logm_at_logt(
         )
 
     return logtc, logtk, dlogm_height, logm0
+
+
+def _logtc_from_mah_percentile(logm0, p, **mah_params):
+    logtc_scatter_logmc = mah_params.get(
+        "logtc_scatter_logmc", DEFAULT_MAH_PARAMS["logtc_scatter_logmc"]
+    )
+    logtc_scatter_logmc_k = mah_params.get(
+        "logtc_scatter_logmc_k", DEFAULT_MAH_PARAMS["logtc_scatter_logmc_k"]
+    )
+    logtc_scatter_dwarfs = mah_params.get(
+        "logtc_scatter_dwarfs", DEFAULT_MAH_PARAMS["logtc_scatter_dwarfs"]
+    )
+    logtc_scatter_clusters = mah_params.get(
+        "logtc_scatter_clusters", DEFAULT_MAH_PARAMS["logtc_scatter_clusters"]
+    )
+    logtc_scatter = _sigmoid(
+        logm0,
+        logtc_scatter_logmc,
+        logtc_scatter_logmc_k,
+        logtc_scatter_dwarfs,
+        logtc_scatter_clusters,
+    )
+    logtc_logm0 = mah_params.get("logtc_logm0", DEFAULT_MAH_PARAMS["logtc_logm0"])
+    logtc_k = mah_params.get("logtc_k", DEFAULT_MAH_PARAMS["logtc_k"])
+    logtc_ymin = mah_params.get("logtc_ymin", DEFAULT_MAH_PARAMS["logtc_ymin"])
+    logtc_ymax = mah_params.get("logtc_ymax", DEFAULT_MAH_PARAMS["logtc_ymax"])
+    logtc_med = _logtc_param_model(
+        logm0,
+        logtc_logm0=logtc_logm0,
+        logtc_k=logtc_k,
+        logtc_ymin=logtc_ymin,
+        logtc_ymax=logtc_ymax,
+    )
+    logtc_lo, logtc_hi = logtc_med - logtc_scatter, logtc_med + logtc_scatter
+    logtc = logtc_lo + p * (logtc_hi - logtc_lo)
+    return logtc
 
 
 def _logtc_param_model(
