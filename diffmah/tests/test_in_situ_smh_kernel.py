@@ -73,3 +73,11 @@ def test_in_situ_mstar_at_zobs_mah_percentile_behavior():
     zobs, logm0 = 0, 12
     with pytest.raises(ValueError):
         in_situ_mstar_at_zobs(zobs, logm0, mah_percentile=1, logtc=1)
+
+
+def test_in_situ_mstar_at_zobs_sensible_quenching_behavior():
+    logmarr = np.linspace(8, 17, 20)
+    for z in (0, 1, 2, 5):
+        for logm in logmarr:
+            mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(z, logm)
+            assert mstar_ms >= mstar_med >= mstar_q
