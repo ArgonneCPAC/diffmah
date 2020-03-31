@@ -7,6 +7,7 @@ from collections import OrderedDict
 from ..in_situ_smh_kernel import _get_model_param_dictionaries
 from ..in_situ_smh_kernel import in_situ_mstar_at_zobs
 from ..sigmoid_mah import DEFAULT_MAH_PARAMS
+from ..moster17_efficiency import DEFAULT_PARAMS as DEFAULT_SFR_PARAMS
 
 
 def test_get_model_param_dictionaries():
@@ -132,6 +133,19 @@ def test_in_situ_mstar_at_zobs_varies_with_MAH_params():
         key: value for key, value in DEFAULT_MAH_PARAMS.items() if "scatter" not in key
     }
     for key, value in mah_params_to_vary.items():
+        mstar_ms_alt, mstar_q_alt = in_situ_mstar_at_zobs(
+            zobs, logm0, **{key: value * 0.9 - 0.1}
+        )
+        pat = "parameter '{0}' has no effect on {1}"
+        assert mstar_ms_alt != mstar_ms_fid, pat.format(key, "mstar_ms")
+        assert mstar_q_alt != mstar_q_fid, pat.format(key, "mstar_q")
+
+
+def test_in_situ_mstar_at_zobs_varies_with_SFR_efficiency_params():
+    """Present-day Mstar should change when each model param is varied."""
+    zobs, logm0 = 0, 12
+    mstar_ms_fid, mstar_q_fid = in_situ_mstar_at_zobs(zobs, logm0)
+    for key, value in DEFAULT_SFR_PARAMS.items():
         mstar_ms_alt, mstar_q_alt = in_situ_mstar_at_zobs(
             zobs, logm0, **{key: value * 0.9 - 0.1}
         )
