@@ -209,7 +209,7 @@ def _process_args(
         dlogm_height = dlogm_height_med
 
     if qtime is None:
-        qtime = central_quenching_time(logm0, mah_percentile, **qtime_params)
+        qtime = central_quenching_time(logm0, mah_percentile, **qtime_params)[0]
 
     return (
         zarr,

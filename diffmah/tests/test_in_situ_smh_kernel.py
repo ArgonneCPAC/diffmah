@@ -268,3 +268,57 @@ def test_self_consistent_logtc_vs_mah_percentile_args():
     __, mstar_q0 = in_situ_mstar_at_zobs(zobs, logm0, logtc=logtc_med)
     __, mstar_q1 = in_situ_mstar_at_zobs(zobs, logm0, mah_percentile=0.5)
     assert np.allclose(mstar_q0, mstar_q1, rtol=0.001)
+
+
+def test_in_situ_mstar_at_zobs_logtc_scatter_behavior():
+    """Stellar mass should be sensitive to logtc scatter parameters
+    """
+    zobs, logm0 = 0, 12
+    logtc_med, __, __ = _median_mah_sigmoid_params(logm0)
+
+    params = dict(logtc_scatter_dwarfs=0.1)
+
+    mstar_ms1, mstar_q1 = in_situ_mstar_at_zobs(
+        zobs, logm0, logtc=logtc_med + 1, **params
+    )
+    mstar_ms2, mstar_q2 = in_situ_mstar_at_zobs(
+        zobs, logm0, logtc=logtc_med - 1, **params
+    )
+    assert not np.allclose(mstar_ms1 / mstar_q1, mstar_ms2 / mstar_q2, rtol=0.01)
+
+
+def test2_in_situ_mstar_at_zobs_logtc_scatter_behavior():
+    """Stellar mass should not be sensitive to logtc scatter parameters
+    for median growth histories
+    """
+    zobs, logm0 = 0, 12
+    logtc_med, __, __ = _median_mah_sigmoid_params(logm0)
+
+    params = dict(logtc_scatter_dwarfs=0.1)
+    params2 = dict(logtc_scatter_dwarfs=0.3)
+    mstar_ms1, mstar_q1 = in_situ_mstar_at_zobs(
+        zobs, logm0, mah_percentile=0.5, **params
+    )
+    mstar_ms2, mstar_q2 = in_situ_mstar_at_zobs(
+        zobs, logm0, mah_percentile=0.5, **params2
+    )
+    assert np.allclose(mstar_ms1, mstar_ms2)
+    assert np.allclose(mstar_q1, mstar_q2)
+
+    mstar_ms1, mstar_q1 = in_situ_mstar_at_zobs(
+        zobs, logm0, mah_percentile=0.25, **params
+    )
+    mstar_ms2, mstar_q2 = in_situ_mstar_at_zobs(
+        zobs, logm0, mah_percentile=0.25, **params2
+    )
+    assert not np.allclose(mstar_ms1, mstar_ms2)
+    assert not np.allclose(mstar_q1, mstar_q2)
+
+    mstar_ms1, mstar_q1 = in_situ_mstar_at_zobs(
+        zobs, logm0, mah_percentile=0.25, **params
+    )
+    mstar_ms2, mstar_q2 = in_situ_mstar_at_zobs(
+        zobs, logm0, mah_percentile=0.75, **params2
+    )
+    assert not np.allclose(mstar_ms1, mstar_ms2)
+    assert not np.allclose(mstar_q1, mstar_q2)
