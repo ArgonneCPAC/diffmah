@@ -126,6 +126,16 @@ def test4_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     assert mstar_q < mstar_ms * 0.9
 
 
+def test5_in_situ_mstar_at_zobs_sensible_qtime_behavior():
+    """When qtime < tobs, quenching should significantly reduce M*(tobs)."""
+    zobs = 0
+    logmarr = np.linspace(10, 15, 10)
+    _fid = [in_situ_mstar_at_zobs(zobs, logm, qtime=20) for logm in logmarr]
+    mstar_ms = [_x[0] for _x in _fid]
+    mstar_q = [_x[1] for _x in _fid]
+    assert np.allclose(mstar_q, mstar_ms, rtol=0.01)
+
+
 def test_in_situ_mstar_at_zobs_varies_with_MAH_params():
     """Present-day Mstar should change when each MAH param is varied."""
     logm0 = 12
