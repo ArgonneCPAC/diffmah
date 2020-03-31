@@ -66,6 +66,8 @@ def in_situ_mstar_at_zobs(
         Base-10 log of the MAH critical time in Gyr.
         Smaller values of logtc produce halos with earlier formation times.
         Default is set by DEFAULT_MAH_PARAMS.
+        Since logtc is determined by mah_percentile, and conversely,
+        these two parameters may not be specified concurrently.
 
     logtk : float, optional
         Steepness of transition from fast- to slow-accretion regimes.
@@ -81,10 +83,13 @@ def in_situ_mstar_at_zobs(
         the halo is early-forming or late-forming for its mass.
         mah_percentile = 0 <==> early-forming halo
         mah_percentile = 1 <==> late-forming halo
-        Default is 0.5 for a halo with a typical assembly history.
+        Default is 0.5 for a halo with a typical assembly history,
+        in which case the median logtc value is used.
+        Since logtc is determined by mah_percentile, and conversely,
+        these two parameters may not be specified concurrently.
 
     **model_params : float, optional
-        Any parameter regulating main-sequence SFR or quenching is accepted.
+        Any parameter regulating main-sequence SFR or quenching times is accepted.
 
     Returns
     -------
