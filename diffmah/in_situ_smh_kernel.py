@@ -32,6 +32,7 @@ def in_situ_mstar_at_zobs(
     logtk=None,
     dlogm_height=None,
     mah_percentile=None,
+    return_mah=False,
     **model_params,
 ):
     """Integrate star formation history to calculate M* at zobs.
@@ -88,6 +89,12 @@ def in_situ_mstar_at_zobs(
         Since logtc is determined by mah_percentile, and conversely,
         these two parameters may not be specified concurrently.
 
+    return_mah : bool, optional
+        Default is False, in which case only mstar_ms, mstar_q will be returned.
+        If True, function will return mstar_ms, mstar_q, mah,
+        where mah is an array of halo masses used when integrating SFR history
+        to give mstar at zobs. The value of halo mass at zobs is given by mah[-1].
+
     **model_params : float, optional
         Any parameter regulating main-sequence SFR or quenching times is accepted.
 
@@ -100,6 +107,12 @@ def in_situ_mstar_at_zobs(
     mstar_q : float
         Stellar mass formed in-situ at zobs,
         if the galaxy were quenched at qtime.
+
+    mah : ndarray, optional
+        Array of shape (n, ), where n is t_table.size,
+        storing halo masses used when integrating SFR history
+        to give mstar at zobs. The value of halo mass at zobs
+        is given by mah[-1].
 
     """
     res = _process_args(
@@ -131,7 +144,10 @@ def in_situ_mstar_at_zobs(
     mstar_ms = trapz(_ms_sfr_integrand, x=tarr)
     mstar_q = trapz(_q_sfr_integrand, x=tarr)
 
-    return mstar_ms, mstar_q
+    if return_mah:
+        return mstar_ms, mstar_q, mah
+    else:
+        return mstar_ms, mstar_q
 
 
 def _process_args(

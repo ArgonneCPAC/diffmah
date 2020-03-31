@@ -186,3 +186,34 @@ def test_in_situ_mstar_at_zobs_varies_with_qtime_params():
             pat2 = "parameter '{0}' has no effect on {1}"
             assert mstar_ms_alt == mstar_ms_fid, pat.format(key, "mstar_ms")
             assert mstar_q_alt != mstar_q_fid, pat2.format(key, "mstar_q")
+
+
+def test_in_situ_mstar_at_zobs_return_mah_feature():
+    zobs = 0
+    for logm0 in [10, 11, 12, 13, 14, 15]:
+        mstar_ms_fid, mstar_q_fid = in_situ_mstar_at_zobs(zobs, logm0)
+        mstar_ms_fid2, mstar_q_fid2, mah = in_situ_mstar_at_zobs(
+            zobs, logm0, return_mah=True
+        )
+        assert np.allclose(mstar_ms_fid, mstar_ms_fid2)
+        assert np.allclose(mstar_q_fid, mstar_q_fid2)
+        assert np.allclose(mah[-1], 10 ** logm0, rtol=0.001)
+        assert np.all(np.diff(mah) > 0)
+
+
+def test2_in_situ_mstar_at_zobs_return_mah_feature():
+    zobs, logm0 = 0, 12
+
+    mstar_ms_fid, mstar_q_fid, mah_fid = in_situ_mstar_at_zobs(
+        zobs, logm0, return_mah=True
+    )
+
+    mah_params_to_vary = {
+        key: value for key, value in DEFAULT_MAH_PARAMS.items() if "scatter" not in key
+    }
+
+    for key, default_value in mah_params_to_vary.items():
+        mstar_ms_alt, mstar_q_alt, mah_alt = in_situ_mstar_at_zobs(
+            zobs, logm0, **{key: 0.9 * default_value - 0.1}, return_mah=True
+        )
+        assert not np.allclose(mah_alt, mah_fid, rtol=1e-3)
