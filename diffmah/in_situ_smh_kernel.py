@@ -161,7 +161,9 @@ def _process_args(
         msg = "Do not pass both mah_percentile and logtc"
         raise ValueError(msg)
 
-    logtc_med, logtk_med, dlogm_height_med = _median_mah_sigmoid_params(logm0)
+    logtc_med, logtk_med, dlogm_height_med = _median_mah_sigmoid_params(
+        logm0, **mah_params
+    )
     if logtc is None:
         if mah_percentile is None:
             logtc = logtc_med
