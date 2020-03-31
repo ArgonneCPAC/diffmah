@@ -259,10 +259,12 @@ def test2_in_situ_mstar_at_zobs_correctly_infers_mah_percentile_from_logtc():
     assert np.allclose(mah1, mah2, rtol=1e-3)
 
 
-def test_regression_in_situ_mstar_at_zobs_logtc_behavior():
-    """Regression test reveals previous bug in low-logtc behavior"""
+def test_self_consistent_logtc_vs_mah_percentile_args():
+    """Passing in the median logtc vs. passing in mah_percentile=0.5
+    should give identical results.
+    """
     zobs, logm0 = 0, 12
     logtc_med, __, __ = _median_mah_sigmoid_params(logm0)
-    __, mstar_q1 = in_situ_mstar_at_zobs(zobs, logm0, logtc=logtc_med)
-    __, mstar_q2 = in_situ_mstar_at_zobs(zobs, logm0, logtc=logtc_med - 0.02)
-    assert not np.allclose(mstar_q1, mstar_q2, rtol=0.1)
+    __, mstar_q0 = in_situ_mstar_at_zobs(zobs, logm0, logtc=logtc_med)
+    __, mstar_q1 = in_situ_mstar_at_zobs(zobs, logm0, mah_percentile=0.5)
+    assert np.allclose(mstar_q0, mstar_q1, rtol=0.001)
