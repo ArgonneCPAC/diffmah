@@ -31,7 +31,7 @@ def sfr_efficiency_function(M, z, **kwargs):
     Returns
     -------
     sfe : ndarray of shape (n, )
-    
+
     """
     M, z = _get_1d_arrays(M, z)
 

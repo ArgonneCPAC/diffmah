@@ -1,6 +1,5 @@
 """Testing functions of the sigmoid-based quenching probability."""
 import numpy as np
-import pytest
 
 from ..quenching_probability import (
     quenching_prob_cens,

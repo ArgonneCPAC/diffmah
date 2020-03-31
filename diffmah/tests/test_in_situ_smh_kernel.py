@@ -27,14 +27,14 @@ def test3_get_model_param_dictionaries():
     defaults = [OrderedDict(a=1, b=2), OrderedDict(c=3, d=4)]
     new_vals = OrderedDict(e=5)
     with pytest.raises(KeyError):
-        result = _get_model_param_dictionaries(*defaults, **new_vals)
+        _get_model_param_dictionaries(*defaults, **new_vals)
 
 
 def test4_get_model_param_dictionaries():
     defaults = [OrderedDict(a=1, b=2), OrderedDict(a=3, d=4)]
     new_vals = OrderedDict(d=5)
     with pytest.raises(KeyError):
-        result = _get_model_param_dictionaries(*defaults, **new_vals)
+        _get_model_param_dictionaries(*defaults, **new_vals)
 
 
 def test1_in_situ_stellar_mass_at_zobs_is_monotonic_in_mass():
