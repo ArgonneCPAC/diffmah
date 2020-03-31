@@ -1,5 +1,5 @@
 # diffmah
-Dummy readme for diffmah package
+it's a thing
 
 For a typical development environment in conda:
 
