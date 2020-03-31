@@ -102,7 +102,6 @@ def in_situ_mstar_at_zobs(
         if the galaxy were quenched at qtime.
 
     """
-
     res = _process_args(
         zobs,
         logm0,
@@ -127,7 +126,7 @@ def in_situ_mstar_at_zobs(
     epsilon = sfr_efficiency_function(mah, zarr, **ms_params)
 
     _ms_sfr_integrand = fb * dmdt * epsilon
-    _q_sfr_integrand = _ms_sfr_integrand * quenching_function(t_table, qtime)
+    _q_sfr_integrand = _ms_sfr_integrand * quenching_function(tarr, qtime)
 
     mstar_ms = trapz(_ms_sfr_integrand, x=tarr)
     mstar_q = trapz(_q_sfr_integrand, x=tarr)

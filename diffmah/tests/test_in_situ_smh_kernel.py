@@ -103,10 +103,9 @@ def test_in_situ_mstar_at_zobs_sensible_qtime_behavior():
 
 
 def test2_in_situ_mstar_at_zobs_sensible_qtime_behavior():
-    """When qtime < today, quenching should not change present-day M*."""
+    """When qtime << today, quenching should change present-day M*."""
     zobs, logm0 = 0, 12
-    tobs = 13.8
-    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
+    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=5)
     assert mstar_q < mstar_ms * 0.9
 
 
@@ -171,7 +170,7 @@ def test_in_situ_mstar_at_zobs_varies_with_SFR_efficiency_params():
 
 def test_in_situ_mstar_at_zobs_varies_with_qtime_params():
     """Present-day Mstar should change when each model param is varied."""
-    logm0 = 12
+    logm0 = 13
     for zobs in (0, 1, 2):
         mstar_ms_fid, mstar_q_fid = in_situ_mstar_at_zobs(zobs, logm0)
         params_to_vary = {
