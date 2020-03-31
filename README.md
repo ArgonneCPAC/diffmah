@@ -1,5 +1,4 @@
 # diffmah
-it's a thing
 
 For a typical development environment in conda:
 
