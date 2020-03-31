@@ -1,0 +1,84 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.7
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v0.2-dependencies
+
+      - run:
+          name: install dependencies
+          command: |
+            if [ ! -d miniconda ]; then
+              curl -s https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh
+              bash miniconda.sh -b -p miniconda
+
+              export PATH=`pwd`/miniconda/bin:$PATH
+
+              conda config --set always_yes yes --set changeps1 no
+              conda config --add channels defaults
+              conda config --add channels conda-forge
+              conda update -q conda
+
+              conda create -q -n test-env \
+                python=3.7 \
+                pip
+            fi
+
+            export PATH=`pwd`/miniconda/bin:$PATH
+
+            conda config --set always_yes yes --set changeps1 no
+            conda config --add channels defaults
+            conda config --add channels conda-forge
+            conda update -q conda
+
+            source activate test-env
+
+            conda update --all -y -q
+
+            conda install -y -q \
+              numpy \
+              numba \
+              emcee \
+              flake8 \
+              pytest \
+              scipy \
+              tqdm \
+              pyyaml \
+              jax \
+              pytest-runner \
+              "halotools>=0.7" \
+              "astropy>=4"
+
+            # get thechopper
+            pip install --no-deps git+https://github.com/ArgonneCPAC/thechopper.git#egg=thechopper
+
+            pip install --no-deps -e .
+
+      - save_cache:
+          paths:
+            - ./miniconda
+          key: v0-dependencies
+
+      - run:
+          name: lint
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+            flake8 diffmah
+
+      - run:
+          name: test
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+
+            export JAX_ENABLE_X64=True
+            pytest -vv diffmah
