@@ -110,11 +110,11 @@ def test2_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     assert mstar_q < mstar_ms * 0.9
 
 
-def tes3_in_situ_mstar_at_zobs_sensible_qtime_behavior():
+def test3_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     """When qtime > tobs, quenching should not change M*(tobs)."""
     zobs, logm0 = 1, 12
     tobs = Planck15.age(zobs).value  # roughly 5.9 Gyr
-    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 1)
+    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 2)
     assert mstar_q > mstar_ms * 0.9
 
 
