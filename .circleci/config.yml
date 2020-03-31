@@ -57,9 +57,6 @@ jobs:
               "halotools>=0.7" \
               "astropy>=4"
 
-            # get thechopper
-            pip install --no-deps git+https://github.com/ArgonneCPAC/thechopper.git#egg=thechopper
-
             pip install --no-deps -e .
 
       - save_cache:
