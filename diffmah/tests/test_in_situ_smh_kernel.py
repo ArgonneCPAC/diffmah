@@ -6,6 +6,7 @@ from astropy.cosmology import Planck15
 from collections import OrderedDict
 from ..in_situ_smh_kernel import _get_model_param_dictionaries
 from ..in_situ_smh_kernel import in_situ_mstar_at_zobs
+from ..sigmoid_mah import DEFAULT_MAH_PARAMS
 
 
 def test_get_model_param_dictionaries():
@@ -121,3 +122,19 @@ def test4_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     tobs = Planck15.age(zobs).value  # roughly 5.9 Gyr
     mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
     assert mstar_q < mstar_ms * 0.9
+
+
+def test_in_situ_mstar_at_zobs_varies_with_MAH_params():
+    """Present-day Mstar should change when each MAH param is varied."""
+    zobs, logm0 = 0, 12
+    mstar_ms_fid, mstar_q_fid = in_situ_mstar_at_zobs(zobs, logm0)
+    mah_params_to_vary = {
+        key: value for key, value in DEFAULT_MAH_PARAMS.items() if "scatter" not in key
+    }
+    for key, value in mah_params_to_vary.items():
+        mstar_ms_alt, mstar_q_alt = in_situ_mstar_at_zobs(
+            zobs, logm0, **{key: value * 0.9 - 0.1}
+        )
+        pat = "parameter '{0}' has no effect on {1}"
+        assert mstar_ms_alt != mstar_ms_fid, pat.format(key, "mstar_ms")
+        assert mstar_q_alt != mstar_q_fid, pat.format(key, "mstar_q")
