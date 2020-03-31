@@ -2,6 +2,7 @@
 """
 import pytest
 import numpy as np
+from astropy.cosmology import Planck15
 from collections import OrderedDict
 from ..in_situ_smh_kernel import _get_model_param_dictionaries
 from ..in_situ_smh_kernel import in_situ_mstar_at_zobs
@@ -69,7 +70,7 @@ def test_in_situ_stellar_mass_at_zobs_accepts_mah_percentile():
     assert mstar_ms_1 > mstar_ms_2 > mstar_ms_3
 
 
-def test_in_situ_mstar_at_zobs_mah_percentile_behavior():
+def test_in_situ_mstar_at_zobs_catches_bad_mah_percentile_inputs():
     zobs, logm0 = 0, 12
     with pytest.raises(ValueError):
         in_situ_mstar_at_zobs(zobs, logm0, mah_percentile=1, logtc=1)
@@ -81,3 +82,35 @@ def test_in_situ_mstar_at_zobs_sensible_quenching_behavior():
         for logm in logmarr:
             mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(z, logm)
             assert mstar_ms >= mstar_med >= mstar_q
+
+
+def test_in_situ_mstar_at_zobs_sensible_qtime_behavior():
+    """When qtime > today, quenching should not change present-day M*."""
+    zobs, logm0 = 0, 12
+    tobs = 13.8
+    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 1)
+    assert mstar_q > mstar_ms * 0.9
+
+
+def test2_in_situ_mstar_at_zobs_sensible_qtime_behavior():
+    """When qtime < today, quenching should not change present-day M*."""
+    zobs, logm0 = 0, 12
+    tobs = 13.8
+    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
+    assert mstar_q < mstar_ms * 0.9
+
+
+def tes3_in_situ_mstar_at_zobs_sensible_qtime_behavior():
+    """When qtime > tobs, quenching should not change M*(tobs)."""
+    zobs, logm0 = 1, 12
+    tobs = Planck15.age(zobs).value  # roughly 5.9 Gyr
+    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 1)
+    assert mstar_q > mstar_ms * 0.9
+
+
+def test4_in_situ_mstar_at_zobs_sensible_qtime_behavior():
+    """When qtime < tobs, quenching should significantly reduce M*(tobs)."""
+    zobs, logm0 = 1, 12
+    tobs = Planck15.age(zobs).value  # roughly 5.9 Gyr
+    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
+    assert mstar_q < mstar_ms * 0.9
