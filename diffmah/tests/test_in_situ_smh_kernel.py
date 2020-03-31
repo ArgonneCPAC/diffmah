@@ -59,12 +59,21 @@ def test2_in_situ_stellar_mass_at_zobs_is_monotonic_in_mass():
             mstar_ms_last = mstar_ms
 
 
-def test_in_situ_stellar_mass_at_zobs_accepts_mah_percentile():
+def test_in_situ_stellar_mass_at_zobs_scales_correctly_with_mah_percentile():
     """Earlier-forming halos have greater M* today."""
     zobs = 0
     mstar_ms_1, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=0)
     mstar_ms_2, __ = in_situ_mstar_at_zobs(zobs, 12)
     mstar_ms_3, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=1)
+    assert mstar_ms_1 > mstar_ms_2 > mstar_ms_3
+
+
+def test_in_situ_stellar_mass_at_zobs_scales_correctly_with_logtc():
+    """Earlier-forming halos have greater M* today."""
+    zobs = 0
+    mstar_ms_1, __ = in_situ_mstar_at_zobs(zobs, 12, logtc=-0.5)
+    mstar_ms_2, __ = in_situ_mstar_at_zobs(zobs, 12, logtc=0)
+    mstar_ms_3, __ = in_situ_mstar_at_zobs(zobs, 12, logtc=0.5)
     assert mstar_ms_1 > mstar_ms_2 > mstar_ms_3
 
 
