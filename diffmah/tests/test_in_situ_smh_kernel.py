@@ -6,7 +6,8 @@ from astropy.cosmology import Planck15
 from collections import OrderedDict
 from ..in_situ_smh_kernel import _get_model_param_dictionaries
 from ..in_situ_smh_kernel import in_situ_mstar_at_zobs
-from ..sigmoid_mah import DEFAULT_MAH_PARAMS
+from ..sigmoid_mah import DEFAULT_MAH_PARAMS, _median_mah_sigmoid_params
+from ..sigmoid_mah import _logtc_from_mah_percentile
 from ..moster17_efficiency import DEFAULT_PARAMS as DEFAULT_SFR_PARAMS
 from ..quenching_times import DEFAULT_PARAMS as DEFAULT_QTIME_PARAMS
 
@@ -217,3 +218,51 @@ def test2_in_situ_mstar_at_zobs_return_mah_feature():
             zobs, logm0, **{key: 0.9 * default_value - 0.1}, return_mah=True
         )
         assert not np.allclose(mah_alt, mah_fid, rtol=1e-3)
+
+
+def test1_in_situ_mstar_at_zobs_correctly_infers_mah_percentile_from_logtc():
+    """
+    """
+    mah_params = dict()
+    zobs, logm0 = 0, 12
+    logtc_med, logtk_med, dlogm_height_med = _median_mah_sigmoid_params(
+        logm0, **mah_params
+    )
+    mstar_ms1, __, mah1 = in_situ_mstar_at_zobs(
+        zobs, logm0, return_mah=True, logtc=logtc_med
+    )
+    mstar_ms2, __, mah2 = in_situ_mstar_at_zobs(
+        zobs, logm0, return_mah=True, mah_percentile=0.5
+    )
+    assert np.allclose(mstar_ms1, mstar_ms2)
+    assert np.allclose(mah1, mah2)
+
+
+def test2_in_situ_mstar_at_zobs_correctly_infers_mah_percentile_from_logtc():
+    """
+    """
+    zobs, logm0 = 0, 12
+    mah_params = dict()
+    mah_percentile = 0.25
+
+    logtc = _logtc_from_mah_percentile(logm0, mah_percentile, **mah_params)
+
+    mstar_ms1, __, mah1 = in_situ_mstar_at_zobs(
+        zobs, logm0, return_mah=True, logtc=logtc
+    )
+
+    mstar_ms2, __, mah2 = in_situ_mstar_at_zobs(
+        zobs, logm0, return_mah=True, mah_percentile=mah_percentile
+    )
+
+    assert np.allclose(mstar_ms1, mstar_ms2, rtol=1e-3)
+    assert np.allclose(mah1, mah2, rtol=1e-3)
+
+
+def test_regression_in_situ_mstar_at_zobs_logtc_behavior():
+    """Regression test reveals previous bug in low-logtc behavior"""
+    zobs, logm0 = 0, 12
+    logtc_med, __, __ = _median_mah_sigmoid_params(logm0)
+    __, mstar_q1 = in_situ_mstar_at_zobs(zobs, logm0, logtc=logtc_med)
+    __, mstar_q2 = in_situ_mstar_at_zobs(zobs, logm0, logtc=logtc_med - 0.02)
+    assert not np.allclose(mstar_q1, mstar_q2, rtol=0.1)
