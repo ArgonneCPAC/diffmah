@@ -55,7 +55,8 @@ jobs:
               jax \
               pytest-runner \
               "halotools>=0.7" \
-              "astropy>=4"
+              "astropy>=4" \
+              thechopper
 
             pip install --no-deps -e .
 
