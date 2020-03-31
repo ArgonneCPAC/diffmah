@@ -40,11 +40,10 @@ def test4_get_model_param_dictionaries():
 
 def test1_in_situ_stellar_mass_at_zobs_is_monotonic_in_mass():
     for z in (0, 1, 2, 5):
-        mstar_ms10, mstar_med10, mstar_q10 = in_situ_mstar_at_zobs(z, 10)
-        mstar_ms12, mstar_med12, mstar_q12 = in_situ_mstar_at_zobs(z, 12)
-        mstar_ms14, mstar_med14, mstar_q14 = in_situ_mstar_at_zobs(z, 14)
+        mstar_ms10, mstar_q10 = in_situ_mstar_at_zobs(z, 10)
+        mstar_ms12, mstar_q12 = in_situ_mstar_at_zobs(z, 12)
+        mstar_ms14, mstar_q14 = in_situ_mstar_at_zobs(z, 14)
         assert mstar_ms10 < mstar_ms12 < mstar_ms14
-        assert mstar_med10 < mstar_med12 < mstar_med14
         assert mstar_q10 < mstar_q12 < mstar_q14
 
 
@@ -52,21 +51,20 @@ def test2_in_situ_stellar_mass_at_zobs_is_monotonic_in_mass():
     logmarr = np.linspace(8, 17, 20)
 
     for z in (0, 1, 2, 5):
-        mstar_ms_last, mstar_med_last, __ = in_situ_mstar_at_zobs(z, logmarr[0])
+        mstar_ms_last, __ = in_situ_mstar_at_zobs(z, logmarr[0])
         for logm in logmarr[1:]:
-            mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(z, logm)
-            assert mstar_ms >= mstar_med >= mstar_q
+            mstar_ms, mstar_q = in_situ_mstar_at_zobs(z, logm)
+            assert mstar_ms >= mstar_q
             assert mstar_ms > mstar_ms_last
-            assert mstar_med > mstar_med_last
-            mstar_ms_last, mstar_med_last = mstar_ms, mstar_med
+            mstar_ms_last = mstar_ms
 
 
 def test_in_situ_stellar_mass_at_zobs_accepts_mah_percentile():
     """Earlier-forming halos have greater M* today."""
     zobs = 0
-    mstar_ms_1, __, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=0)
-    mstar_ms_2, __, __ = in_situ_mstar_at_zobs(zobs, 12)
-    mstar_ms_3, __, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=1)
+    mstar_ms_1, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=0)
+    mstar_ms_2, __ = in_situ_mstar_at_zobs(zobs, 12)
+    mstar_ms_3, __ = in_situ_mstar_at_zobs(zobs, 12, mah_percentile=1)
     assert mstar_ms_1 > mstar_ms_2 > mstar_ms_3
 
 
@@ -80,15 +78,15 @@ def test_in_situ_mstar_at_zobs_sensible_quenching_behavior():
     logmarr = np.linspace(8, 17, 20)
     for z in (0, 1, 2, 5):
         for logm in logmarr:
-            mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(z, logm)
-            assert mstar_ms >= mstar_med >= mstar_q
+            mstar_ms, mstar_q = in_situ_mstar_at_zobs(z, logm)
+            assert mstar_ms >= mstar_q
 
 
 def test_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     """When qtime > today, quenching should not change present-day M*."""
     zobs, logm0 = 0, 12
     tobs = 13.8
-    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 1)
+    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 1)
     assert mstar_q > mstar_ms * 0.9
 
 
@@ -96,7 +94,7 @@ def test2_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     """When qtime < today, quenching should not change present-day M*."""
     zobs, logm0 = 0, 12
     tobs = 13.8
-    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
+    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
     assert mstar_q < mstar_ms * 0.9
 
 
@@ -104,7 +102,7 @@ def tes3_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     """When qtime > tobs, quenching should not change M*(tobs)."""
     zobs, logm0 = 1, 12
     tobs = Planck15.age(zobs).value  # roughly 5.9 Gyr
-    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 1)
+    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs + 1)
     assert mstar_q > mstar_ms * 0.9
 
 
@@ -112,5 +110,5 @@ def test4_in_situ_mstar_at_zobs_sensible_qtime_behavior():
     """When qtime < tobs, quenching should significantly reduce M*(tobs)."""
     zobs, logm0 = 1, 12
     tobs = Planck15.age(zobs).value  # roughly 5.9 Gyr
-    mstar_ms, mstar_med, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
+    mstar_ms, mstar_q = in_situ_mstar_at_zobs(zobs, logm0, qtime=tobs - 1)
     assert mstar_q < mstar_ms * 0.9

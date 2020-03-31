@@ -8,14 +8,8 @@ from .sigmoid_mah import logmpeak_from_logt, _median_mah_sigmoid_params, LOGT0
 from .sigmoid_mah import _logtc_from_mah_percentile, DEFAULT_MAH_PARAMS
 from .moster17_efficiency import DEFAULT_PARAMS as DEFAULT_SFR_PARAMS
 from .quenching_times import DEFAULT_PARAMS as DEFAULT_QTIME_PARAMS
-from .quenching_probability import DEFAULT_PARAM_VALUES as DEFAULT_QPROB_PARAMS
-from .quenching_probability import quenching_prob_cens
 from .quenching_times import quenching_function, central_quenching_time
 
-
-DEFAULT_QPROB_CENS_PARAMS = OrderedDict(
-    [(key, value) for key, value in DEFAULT_QPROB_PARAMS.items() if "cens" in key]
-)
 
 Z_INTERP_TABLE = np.linspace(15, -0.25, 5000)
 T_INTERP_TABLE = Planck15.age(Z_INTERP_TABLE).value
@@ -50,7 +44,8 @@ def in_situ_mstar_at_zobs(
         Base-10 log of halo mass at logt0
 
     qtime : float, optional
-        Quenching time in Gyr. Default is set by quenching time parameters.
+        Quenching time in Gyr. When not set explicitly,
+        default qtime is set by the default values in model_params
 
     t_table : ndarray, optional
         Array of cosmic times used as control points to define the SFH integrand.
@@ -93,7 +88,13 @@ def in_situ_mstar_at_zobs(
 
     Returns
     -------
-    mstar : float
+    mstar_ms : float
+        Stellar mass formed in-situ at zobs,
+        if the galaxy remained on the main sequence.
+
+    mstar_q : float
+        Stellar mass formed in-situ at zobs,
+        if the galaxy were quenched at qtime.
 
     """
 
@@ -110,7 +111,7 @@ def in_situ_mstar_at_zobs(
         mah_percentile,
     )
     zarr, logtarr, logtc, logtk, dlogm_height = res[:5]
-    ms_params, qprob_params, qtime, mah_percentile = res[5:]
+    ms_params, qtime, mah_percentile = res[5:]
 
     mah = 10 ** logmpeak_from_logt(logtarr, logtc, logtk, dlogm_height, logm0, logt0)
 
@@ -125,13 +126,8 @@ def in_situ_mstar_at_zobs(
 
     mstar_ms = trapz(_ms_sfr_integrand, x=tarr)
     mstar_q = trapz(_q_sfr_integrand, x=tarr)
-    msg = "Quenched galaxies cannot have greater M* than non-quenched"
-    assert mstar_ms >= mstar_q, msg
 
-    qprob_at_z0 = quenching_prob_cens(logm0, **qprob_params)
-    mstar_med = (qprob_at_z0 * mstar_q) + (1 - qprob_at_z0) * mstar_ms
-
-    return mstar_ms, mstar_med[0], mstar_q
+    return mstar_ms, mstar_q
 
 
 def _process_args(
@@ -154,16 +150,9 @@ def _process_args(
     tarr = np.interp(zarr, z_table[::-1], t_table[::-1])
     logtarr = np.log10(tarr)
 
-    defaults = list(
-        (
-            DEFAULT_MAH_PARAMS,
-            DEFAULT_SFR_PARAMS,
-            DEFAULT_QPROB_CENS_PARAMS,
-            DEFAULT_QTIME_PARAMS,
-        )
-    )
+    defaults = list((DEFAULT_MAH_PARAMS, DEFAULT_SFR_PARAMS, DEFAULT_QTIME_PARAMS,))
     param_list = _get_model_param_dictionaries(*defaults, **model_params)
-    mah_params, ms_params, qprob_params, qtime_params = param_list
+    mah_params, ms_params, qtime_params = param_list
 
     inconsistent = (mah_percentile is not None) & (logtc is not None)
     try:
@@ -200,7 +189,6 @@ def _process_args(
         logtk,
         dlogm_height,
         ms_params,
-        qprob_params,
         qtime,
         mah_percentile,
     )
