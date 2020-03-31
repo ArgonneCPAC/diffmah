@@ -8,6 +8,7 @@ from ..in_situ_smh_kernel import _get_model_param_dictionaries
 from ..in_situ_smh_kernel import in_situ_mstar_at_zobs
 from ..sigmoid_mah import DEFAULT_MAH_PARAMS
 from ..moster17_efficiency import DEFAULT_PARAMS as DEFAULT_SFR_PARAMS
+from ..quenching_times import DEFAULT_PARAMS as DEFAULT_QTIME_PARAMS
 
 
 def test_get_model_param_dictionaries():
@@ -156,3 +157,23 @@ def test_in_situ_mstar_at_zobs_varies_with_SFR_efficiency_params():
             pat = "parameter '{0}' has no effect on {1}"
             assert mstar_ms_alt != mstar_ms_fid, pat.format(key, "mstar_ms")
             assert mstar_q_alt != mstar_q_fid, pat.format(key, "mstar_q")
+
+
+def test_in_situ_mstar_at_zobs_varies_with_qtime_params():
+    """Present-day Mstar should change when each model param is varied."""
+    logm0 = 12
+    for zobs in (0, 1, 2):
+        mstar_ms_fid, mstar_q_fid = in_situ_mstar_at_zobs(zobs, logm0)
+        params_to_vary = {
+            key: value
+            for key, value in DEFAULT_QTIME_PARAMS.items()
+            if "scatter" not in key
+        }
+        for key, value in params_to_vary.items():
+            mstar_ms_alt, mstar_q_alt = in_situ_mstar_at_zobs(
+                zobs, logm0, **{key: value * 0.9 - 0.1}
+            )
+            pat = "parameter '{0}' has an effect on {1}, which should not be so"
+            pat2 = "parameter '{0}' has no effect on {1}"
+            assert mstar_ms_alt == mstar_ms_fid, pat.format(key, "mstar_ms")
+            assert mstar_q_alt != mstar_q_fid, pat2.format(key, "mstar_q")
