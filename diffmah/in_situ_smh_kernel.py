@@ -138,11 +138,9 @@ def in_situ_mstar_at_zobs(
     zarr, logtarr, logtc, logtk, dlogm_height = res[:5]
     ms_params, qtime, mah_percentile = res[5:]
 
-    mah = 10 ** logmpeak_from_logt(logtarr, logtc, logtk, dlogm_height, logm0, logt0)
-
-    tarr = 10 ** logtarr
-    _dmdt = np.diff(mah) / np.diff(tarr)
-    dmdt = np.insert(_dmdt, 0, _dmdt[0])
+    tarr, mah, dmdt = _get_mah_history(
+        zarr, logtarr, logtc, logtk, dlogm_height, logm0, logt0
+    )
 
     epsilon = sfr_efficiency_function(mah, zarr, **ms_params)
 
@@ -156,6 +154,16 @@ def in_situ_mstar_at_zobs(
         return mstar_ms, mstar_q, mah
     else:
         return mstar_ms, mstar_q
+
+
+def _get_mah_history(zarr, logtarr, logtc, logtk, dlogm_height, logm0, logt0):
+    mah = 10 ** logmpeak_from_logt(logtarr, logtc, logtk, dlogm_height, logm0, logt0)
+
+    tarr = 10 ** logtarr
+    _dmdt = np.diff(mah) / np.diff(tarr)
+    dmdt = np.insert(_dmdt, 0, _dmdt[0])
+
+    return tarr, mah, dmdt
 
 
 def _process_args(
