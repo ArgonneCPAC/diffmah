@@ -322,3 +322,12 @@ def test2_in_situ_mstar_at_zobs_logtc_scatter_behavior():
     )
     assert not np.allclose(mstar_ms1, mstar_ms2)
     assert not np.allclose(mstar_q1, mstar_q2)
+
+
+def test_in_situ_mstar_at_zobs_qtime_percentile_behavior():
+    zobs, logm0 = 0, 12
+    mstar_ms1, mstar_q1 = in_situ_mstar_at_zobs(zobs, logm0, qtime_percentile=0.0,)
+    mstar_ms2, mstar_q2 = in_situ_mstar_at_zobs(zobs, logm0, qtime_percentile=0.5,)
+    mstar_ms3, mstar_q3 = in_situ_mstar_at_zobs(zobs, logm0, qtime_percentile=1,)
+
+    assert mstar_q1 < mstar_q2 < mstar_q3

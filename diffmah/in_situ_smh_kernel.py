@@ -33,6 +33,7 @@ def in_situ_mstar_at_zobs(
     dlogm_height=None,
     mah_percentile=None,
     return_mah=False,
+    qtime_percentile=0.5,
     **model_params,
 ):
     """Integrate star formation history to calculate M* at zobs.
@@ -89,6 +90,12 @@ def in_situ_mstar_at_zobs(
         Since logtc is determined by mah_percentile, and conversely,
         these two parameters may not be specified concurrently.
 
+    qtime_percentile : float, optional
+        Value in the interval [0, 1] specifying whether
+        the quenching time is earlier (0) or later (1) relative to
+        the quenching time of other quenched galaxies of the same mass.
+        Default is 0.5 for median quenching times.
+
     return_mah : bool, optional
         Default is False, in which case only mstar_ms, mstar_q will be returned.
         If True, function will return mstar_ms, mstar_q, mah,
@@ -126,6 +133,7 @@ def in_situ_mstar_at_zobs(
         model_params,
         qtime,
         mah_percentile,
+        qtime_percentile,
     )
     zarr, logtarr, logtc, logtk, dlogm_height = res[:5]
     ms_params, qtime, mah_percentile = res[5:]
@@ -161,6 +169,7 @@ def _process_args(
     model_params,
     qtime,
     mah_percentile,
+    qtime_percentile,
 ):
     assert np.shape(zobs) == (), "zobs should be a float"
     assert np.shape(logm0) == (), "logm0 should be a float"
@@ -209,7 +218,7 @@ def _process_args(
         dlogm_height = dlogm_height_med
 
     if qtime is None:
-        qtime = central_quenching_time(logm0, mah_percentile, **qtime_params)[0]
+        qtime = central_quenching_time(logm0, qtime_percentile, **qtime_params)[0]
 
     return (
         zarr,
