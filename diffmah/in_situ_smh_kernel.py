@@ -193,7 +193,7 @@ def _process_args(
     else:
         msg = "logtc should be a float, instead got {}"
         assert np.shape(logtc) == (), msg.format(logtc)
-        logtc_lo = _logtc_from_mah_percentile(logm0, 0.5, **mah_params)
+        logtc_lo = _logtc_from_mah_percentile(logm0, 0, **mah_params)
         logtc_med = _logtc_from_mah_percentile(logm0, 0.5, **mah_params)
         logtc_hi = _logtc_from_mah_percentile(logm0, 1, **mah_params)
         if logtc < logtc_lo:
