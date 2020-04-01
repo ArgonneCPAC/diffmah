@@ -2,7 +2,6 @@
 """
 import numpy as np
 from collections import OrderedDict
-from .in_situ_history import in_situ_galaxy_halo_history
 from .quenching_times import central_quenching_time
 from .quenching_times import DEFAULT_PARAMS as DEFAULT_QTIME_PARAMS
 from .quenching_times import QFUNC_PARAMS
@@ -24,10 +23,6 @@ def quenched_fraction_at_tobs(
     """Calculate the probability the galaxy is quenched at tobs."""
     assert np.shape(logm0) == (), "logm0 should be a float"
     assert np.shape(tobs) == (), "logm0 should be a float"
-
-    _X = in_situ_galaxy_halo_history(logm0, **kwargs)
-    zarr, tarr, mah, dmhdt = _X[:4]
-    sfrh_ms, sfrh_q, smh_ms, smh_q = _X[4:]
 
     qprob_params = _get_params(DEFAULT_QPROB_PARAMS, **kwargs)
     qtime_params = _get_params(DEFAULT_QTIME_PARAMS, **kwargs)
