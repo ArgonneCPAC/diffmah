@@ -31,7 +31,6 @@ def in_situ_galaxy_halo_history(
     logtk=None,
     dlogm_height=None,
     mah_percentile=None,
-    return_mah=False,
     qtime_percentile=0.5,
     **model_params,
 ):
