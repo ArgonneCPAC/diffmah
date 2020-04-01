@@ -1,7 +1,7 @@
 """Module implements in_situ_stellar_mass_at_zobs function to calculate M*(z)."""
 import numpy as np
 from collections import OrderedDict
-from scipy.integrate import trapz, cumtrapz
+from scipy.integrate import cumtrapz
 from astropy.cosmology import Planck15
 from .moster17_efficiency import sfr_efficiency_function
 from .sigmoid_mah import logmpeak_from_logt, _median_mah_sigmoid_params, LOGT0
@@ -98,11 +98,31 @@ def in_situ_galaxy_halo_history(
 
     Returns
     -------
-    mah : ndarray, optional
-        Array of shape (n, ), where n is t_table.size,
-        storing halo masses used when integrating SFR history
-        to give mstar at zobs. The value of halo mass at zobs
-        is given by mah[-1].
+    zarr : ndarray of shape (n, )
+        Redshift of the universe. Array monotonically decreases
+        with final value zarr[-1] = 0.
+
+    tarr : ndarray of shape (n, )
+        Age of the universe in Gyr. Array monotonically increases
+        with final value tarr[-1] ~ 13.8 for Planck-like cosmology.
+
+    mah : ndarray of shape (n, )
+        Halo masses used when integrating SFR history
+
+    dmdt : ndarray of shape (n, )
+        Halo mass accretion rate in Msun/Gyr
+
+    sfr_ms_history : ndarray of shape (n, )
+        Star formation rates in Msun/yr of main-sequence galaxies
+
+    sfr_q_history : ndarray of shape (n, )
+        Star formation rates in Msun/yr of quenched galaxies
+
+    mstar_ms_history : ndarray of shape (n, )
+        Stellar mass in Msun for main-sequence galaxies
+
+    mstar_q_history : ndarray of shape (n, )
+        Stellar mass in Msun for quenched galaxies
 
     """
     res = _process_args(
