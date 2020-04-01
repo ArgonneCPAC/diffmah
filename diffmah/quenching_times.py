@@ -3,9 +3,11 @@ import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
 from jax.scipy.special import erfinv as jax_erfinv
+from jax.scipy.special import erf as jax_erf
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 from .utils import _enforce_no_extraneous_keywords
+from .utils import jax_inverse_sigmoid
 
 
 DEFAULT_PARAMS = OrderedDict(
@@ -106,6 +108,60 @@ def central_quenching_time(logm0, percentile, **kwargs):
     return np.asarray(qtime)
 
 
+def inverse_central_quenching_time(logm0, qtime, **kwargs):
+    """Inverse quenching time of central galaxies.
+
+    In this model, the quenching time decreases with increasing mass,
+    such that massive BCGs have earlier quenching times relative to
+    centrals of Milky Way mass halos.
+
+    Parameters
+    ----------
+    logm0 : float or ndarray of shape (n, )
+        Base-10 log of halo mass at z=0
+
+    percentile : float or ndarray of shape (n, )
+        percentile = Prob(< y | logm0) for some halo property y.
+        For the median quenching time use percentile = 0.5.
+
+    qt_lgmc : float or ndarray, optional
+        Value of log10(Mhalo) of the inflection point of qtime
+
+    qt_k : float or ndarray, optional
+        Steepness of the qtime sigmoid
+
+    qt_dwarfs : float or ndarray, optional
+        Quenching time of dwarf-mass centrals
+
+    qt_clusters : float or ndarray, optional
+        Quenching time of cluster-mass centrals
+
+    qt_scatter_lgmc : float or ndarray, optional
+        Value of log10(Mhalo) of the inflection point of qtime scatter
+
+    qt_scatter_k : float or ndarray, optional
+        Steepness of the qtime scatter sigmoid
+
+    qt_scatter_dwarfs : float or ndarray, optional
+        Quenching time scatter in dwarf-mass centrals
+
+    qt_scatter_clusters : float or ndarray, optional
+        Quenching time scatter in cluster-mass centrals
+
+    Returns
+    -------
+    percentile : float or ndarray of shape (n, )
+        percentile = Prob(< y | logm0) for some halo property y.
+        For the median quenching time use percentile = 0.5.
+
+    """
+    logm0, qtime = _get_1d_arrays(logm0, qtime)
+    param_dict = _get_default_quenching_time_param_dict(**kwargs)
+    params = tuple(param_dict.values())
+    percentile = inverse_central_quenching_time_jax(logm0, qtime, params)
+    return np.asarray(percentile)
+
+
 def _central_quenching_time_kern(logm0, percentile, params):
     qt_params, qt_scatter_params = params[0:4], params[4:]
     logtq_med = jax_np.log10(_median_quenching_time_kern(logm0, qt_params))
@@ -116,8 +172,26 @@ def _central_quenching_time_kern(logm0, percentile, params):
     return jax_np.power(10, log_qt)
 
 
+def _inverse_central_quenching_time_kern(logm0, qtime, params):
+    qt_params, qt_scatter_params = params[0:4], params[4:]
+    log_qt = jax_np.log10(qtime)
+
+    log_qt_med = jax_np.log10(_median_quenching_time_kern(logm0, qt_params))
+    log_tq_scale = _quenching_time_scatter_kern(logm0, qt_scatter_params)
+    ylo, yhi = log_qt_med - log_tq_scale, log_qt_med + log_tq_scale
+
+    qtime_z_score = jax_inverse_sigmoid(log_qt, 0, 1, ylo, yhi)
+    qtime_percentile = _percentile_from_z_score(qtime_z_score)
+    return qtime_percentile
+
+
 central_quenching_time_jax = jax_jit(
     jax_vmap(_central_quenching_time_kern, in_axes=(0, 0, None))
+)
+
+
+inverse_central_quenching_time_jax = jax_jit(
+    jax_vmap(_inverse_central_quenching_time_kern, in_axes=(0, 0, None))
 )
 
 
@@ -155,6 +229,11 @@ quenching_time_scatter_jax = jax_jit(
 @jax_jit
 def _z_score_from_percentile(percentile):
     return jax_np.sqrt(2) * jax_erfinv(2 * percentile - 1)
+
+
+@jax_jit
+def _percentile_from_z_score(z_score):
+    return 0.5 * (1 + jax_erf(z_score / np.sqrt(2)))
 
 
 @jax_jit
