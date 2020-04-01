@@ -5,6 +5,7 @@ from jax import numpy as jax_np
 from jax.scipy.special import erfinv as jax_erfinv
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
+from .utils import _enforce_no_extraneous_keywords
 
 
 DEFAULT_PARAMS = OrderedDict(
@@ -173,22 +174,10 @@ def _get_1d_arrays(*args):
     return [np.zeros(npts).astype(arr.dtype) + arr for arr in results]
 
 
-def _enforce_no_extraneous_keywords(**kwargs):
-    unrecognized_params = set(kwargs) - set(DEFAULT_PARAMS)
-
-    if len(unrecognized_params) > 0:
-        param = list(unrecognized_params)[0]
-        msg = (
-            "Unrecognized parameter ``{0}``"
-            " passed to central_quenching_time function"
-        )
-        raise KeyError(msg.format(param))
-
-
 def _get_default_quenching_time_param_dict(**kwargs):
     """
     """
-    _enforce_no_extraneous_keywords(**kwargs)
+    _enforce_no_extraneous_keywords(DEFAULT_PARAMS, **kwargs)
 
     param_dict = OrderedDict()
     for key, default_value in DEFAULT_PARAMS.items():

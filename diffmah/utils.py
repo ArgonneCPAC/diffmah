@@ -61,3 +61,15 @@ def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
     """
     lnarg = (yhi - ylo) / (y - ylo) - 1
     return x0 - jax_np.log(lnarg) / k
+
+
+def _enforce_no_extraneous_keywords(defaults, **kwargs):
+    unrecognized_params = set(kwargs) - set(defaults)
+
+    if len(unrecognized_params) > 0:
+        param = list(unrecognized_params)[0]
+        msg = (
+            "Unrecognized parameter ``{0}``"
+            " passed to central_quenching_time function"
+        )
+        raise KeyError(msg.format(param))
