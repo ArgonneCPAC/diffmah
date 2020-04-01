@@ -129,7 +129,7 @@ def test_logtc_from_mah_percentile_varies_with_params():
 
 
 def test_logtc_from_mah_percentile_varies_with_percentile_correctly():
-    logm0, p = 12, 0.25
+    logm0 = 12
     params = dict(logtc_scatter_dwarfs=1, logtc_scatter_clusters=1)
     logtc_lo = _logtc_from_mah_percentile(logm0, 0, **params)
     logtc_hi = _logtc_from_mah_percentile(logm0, 1, **params)

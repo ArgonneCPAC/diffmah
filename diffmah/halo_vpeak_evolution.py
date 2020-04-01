@@ -44,7 +44,7 @@ def vmax_vs_mhalo_and_redshift(mhalo, redshift, **param_dict):
     for key, default_value in PARAM_DEFAULT_DICT.items():
         params[key] = param_dict.get(key, default_value)
 
-    __ = _vmax_vs_mhalo_and_redshift(mhalo, redshift, vmax, *params.values())
+    _vmax_vs_mhalo_and_redshift(mhalo, redshift, vmax, *params.values())
     return vmax
 
 
