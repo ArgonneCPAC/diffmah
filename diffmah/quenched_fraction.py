@@ -32,7 +32,7 @@ def _get_params(defaults, **kwargs):
     )
 
 
-def qprob_at_tobs(logm0, tobs, qtime_percentile=0.5, qcut=0.1, **kwargs):
+def qprob_at_tobs(logm0, tobs, qtime_percentile=0.5, **kwargs):
     """Calculate the probability the galaxy is quenched at tobs."""
     assert np.shape(logm0) == (), "logm0 should be a float"
     assert np.shape(tobs) == (), "logm0 should be a float"
