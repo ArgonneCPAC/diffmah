@@ -3,8 +3,11 @@ import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
 from jax.scipy.special import erfinv as jax_erfinv
+from jax.scipy.special import erf as jax_erf
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
+from .utils import _enforce_no_extraneous_keywords
+from .utils import jax_inverse_sigmoid
 
 
 DEFAULT_PARAMS = OrderedDict(
@@ -18,8 +21,16 @@ DEFAULT_PARAMS = OrderedDict(
     qt_scatter_clusters=0.4,
 )
 
+QFUNC_PARAMS = OrderedDict(qfunc_k=5, qfunc_ylo=1, qfunc_yhi=0)
 
-def quenching_function(t, qt):
+
+def quenching_function(
+    t,
+    qt,
+    qfunc_k=QFUNC_PARAMS["qfunc_k"],
+    qfunc_ylo=QFUNC_PARAMS["qfunc_ylo"],
+    qfunc_yhi=QFUNC_PARAMS["qfunc_yhi"],
+):
     """Sigmoid function smoothly dropping SFR from 1 to 0 at t = qt.
 
     Parameters
@@ -37,7 +48,7 @@ def quenching_function(t, qt):
 
     """
     t, qt = _get_1d_arrays(t, qt)
-    return np.array(_jax_sigmoid(t, qt, 5, 1, 0))
+    return np.array(_jax_sigmoid(t, qt, qfunc_k, qfunc_ylo, qfunc_yhi))
 
 
 def central_quenching_time(logm0, percentile, **kwargs):
@@ -93,6 +104,61 @@ def central_quenching_time(logm0, percentile, **kwargs):
     return np.asarray(qtime)
 
 
+def inverse_central_quenching_time(logm0, qthresh, **kwargs):
+    """Calculate Prob(qtime < qthresh | logm0) for central galaxies.
+
+    In this model, the quenching time decreases with increasing mass,
+    such that massive BCGs have earlier quenching times relative to
+    centrals of Milky Way mass halos.
+
+    Parameters
+    ----------
+    logm0 : float or ndarray of shape (n, )
+        Base-10 log of halo mass at z=0
+
+    qthresh : float or ndarray of shape (n, )
+        Prob(qtime < qthresh | logm0).
+        For the median quenching time use percentile = 0.5.
+
+    qt_lgmc : float or ndarray, optional
+        Value of log10(Mhalo) of the inflection point of qtime
+
+    qt_k : float or ndarray, optional
+        Steepness of the qtime sigmoid
+
+    qt_dwarfs : float or ndarray, optional
+        Quenching time of dwarf-mass centrals
+
+    qt_clusters : float or ndarray, optional
+        Quenching time of cluster-mass centrals
+
+    qt_scatter_lgmc : float or ndarray, optional
+        Value of log10(Mhalo) of the inflection point of qtime scatter
+
+    qt_scatter_k : float or ndarray, optional
+        Steepness of the qtime scatter sigmoid
+
+    qt_scatter_dwarfs : float or ndarray, optional
+        Quenching time scatter in dwarf-mass centrals
+
+    qt_scatter_clusters : float or ndarray, optional
+        Quenching time scatter in cluster-mass centrals
+
+    Returns
+    -------
+    percentile : float or ndarray of shape (n, )
+        percentile = Prob(qtime < qthresh | logm0).
+        When qthresh is the median qtime for a halo of mass logm0,
+        function returns 0.5
+
+    """
+    logm0, qthresh = _get_1d_arrays(logm0, qthresh)
+    param_dict = _get_default_quenching_time_param_dict(**kwargs)
+    params = tuple(param_dict.values())
+    percentile = inverse_central_quenching_time_jax(logm0, qthresh, params)
+    return np.asarray(percentile)
+
+
 def _central_quenching_time_kern(logm0, percentile, params):
     qt_params, qt_scatter_params = params[0:4], params[4:]
     logtq_med = jax_np.log10(_median_quenching_time_kern(logm0, qt_params))
@@ -103,8 +169,26 @@ def _central_quenching_time_kern(logm0, percentile, params):
     return jax_np.power(10, log_qt)
 
 
+def _inverse_central_quenching_time_kern(logm0, qtime, params):
+    qt_params, qt_scatter_params = params[0:4], params[4:]
+    log_qt = jax_np.log10(qtime)
+
+    log_qt_med = jax_np.log10(_median_quenching_time_kern(logm0, qt_params))
+    log_tq_scale = _quenching_time_scatter_kern(logm0, qt_scatter_params)
+    ylo, yhi = log_qt_med - log_tq_scale, log_qt_med + log_tq_scale
+
+    qtime_z_score = jax_inverse_sigmoid(log_qt, 0, 1, ylo, yhi)
+    qtime_percentile = _percentile_from_z_score(qtime_z_score)
+    return qtime_percentile
+
+
 central_quenching_time_jax = jax_jit(
     jax_vmap(_central_quenching_time_kern, in_axes=(0, 0, None))
+)
+
+
+inverse_central_quenching_time_jax = jax_jit(
+    jax_vmap(_inverse_central_quenching_time_kern, in_axes=(0, 0, None))
 )
 
 
@@ -145,6 +229,11 @@ def _z_score_from_percentile(percentile):
 
 
 @jax_jit
+def _percentile_from_z_score(z_score):
+    return 0.5 * (1 + jax_erf(z_score / np.sqrt(2)))
+
+
+@jax_jit
 def _weighted_mixture_of_two_gaussians(g1, g2, r):
     return r * g1 + jax_np.sqrt(1 - r * r) * g2
 
@@ -165,22 +254,10 @@ def _get_1d_arrays(*args):
     return [np.zeros(npts).astype(arr.dtype) + arr for arr in results]
 
 
-def _enforce_no_extraneous_keywords(**kwargs):
-    unrecognized_params = set(kwargs) - set(DEFAULT_PARAMS)
-
-    if len(unrecognized_params) > 0:
-        param = list(unrecognized_params)[0]
-        msg = (
-            "Unrecognized parameter ``{0}``"
-            " passed to central_quenching_time function"
-        )
-        raise KeyError(msg.format(param))
-
-
 def _get_default_quenching_time_param_dict(**kwargs):
     """
     """
-    _enforce_no_extraneous_keywords(**kwargs)
+    _enforce_no_extraneous_keywords(DEFAULT_PARAMS, **kwargs)
 
     param_dict = OrderedDict()
     for key, default_value in DEFAULT_PARAMS.items():

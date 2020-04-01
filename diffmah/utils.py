@@ -37,3 +37,39 @@ def jax_sigmoid(x, x0, k, ylo, yhi):
     sigmoid : scalar or array-like, same shape as input
     """
     return ylo + (yhi - ylo) / (1 + jax_np.exp(-k * (x - x0)))
+
+
+def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
+    """Sigmoid function implemented w/ `jax.numpy.exp`.
+
+    Parameters
+    ----------
+    y : float or array-like
+        Value of the function
+    x0 : float or array-like
+        Location of transition.
+    k : float or array-like
+        Inverse of the width of the transition.
+    ylo : float or array-like
+        The value as x goes to -infty.
+    yhi : float or array-like
+        The value as x goes to +infty.
+
+    Returns
+    -------
+    sigmoid : scalar or array-like, same shape as input
+    """
+    lnarg = (yhi - ylo) / (y - ylo) - 1
+    return x0 - jax_np.log(lnarg) / k
+
+
+def _enforce_no_extraneous_keywords(defaults, **kwargs):
+    unrecognized_params = set(kwargs) - set(defaults)
+
+    if len(unrecognized_params) > 0:
+        param = list(unrecognized_params)[0]
+        msg = (
+            "Unrecognized parameter ``{0}``"
+            " passed to central_quenching_time function"
+        )
+        raise KeyError(msg.format(param))
