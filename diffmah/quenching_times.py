@@ -24,10 +24,6 @@ DEFAULT_PARAMS = OrderedDict(
 QFUNC_PARAMS = OrderedDict(qfunc_k=5, qfunc_ylo=1, qfunc_yhi=0)
 
 
-def qtime_percentile_at_qtime(logm0, qt, **kwargs):
-    return -1
-
-
 def quenching_function(
     t,
     qt,
@@ -108,8 +104,8 @@ def central_quenching_time(logm0, percentile, **kwargs):
     return np.asarray(qtime)
 
 
-def inverse_central_quenching_time(logm0, qtime, **kwargs):
-    """Inverse quenching time of central galaxies.
+def inverse_central_quenching_time(logm0, qthresh, **kwargs):
+    """Calculate Prob(qtime < qthresh | logm0) for central galaxies.
 
     In this model, the quenching time decreases with increasing mass,
     such that massive BCGs have earlier quenching times relative to
@@ -120,8 +116,8 @@ def inverse_central_quenching_time(logm0, qtime, **kwargs):
     logm0 : float or ndarray of shape (n, )
         Base-10 log of halo mass at z=0
 
-    percentile : float or ndarray of shape (n, )
-        percentile = Prob(< y | logm0) for some halo property y.
+    qthresh : float or ndarray of shape (n, )
+        Prob(qtime < qthresh | logm0).
         For the median quenching time use percentile = 0.5.
 
     qt_lgmc : float or ndarray, optional
@@ -151,14 +147,15 @@ def inverse_central_quenching_time(logm0, qtime, **kwargs):
     Returns
     -------
     percentile : float or ndarray of shape (n, )
-        percentile = Prob(< y | logm0) for some halo property y.
-        For the median quenching time use percentile = 0.5.
+        percentile = Prob(qtime < qthresh | logm0).
+        When qthresh is the median qtime for a halo of mass logm0,
+        function returns 0.5
 
     """
-    logm0, qtime = _get_1d_arrays(logm0, qtime)
+    logm0, qthresh = _get_1d_arrays(logm0, qthresh)
     param_dict = _get_default_quenching_time_param_dict(**kwargs)
     params = tuple(param_dict.values())
-    percentile = inverse_central_quenching_time_jax(logm0, qtime, params)
+    percentile = inverse_central_quenching_time_jax(logm0, qthresh, params)
     return np.asarray(percentile)
 
 

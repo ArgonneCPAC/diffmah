@@ -42,6 +42,13 @@ def test_inverse_qtimes_default_model():
             assert np.allclose(p, inferred_p, rtol=0.01)
 
 
+def test2_inverse_qtimes_default_model():
+    for logm0 in np.linspace(10, 15, 5):
+        qt_med = central_quenching_time(logm0, 0.5)
+        p = inverse_central_quenching_time(logm0, qt_med)
+        assert np.allclose(p, 0.5, rtol=1e-3)
+
+
 def test_inverse_qtimes_alt_models():
     for key, default_value in DEFAULT_QTIME_PARAMS.items():
         params = dict(key=default_value * 0.9 - 0.1)

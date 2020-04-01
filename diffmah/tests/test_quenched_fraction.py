@@ -27,7 +27,7 @@ def test_qprob_at_tobs_scales_sensibly_with_mass():
 
 def test_qprob_at_tobs_scales_sensibly_with_time():
     logm0 = 12
-    tarr = np.linspace(1, 13.8, 40)
+    tarr = np.linspace(1, 13.8, 6)
     qfrac = np.array([qprob_at_tobs(logm0, t) for t in tarr])
     dq = np.diff(qfrac)
 
