@@ -110,7 +110,7 @@ def in_situ_galaxy_halo_history(
         Halo masses used when integrating SFR history
 
     dmdt : ndarray of shape (n, )
-        Halo mass accretion rate in Msun/Gyr
+        Halo mass accretion rate in Msun/yr
 
     sfr_ms_history : ndarray of shape (n, )
         Star formation rates in Msun/yr of main-sequence galaxies
@@ -158,9 +158,9 @@ def in_situ_galaxy_halo_history(
         zarr,
         tarr,
         mah,
-        dmdt,
-        sfr_ms_history,
-        sfr_q_history,
+        dmdt / 1e9,
+        sfr_ms_history / 1e9,
+        sfr_q_history / 1e9,
         mstar_ms_history,
         mstar_q_history,
     )

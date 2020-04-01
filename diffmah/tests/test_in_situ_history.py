@@ -166,14 +166,15 @@ def test_in_situ_galaxy_halo_history_varies_with_SFR_efficiency_params():
 
 def test_in_situ_galaxy_halo_history_self_consistent_mah_dmhdt():
     """This unit-test enforces the relationship between
-    Mhalo(t) and dMhalo/dt(t).
+    Mhalo(t) and dMhalo/dt(t). We need to rescale by 1e9 since
+    tarr is in Gyr but dMhalo/dt is in Msun/yr
     """
     for logM in np.linspace(10, 15, 15):
         X = in_situ_galaxy_halo_history(logM)
         tarr, mah, dmhdt = X[1:4]
         _dmdt = np.diff(mah) / np.diff(tarr)
-        dmhdt_correct = np.insert(_dmdt, 0, _dmdt[0])
-        assert np.allclose(dmhdt_correct, dmhdt)
+        dmhdt_Gyr = np.insert(_dmdt, 0, _dmdt[0])
+        assert np.allclose(dmhdt_Gyr / 1e9, dmhdt)
 
 
 def test_in_situ_galaxy_halo_history_varies_with_qtime_params():
