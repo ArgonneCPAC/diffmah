@@ -22,6 +22,10 @@ DEFAULT_PARAMS = OrderedDict(
 QFUNC_PARAMS = OrderedDict(qfunc_k=5, qfunc_ylo=1, qfunc_yhi=0)
 
 
+def qtime_percentile_at_qtime(logm0, qt, **kwargs):
+    return -1
+
+
 def quenching_function(
     t,
     qt,
