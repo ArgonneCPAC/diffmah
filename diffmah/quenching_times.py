@@ -18,8 +18,16 @@ DEFAULT_PARAMS = OrderedDict(
     qt_scatter_clusters=0.4,
 )
 
+QFUNC_PARAMS = OrderedDict(qfunc_k=5, qfunc_ylo=1, qfunc_yhi=0)
 
-def quenching_function(t, qt):
+
+def quenching_function(
+    t,
+    qt,
+    qfunc_k=QFUNC_PARAMS["qfunc_k"],
+    qfunc_ylo=QFUNC_PARAMS["qfunc_ylo"],
+    qfunc_yhi=QFUNC_PARAMS["qfunc_yhi"],
+):
     """Sigmoid function smoothly dropping SFR from 1 to 0 at t = qt.
 
     Parameters
@@ -37,7 +45,7 @@ def quenching_function(t, qt):
 
     """
     t, qt = _get_1d_arrays(t, qt)
-    return np.array(_jax_sigmoid(t, qt, 5, 1, 0))
+    return np.array(_jax_sigmoid(t, qt, qfunc_k, qfunc_ylo, qfunc_yhi))
 
 
 def central_quenching_time(logm0, percentile, **kwargs):
