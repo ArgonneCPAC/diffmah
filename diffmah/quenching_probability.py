@@ -10,7 +10,7 @@ from .utils import get_1d_arrays, jax_sigmoid
 __all__ = ("quenching_prob", "quenching_prob_cens", "quenching_prob_sats")
 
 
-DEFAULT_PARAM_VALUES = OrderedDict(
+DEFAULT_PARAMS = OrderedDict(
     fq_cens_logm_crit=12.65,
     fq_cens_k=10 ** 0.2,
     fq_cens_ylo=0.15,
@@ -32,6 +32,11 @@ PARAM_BOUNDS = OrderedDict(
     fq_satboost_clusters=(0, 1),
     fq_sat_delay_time=(0, 10),
     fq_sat_tinfall_k=(0, 2),
+)
+
+
+DEFAULT_CENS_PARAMS = OrderedDict(
+    [(key, DEFAULT_PARAMS[key]) for key in DEFAULT_PARAMS.keys() if "sat" not in key]
 )
 
 
@@ -94,40 +99,36 @@ def quenching_prob(
     )
 
     fq_cens_logm_crit = (
-        DEFAULT_PARAM_VALUES["fq_cens_logm_crit"]
+        DEFAULT_PARAMS["fq_cens_logm_crit"]
         if fq_cens_logm_crit is None
         else fq_cens_logm_crit
     )
-    fq_cens_k = DEFAULT_PARAM_VALUES["fq_cens_k"] if fq_cens_k is None else fq_cens_k
-    fq_cens_ylo = (
-        DEFAULT_PARAM_VALUES["fq_cens_ylo"] if fq_cens_ylo is None else fq_cens_ylo
-    )
-    fq_cens_yhi = (
-        DEFAULT_PARAM_VALUES["fq_cens_yhi"] if fq_cens_yhi is None else fq_cens_yhi
-    )
+    fq_cens_k = DEFAULT_PARAMS["fq_cens_k"] if fq_cens_k is None else fq_cens_k
+    fq_cens_ylo = DEFAULT_PARAMS["fq_cens_ylo"] if fq_cens_ylo is None else fq_cens_ylo
+    fq_cens_yhi = DEFAULT_PARAMS["fq_cens_yhi"] if fq_cens_yhi is None else fq_cens_yhi
 
     fq_satboost_logmhost_crit = (
-        DEFAULT_PARAM_VALUES["fq_satboost_logmhost_crit"]
+        DEFAULT_PARAMS["fq_satboost_logmhost_crit"]
         if fq_satboost_logmhost_crit is None
         else fq_satboost_logmhost_crit
     )
     fq_satboost_logmhost_k = (
-        DEFAULT_PARAM_VALUES["fq_satboost_logmhost_k"]
+        DEFAULT_PARAMS["fq_satboost_logmhost_k"]
         if fq_satboost_logmhost_k is None
         else fq_satboost_logmhost_k
     )
     fq_satboost_clusters = (
-        DEFAULT_PARAM_VALUES["fq_satboost_clusters"]
+        DEFAULT_PARAMS["fq_satboost_clusters"]
         if fq_satboost_clusters is None
         else fq_satboost_clusters
     )
     fq_sat_delay_time = (
-        DEFAULT_PARAM_VALUES["fq_sat_delay_time"]
+        DEFAULT_PARAMS["fq_sat_delay_time"]
         if fq_sat_delay_time is None
         else fq_sat_delay_time
     )
     fq_sat_tinfall_k = (
-        DEFAULT_PARAM_VALUES["fq_sat_tinfall_k"]
+        DEFAULT_PARAMS["fq_sat_tinfall_k"]
         if fq_sat_tinfall_k is None
         else fq_sat_tinfall_k
     )
@@ -231,17 +232,13 @@ def quenching_prob_cens(
     (logmhalo,) = get_1d_arrays(logmhalo)
 
     fq_cens_logm_crit = (
-        DEFAULT_PARAM_VALUES["fq_cens_logm_crit"]
+        DEFAULT_PARAMS["fq_cens_logm_crit"]
         if fq_cens_logm_crit is None
         else fq_cens_logm_crit
     )
-    fq_cens_k = DEFAULT_PARAM_VALUES["fq_cens_k"] if fq_cens_k is None else fq_cens_k
-    fq_cens_ylo = (
-        DEFAULT_PARAM_VALUES["fq_cens_ylo"] if fq_cens_ylo is None else fq_cens_ylo
-    )
-    fq_cens_yhi = (
-        DEFAULT_PARAM_VALUES["fq_cens_yhi"] if fq_cens_yhi is None else fq_cens_yhi
-    )
+    fq_cens_k = DEFAULT_PARAMS["fq_cens_k"] if fq_cens_k is None else fq_cens_k
+    fq_cens_ylo = DEFAULT_PARAMS["fq_cens_ylo"] if fq_cens_ylo is None else fq_cens_ylo
+    fq_cens_yhi = DEFAULT_PARAMS["fq_cens_yhi"] if fq_cens_yhi is None else fq_cens_yhi
 
     params = np.array([fq_cens_logm_crit, fq_cens_k, fq_cens_ylo, fq_cens_yhi])
 
@@ -339,40 +336,36 @@ def quenching_prob_sats(
     )
 
     fq_cens_logm_crit = (
-        DEFAULT_PARAM_VALUES["fq_cens_logm_crit"]
+        DEFAULT_PARAMS["fq_cens_logm_crit"]
         if fq_cens_logm_crit is None
         else fq_cens_logm_crit
     )
-    fq_cens_k = DEFAULT_PARAM_VALUES["fq_cens_k"] if fq_cens_k is None else fq_cens_k
-    fq_cens_ylo = (
-        DEFAULT_PARAM_VALUES["fq_cens_ylo"] if fq_cens_ylo is None else fq_cens_ylo
-    )
-    fq_cens_yhi = (
-        DEFAULT_PARAM_VALUES["fq_cens_yhi"] if fq_cens_yhi is None else fq_cens_yhi
-    )
+    fq_cens_k = DEFAULT_PARAMS["fq_cens_k"] if fq_cens_k is None else fq_cens_k
+    fq_cens_ylo = DEFAULT_PARAMS["fq_cens_ylo"] if fq_cens_ylo is None else fq_cens_ylo
+    fq_cens_yhi = DEFAULT_PARAMS["fq_cens_yhi"] if fq_cens_yhi is None else fq_cens_yhi
 
     fq_satboost_logmhost_crit = (
-        DEFAULT_PARAM_VALUES["fq_satboost_logmhost_crit"]
+        DEFAULT_PARAMS["fq_satboost_logmhost_crit"]
         if fq_satboost_logmhost_crit is None
         else fq_satboost_logmhost_crit
     )
     fq_satboost_logmhost_k = (
-        DEFAULT_PARAM_VALUES["fq_satboost_logmhost_k"]
+        DEFAULT_PARAMS["fq_satboost_logmhost_k"]
         if fq_satboost_logmhost_k is None
         else fq_satboost_logmhost_k
     )
     fq_satboost_clusters = (
-        DEFAULT_PARAM_VALUES["fq_satboost_clusters"]
+        DEFAULT_PARAMS["fq_satboost_clusters"]
         if fq_satboost_clusters is None
         else fq_satboost_clusters
     )
     fq_sat_delay_time = (
-        DEFAULT_PARAM_VALUES["fq_sat_delay_time"]
+        DEFAULT_PARAMS["fq_sat_delay_time"]
         if fq_sat_delay_time is None
         else fq_sat_delay_time
     )
     fq_sat_tinfall_k = (
-        DEFAULT_PARAM_VALUES["fq_sat_tinfall_k"]
+        DEFAULT_PARAMS["fq_sat_tinfall_k"]
         if fq_sat_tinfall_k is None
         else fq_sat_tinfall_k
     )

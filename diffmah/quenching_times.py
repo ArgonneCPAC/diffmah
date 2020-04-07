@@ -21,6 +21,11 @@ DEFAULT_PARAMS = OrderedDict(
     qt_scatter_clusters=0.4,
 )
 
+DEFAULT_CENS_PARAMS = OrderedDict(
+    [(key, DEFAULT_PARAMS[key]) for key in DEFAULT_PARAMS.keys() if "sat" not in key]
+)
+
+
 QFUNC_PARAMS = OrderedDict(qfunc_k=5, qfunc_ylo=1, qfunc_yhi=0)
 
 
