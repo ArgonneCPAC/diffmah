@@ -20,6 +20,9 @@ ZARR = np.interp(TARR, T_INTERP_TABLE, Z_INTERP_TABLE)
 FB = Planck15.Ob0 / Planck15.Om0
 
 
+__all__ = ("in_situ_galaxy_halo_history",)
+
+
 def in_situ_galaxy_halo_history(
     logm0,
     qtime=None,
