@@ -46,9 +46,9 @@ def test1_in_situ_galaxy_halo_history_is_monotonic_in_mass():
     X12 = in_situ_galaxy_halo_history(12)
     X14 = in_situ_galaxy_halo_history(14)
 
-    mstarh_logm10 = X10[-2]
-    mstarh_logm12 = X12[-2]
-    mstarh_logm14 = X14[-2]
+    mstarh_logm10 = X10[-3]
+    mstarh_logm12 = X12[-3]
+    mstarh_logm14 = X14[-3]
 
     assert np.all(mstarh_logm10 < mstarh_logm12)
     assert np.all(mstarh_logm12 < mstarh_logm14)
@@ -59,7 +59,7 @@ def test_in_situ_galaxy_halo_history_is_less_for_quenched_galaxies():
     """
     for logM in np.linspace(10, 15, 15):
         X = in_situ_galaxy_halo_history(logM, qtime=1)
-        mstarh_logm10, mstarh_logm10_q = X[-2], X[-1]
+        mstarh_logm10, mstarh_logm10_q = X[-3], X[-2]
         assert np.all(mstarh_logm10 >= mstarh_logm10_q)
         assert np.any(mstarh_logm10 > mstarh_logm10_q)
 
@@ -70,11 +70,11 @@ def test_in_situ_galaxy_halo_history_scales_correctly_with_mah_percentile():
     X0p5 = in_situ_galaxy_halo_history(12)
     X1 = in_situ_galaxy_halo_history(12, mah_percentile=1)
 
-    mstarh0 = X0[-2]
-    mstarh0p5 = X0p5[-2]
-    mstarh1 = X1[-2]
+    mstarh0 = X0[-3]
+    mstarh0p5 = X0p5[-3]
+    mstarh1 = X1[-3]
 
-    assert mstarh0[-1] > mstarh0p5[-1] > mstarh1[-1]
+    assert mstarh0[-2] > mstarh0p5[-2] > mstarh1[-2]
     assert np.all(mstarh0 >= mstarh0p5)
     assert np.any(mstarh0 > mstarh0p5)
     assert np.all(mstarh0p5 >= mstarh1)
@@ -86,11 +86,11 @@ def test_in_situ_galaxy_halo_history_scales_correctly_with_logtc():
     X0 = in_situ_galaxy_halo_history(12, logtc=-0.5)
     X0p5 = in_situ_galaxy_halo_history(12, logtc=0)
     X1 = in_situ_galaxy_halo_history(12, logtc=0.5)
-    mstarh0 = X0[-2]
-    mstarh0p5 = X0p5[-2]
-    mstarh1 = X1[-2]
+    mstarh0 = X0[-3]
+    mstarh0p5 = X0p5[-3]
+    mstarh1 = X1[-3]
 
-    assert mstarh0[-1] > mstarh0p5[-1] > mstarh1[-1]
+    assert mstarh0[-2] > mstarh0p5[-2] > mstarh1[-2]
     assert np.all(mstarh0 >= mstarh0p5)
     assert np.any(mstarh0 > mstarh0p5)
     assert np.all(mstarh0p5 >= mstarh1)
@@ -107,10 +107,11 @@ def test_in_situ_galaxy_halo_history_has_sensible_qtime_behavior():
     """Changing qtime should have the expected effect on stellar mass."""
     X1 = in_situ_galaxy_halo_history(12, qtime=1)
     X10 = in_situ_galaxy_halo_history(12, qtime=10)
-    mstar_ms1, mstar_q1 = X1[-2:]
-    mstar_ms10, mstar_q10 = X10[-2:]
+    mstar_ms1, mstar_q1, qprob1 = X1[-3:]
+    mstar_ms10, mstar_q10, qprob10 = X10[-3:]
 
     assert np.allclose(mstar_ms1, mstar_ms10)
+    assert np.allclose(qprob1, qprob10)
 
     assert np.all(mstar_ms1 >= mstar_q1)
     assert np.any(mstar_ms1 > mstar_q1)
@@ -134,7 +135,7 @@ def test_in_situ_galaxy_halo_history_varies_with_MAH_params():
     mstar_ms_fid, mstar_q_fid = in_situ_galaxy_halo_history(12)[-2:]
     for key, value in mah_params_to_vary.items():
         X = in_situ_galaxy_halo_history(12, **{key: value * 0.9 - 0.1})
-        mstar_ms, mstar_q = X[-2:]
+        mstar_ms, mstar_q, qprob = X[-3:]
         assert np.any(mstar_ms != mstar_ms_fid)
         assert np.any(mstar_q != mstar_q_fid)
 
@@ -144,12 +145,25 @@ def test_in_situ_galaxy_halo_history_varies_with_SFR_efficiency_params():
     params_to_vary = {
         key: value for key, value in DEFAULT_SFR_PARAMS.items() if "scatter" not in key
     }
-    mstar_ms_fid, mstar_q_fid = in_situ_galaxy_halo_history(12)[-2:]
+    mstar_ms_fid, mstar_q_fid, qprob = in_situ_galaxy_halo_history(12)[-3:]
     for key, value in params_to_vary.items():
         X = in_situ_galaxy_halo_history(12, **{key: value * 0.9 - 0.1})
-        mstar_ms, mstar_q = X[-2:]
+        mstar_ms, mstar_q, qprob = X[-3:]
         assert np.any(mstar_ms != mstar_ms_fid)
         assert np.any(mstar_q != mstar_q_fid)
+
+
+def test_in_situ_galaxy_halo_history_varies_with_qprob_params():
+    """Present-day Mstar should change when each central quenching param is varied."""
+
+    for __ in range(10):
+        X1 = in_situ_galaxy_halo_history(12.5, fq_cens_logm_crit=12)
+        X2 = in_situ_galaxy_halo_history(12.5, fq_cens_logm_crit=13)
+        mstar_ms1, mstar_q1, qh1 = X1[-3:]
+        mstar_ms2, mstar_q2, qh2 = X2[-3:]
+        assert np.all(mstar_ms1 == mstar_ms2)
+        assert np.all(mstar_q1 == mstar_q2)
+        assert np.any(qh1 != qh2)
 
 
 def test_in_situ_galaxy_halo_history_self_consistent_mah_dmhdt():
@@ -157,7 +171,7 @@ def test_in_situ_galaxy_halo_history_self_consistent_mah_dmhdt():
     Mhalo(t) and dMhalo/dt(t). We need to rescale by 1e9 since
     tarr is in Gyr but dMhalo/dt is in Msun/yr
     """
-    for logM in np.linspace(10, 15, 15):
+    for logM in (11, 12, 15):
         X = in_situ_galaxy_halo_history(logM)
         tarr, logmah, dmhdt = X[1:4]
         mah = 10 ** logmah
@@ -173,10 +187,10 @@ def test_in_situ_galaxy_halo_history_varies_with_qtime_params():
         for key, value in DEFAULT_QTIME_PARAMS.items()
         if "scatter" not in key
     }
-    mstar_ms_fid, mstar_q_fid = in_situ_galaxy_halo_history(12)[-2:]
+    mstar_ms_fid, mstar_q_fid, qprob = in_situ_galaxy_halo_history(12)[-3:]
     for key, value in params_to_vary.items():
         X = in_situ_galaxy_halo_history(12, **{key: value * 0.9 - 0.1})
-        mstar_ms, mstar_q = X[-2:]
+        mstar_ms, mstar_q, qprob = X[-3:]
         assert np.all(mstar_ms == mstar_ms_fid)
         assert np.any(mstar_q != mstar_q_fid)
 
@@ -202,8 +216,8 @@ def test_in_situ_galaxy_halo_history_logtc_scatter_behavior():
 
     X1 = in_situ_galaxy_halo_history(logm0, logtc=logtc_med + 1,)
     X2 = in_situ_galaxy_halo_history(logm0, logtc=logtc_med - 1,)
-    mstar_ms1, mstar_q1 = X1[-2:]
-    mstar_ms2, mstar_q2 = X2[-2:]
+    mstar_ms1, mstar_q1, qprob1 = X1[-3:]
+    mstar_ms2, mstar_q2, qprob2 = X2[-3:]
     assert not np.allclose(mstar_ms1 / mstar_q1, mstar_ms2 / mstar_q2, rtol=0.01)
 
 
@@ -219,8 +233,8 @@ def test2_in_situ_galaxy_halo_history_logtc_scatter_behavior():
 
     X1 = in_situ_galaxy_halo_history(logm0, mah_percentile=0.5, **params)
     X2 = in_situ_galaxy_halo_history(logm0, mah_percentile=0.5, **params2)
-    mstar_ms1, mstar_q1 = X1[-2:]
-    mstar_ms2, mstar_q2 = X2[-2:]
+    mstar_ms1, mstar_q1, qprob1 = X1[-3:]
+    mstar_ms2, mstar_q2, qprob2 = X2[-3:]
     assert np.allclose(mstar_ms1, mstar_ms2)
     assert np.allclose(mstar_q1, mstar_q2)
 
@@ -235,11 +249,11 @@ def test3_in_situ_galaxy_halo_history_logtc_scatter_behavior():
     params = dict(logtc_scatter_dwarfs=0.1)
     params2 = dict(logtc_scatter_dwarfs=0.3)
 
-    for p in (0.1, 0.25, 0.75, 0.9):
+    for p in (0.1, 0.9):
         X1 = in_situ_galaxy_halo_history(logm0, mah_percentile=p, **params)
         X2 = in_situ_galaxy_halo_history(logm0, mah_percentile=p, **params2)
-        mstar_ms1, mstar_q1 = X1[-2:]
-        mstar_ms2, mstar_q2 = X2[-2:]
+        mstar_ms1, mstar_q1, qprob1 = X1[-3:]
+        mstar_ms2, mstar_q2, qprob2 = X2[-3:]
         assert not np.allclose(mstar_ms1, mstar_ms2)
         assert not np.allclose(mstar_q1, mstar_q2)
 
@@ -250,9 +264,9 @@ def test_in_situ_mstar_at_zobs_qtime_percentile_behavior():
     X2 = in_situ_galaxy_halo_history(logm0, qtime_percentile=0.5)
     X3 = in_situ_galaxy_halo_history(logm0, qtime_percentile=1)
 
-    mstar_q1 = X1[-1]
-    mstar_q2 = X2[-1]
-    mstar_q3 = X3[-1]
+    mstar_q1 = X1[-2]
+    mstar_q2 = X2[-2]
+    mstar_q3 = X3[-2]
 
     assert np.all(mstar_q1 <= mstar_q2)
     assert np.any(mstar_q1 < mstar_q2)

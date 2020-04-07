@@ -9,6 +9,8 @@ from .sigmoid_mah import _logtc_from_mah_percentile, DEFAULT_MAH_PARAMS
 from .moster17_efficiency import DEFAULT_PARAMS as DEFAULT_SFR_PARAMS
 from .quenching_times import DEFAULT_PARAMS as DEFAULT_QTIME_PARAMS
 from .quenching_times import quenching_function, central_quenching_time
+from .quenching_probability import DEFAULT_CENS_PARAMS as DEFAULT_QPROB_CENS_PARAMS
+from .quenched_fraction import qprob_at_tobs
 
 
 Z_INTERP_TABLE = np.linspace(15, -0.25, 5000)
@@ -140,7 +142,7 @@ def in_situ_galaxy_halo_history(
         qtime_percentile,
     )
     zarr, logtarr, logtc, logtk, dlogm_height = res[:5]
-    ms_params, qtime, mah_percentile = res[5:]
+    ms_params, qprob_params, qtime, mah_percentile = res[5:]
 
     tarr, logmah, dmdt = _get_mah_history(
         zarr, logtarr, logtc, logtk, dlogm_height, logm0, logt0
@@ -156,6 +158,17 @@ def in_situ_galaxy_halo_history(
     mstar_ms_history = np.insert(_mstar_ms_history, 0, _mstar_ms_history[0])
     mstar_q_history = np.insert(_mstar_q_history, 0, _mstar_q_history[0])
 
+    qprob_history = np.array(
+        list(
+            (
+                qprob_at_tobs(
+                    logm0, t, qtime_percentile=qtime_percentile, **qprob_params
+                )
+                for t in 10 ** logtarr
+            )
+        )
+    )
+
     return (
         zarr,
         tarr,
@@ -165,6 +178,7 @@ def in_situ_galaxy_halo_history(
         sfr_q_history / 1e9,
         mstar_ms_history,
         mstar_q_history,
+        qprob_history,
     )
 
 
@@ -199,9 +213,16 @@ def _process_args(
     tarr = np.interp(zarr, z_table[::-1], t_table[::-1])
     logtarr = np.log10(tarr)
 
-    defaults = list((DEFAULT_MAH_PARAMS, DEFAULT_SFR_PARAMS, DEFAULT_QTIME_PARAMS,))
+    defaults = list(
+        (
+            DEFAULT_MAH_PARAMS,
+            DEFAULT_SFR_PARAMS,
+            DEFAULT_QTIME_PARAMS,
+            DEFAULT_QPROB_CENS_PARAMS,
+        )
+    )
     param_list = _get_model_param_dictionaries(*defaults, **model_params)
-    mah_params, ms_params, qtime_params = param_list
+    mah_params, ms_params, qtime_params, qprob_params = param_list
 
     inconsistent = (mah_percentile is not None) & (logtc is not None)
     try:
@@ -247,6 +268,7 @@ def _process_args(
         logtk,
         dlogm_height,
         ms_params,
+        qprob_params,
         qtime,
         mah_percentile,
     )
@@ -260,7 +282,8 @@ def _get_model_param_dictionaries(*default_param_dicts, **input_model_params):
     try:
         assert len(all_input_param_names) == len(set(all_input_param_names))
     except AssertionError:
-        raise KeyError("Model parameter names must be unique")
+        msg = "Model parameter names must be unique. Received the following:\n{}"
+        raise KeyError(msg.format(all_input_param_names))
 
     pat = "Parameter name `{0}` not recognized as a model parameter"
     input_keys = list(input_model_params.keys())
