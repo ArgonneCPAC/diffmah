@@ -142,11 +142,11 @@ def in_situ_galaxy_halo_history(
     zarr, logtarr, logtc, logtk, dlogm_height = res[:5]
     ms_params, qtime, mah_percentile = res[5:]
 
-    tarr, mah, dmdt = _get_mah_history(
+    tarr, logmah, dmdt = _get_mah_history(
         zarr, logtarr, logtc, logtk, dlogm_height, logm0, logt0
     )
 
-    epsilon = sfr_efficiency_function(mah, zarr, **ms_params)
+    epsilon = sfr_efficiency_function(10 ** logmah, zarr, **ms_params)
 
     sfr_ms_history = fb * dmdt * epsilon
     sfr_q_history = sfr_ms_history * quenching_function(tarr, qtime)
@@ -159,7 +159,7 @@ def in_situ_galaxy_halo_history(
     return (
         zarr,
         tarr,
-        mah,
+        logmah,
         dmdt / 1e9,
         sfr_ms_history / 1e9,
         sfr_q_history / 1e9,
@@ -169,13 +169,14 @@ def in_situ_galaxy_halo_history(
 
 
 def _get_mah_history(zarr, logtarr, logtc, logtk, dlogm_height, logm0, logt0):
-    mah = 10 ** logmpeak_from_logt(logtarr, logtc, logtk, dlogm_height, logm0, logt0)
+    logmah = logmpeak_from_logt(logtarr, logtc, logtk, dlogm_height, logm0, logt0)
+    mah = 10 ** logmah
 
     tarr = 10 ** logtarr
     _dmdt = np.diff(mah) / np.diff(tarr)
     dmdt = np.insert(_dmdt, 0, _dmdt[0])
 
-    return tarr, mah, dmdt
+    return tarr, logmah, dmdt
 
 
 def _process_args(

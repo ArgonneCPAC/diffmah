@@ -159,7 +159,8 @@ def test_in_situ_galaxy_halo_history_self_consistent_mah_dmhdt():
     """
     for logM in np.linspace(10, 15, 15):
         X = in_situ_galaxy_halo_history(logM)
-        tarr, mah, dmhdt = X[1:4]
+        tarr, logmah, dmhdt = X[1:4]
+        mah = 10 ** logmah
         _dmdt = np.diff(mah) / np.diff(tarr)
         dmhdt_Gyr = np.insert(_dmdt, 0, _dmdt[0])
         assert np.allclose(dmhdt_Gyr / 1e9, dmhdt)
