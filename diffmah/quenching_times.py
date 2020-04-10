@@ -20,22 +20,9 @@ DEFAULT_PARAMS = OrderedDict(
     qt_scatter_dwarfs=0.1,
     qt_scatter_clusters=0.4,
 )
-PARAM_BOUNDS = OrderedDict(
-    qt_lgmc=(11.5, 13),
-    qt_k=(0.5, 3),
-    qt_dwarfs=(10, 20),
-    qt_clusters=(0.1, 10),
-    qt_scatter_lgmc=(11.5, 13.25),
-    qt_scatter_k=(0.25, 4),
-    qt_scatter_dwarfs=(0.01, 5),
-    qt_scatter_clusters=(0.01, 1),
-)
 
 DEFAULT_CENS_PARAMS = OrderedDict(
-    [(key, DEFAULT_PARAMS[key]) for key in DEFAULT_PARAMS.keys()]
-)
-PARAM_BOUNDS_CENS = OrderedDict(
-    [(key, PARAM_BOUNDS[key]) for key in PARAM_BOUNDS.keys()]
+    [(key, DEFAULT_PARAMS[key]) for key in DEFAULT_PARAMS.keys() if "sat" not in key]
 )
 
 

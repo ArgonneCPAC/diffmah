@@ -15,16 +15,6 @@ DEFAULT_PARAMS = OrderedDict(
     epsilonNz=0.689,
 )
 
-PARAM_BOUNDS = OrderedDict(
-    M0=(10.5, 12.5),
-    Mz=(0.1, 2),
-    beta0=(1, 5),
-    betaz=(-5, -0.1),
-    gamma0=(0.1, 2),
-    epsilonN0=(0.0001, 0.1),
-    epsilonNz=(0.1, 1.5),
-)
-
 
 def sfr_efficiency_function(M, z, **kwargs):
     """SFR efficiency function from Moster+17, arXiv:1705.05373.
