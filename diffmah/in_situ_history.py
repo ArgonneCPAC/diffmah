@@ -128,6 +128,9 @@ def in_situ_galaxy_halo_history(
     mstar_q_history : ndarray of shape (n, )
         Stellar mass in Msun for quenched galaxies
 
+    qprob_history : ndarray of shape (n, )
+        Probability that the galaxy is quenched
+
     """
     res = _process_args(
         logm0,
