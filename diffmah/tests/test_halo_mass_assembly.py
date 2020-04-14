@@ -36,8 +36,9 @@ def test_halo_dmdt_vs_time_integrates_to_halo_mass_vs_time():
     p1 = dict(t0=t0, logtc=0.5, logtk=3, dlogm_height=5)
     p2 = dict(t0=t0, logtc=0, logtk=6, dlogm_height=5)
     p3 = dict(t0=t0, logtc=0, logtk=3, dlogm_height=2)
+    p4 = dict(mah_percentile=0.1)
 
-    param_list = [p0, p1, p2, p3]
+    param_list = [p0, p1, p2, p3, p4]
     for params in param_list:
         for logm0 in np.linspace(8, 16.5, 25):
             logmpeak_jax = halo_mass_vs_time(time, logm0, **params,)
