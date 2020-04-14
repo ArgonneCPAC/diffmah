@@ -7,7 +7,7 @@ from jax import vmap as jax_vmap
 from jax import grad as jax_grad
 from collections import OrderedDict
 
-__all__ = ("halo_mass_vs_time",)
+__all__ = ("halo_logmass_vs_time", "halo_dmdt_vs_time")
 
 
 DEFAULT_MAH_PARAMS = OrderedDict(
@@ -26,7 +26,7 @@ LOGT0 = 1.14
 COSMIC_AGE_TODAY = 10 ** LOGT0
 
 
-def halo_mass_vs_time(
+def halo_logmass_vs_time(
     cosmic_time, logm0, t0=COSMIC_AGE_TODAY, mah_percentile=None, **kwargs
 ):
     """Median halo mass growth vs cosmic time.
@@ -107,11 +107,11 @@ logmpeak_vs_time_jax = jax_jit(
 logmpeak_vs_time_jax.__doc__ = _logmpeak_vs_time_jax_kern.__doc__
 
 
-def _halo_dmhdt_integral(cosmic_time, t0, params):
+def halo_mass_vs_time_jax_kern(cosmic_time, t0, params):
     return jax_np.power(10.0, _logmpeak_vs_time_jax_kern(cosmic_time, t0, params))
 
 
-halo_dmdt_vs_time_jax_kern = jax_grad(_halo_dmhdt_integral, argnums=0)
+halo_dmdt_vs_time_jax_kern = jax_grad(halo_mass_vs_time_jax_kern, argnums=0)
 halo_dmdt_vs_time_jax = jax_jit(
     jax_vmap(halo_dmdt_vs_time_jax_kern, in_axes=(0, None, 0))
 )

@@ -2,7 +2,7 @@
 """
 import numpy as np
 from scipy.integrate import trapz
-from ..halo_mass_assembly import halo_mass_vs_time, halo_dmdt_vs_time
+from ..halo_mass_assembly import halo_logmass_vs_time, halo_dmdt_vs_time
 from ..halo_mass_assembly import _get_mah_sigmoid_params, _logtc_from_mah_percentile
 from ..sigmoid_mah import logmpeak_from_logt as logmpeak_from_logt_np
 
@@ -22,13 +22,13 @@ def test_jax_mah_model_agrees_with_numpy_sigmoid_mah():
             logt, logtc, logtk, dlogm_height, logm0, logt0
         )
 
-        logmpeak_jax = halo_mass_vs_time(
+        logmpeak_jax = halo_logmass_vs_time(
             time, logm0, t0=t0, logtc=logtc, logtk=logtk, dlogm_height=dlogm_height,
         )
         assert np.allclose(logmpeak_np, logmpeak_jax, rtol=0.001)
 
 
-def test_halo_dmdt_vs_time_integrates_to_halo_mass_vs_time():
+def test_halo_dmdt_vs_time_integrates_to_halo_logmass_vs_time():
     t0 = 13.8
     time = np.linspace(0.1, t0, 200)
 
@@ -41,7 +41,7 @@ def test_halo_dmdt_vs_time_integrates_to_halo_mass_vs_time():
     param_list = [p0, p1, p2, p3, p4]
     for params in param_list:
         for logm0 in np.linspace(8, 16.5, 25):
-            logmpeak_jax = halo_mass_vs_time(time, logm0, **params,)
+            logmpeak_jax = halo_logmass_vs_time(time, logm0, **params,)
             dmhdt_jax = halo_dmdt_vs_time(time, logm0, **params,)
             assert logmpeak_jax.shape == dmhdt_jax.shape
 
@@ -52,9 +52,9 @@ def test_halo_dmdt_vs_time_integrates_to_halo_mass_vs_time():
 def test_median_logmhalo_is_monotonic_at_z0():
     today = 13.8
     t = np.linspace(0.1, today, 100)
-    logmah5 = halo_mass_vs_time(t, 5, t0=today)
-    logmah10 = halo_mass_vs_time(t, 10, t0=today)
-    logmah15 = halo_mass_vs_time(t, 15, t0=today)
+    logmah5 = halo_logmass_vs_time(t, 5, t0=today)
+    logmah10 = halo_logmass_vs_time(t, 10, t0=today)
+    logmah15 = halo_logmass_vs_time(t, 15, t0=today)
     assert logmah5[-1] < logmah10[-1] < logmah15[-1]
     assert np.all(np.diff(logmah5) > 0)
     assert np.all(np.diff(logmah10) > 0)
@@ -77,16 +77,16 @@ def test_halo_mass_behaves_properly_with_t0():
     today = 13.8
     logm0 = 13.0
     t = np.linspace(0.1, today, 100)
-    logmah1 = halo_mass_vs_time(t, logm0, 13)
-    logmah2 = halo_mass_vs_time(t, logm0, 14)
+    logmah1 = halo_logmass_vs_time(t, logm0, 13)
+    logmah2 = halo_logmass_vs_time(t, logm0, 14)
     assert logmah2[-1] < logmah1[-1]
 
 
-def test_halo_mass_vs_time_is_monotonic_in_time():
+def test_halo_logmass_vs_time_is_monotonic_in_time():
     logm0 = 12
     for logm0 in np.arange(5, 17):
         t = np.linspace(0.1, 10 ** 1.14, 30)
-        mah = 10 ** halo_mass_vs_time(t, logm0)
+        mah = 10 ** halo_logmass_vs_time(t, logm0)
         assert np.all(np.diff(mah) > 0)
 
 
