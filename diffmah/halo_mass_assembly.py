@@ -136,7 +136,7 @@ def halo_dmdt_vs_time(
     Returns
     -------
     dmhdt : ndarray
-        dMhalo / dt in [Msun/yr]
+        dMhalo / dt in units of Msun/yr
 
     """
     cosmic_time, logm0 = _get_1d_arrays(cosmic_time, logm0, dtype="f4")
@@ -144,7 +144,7 @@ def halo_dmdt_vs_time(
         logm0, mah_percentile=mah_percentile, **kwargs
     )
     params = logtc, logtk, dlogm_height, logm0
-    dmhdt = np.array(halo_dmdt_vs_time_jax(cosmic_time, t0, params))
+    dmhdt = np.array(halo_dmdt_vs_time_jax(cosmic_time, t0, params)) / 1e9
     return dmhdt
 
 

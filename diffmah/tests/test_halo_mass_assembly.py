@@ -43,5 +43,5 @@ def test_halo_dmdt_vs_time_integrates_to_halo_mass_vs_time():
         )
         assert logmpeak_jax.shape == dmhdt_jax.shape
 
-        integrated_logmh = np.log10(trapz(dmhdt_jax, x=time))
+        integrated_logmh = np.log10(trapz(dmhdt_jax, x=time)) + 9
         assert np.allclose(integrated_logmh, logm0)
