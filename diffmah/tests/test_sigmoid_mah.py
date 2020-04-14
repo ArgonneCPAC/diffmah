@@ -143,5 +143,5 @@ def test2_logtc_from_mah_percentile_varies_with_percentile_correctly():
     logtc_lo = _logtc_from_mah_percentile(0, 0, **params)
     logtc_med = _logtc_from_mah_percentile(0, 0.5, **params)
     logtc_hi = _logtc_from_mah_percentile(0, 1, **params)
-    assert np.allclose(logtc_lo, logtc_med - params["logtc_scatter_dwarfs"], rtol=1e-3)
-    assert np.allclose(logtc_hi, logtc_med + params["logtc_scatter_dwarfs"], rtol=1e-3)
+    assert np.allclose(logtc_lo, logtc_med - params["logtc_scatter_dwarfs"], rtol=0.01)
+    assert np.allclose(logtc_hi, logtc_med + params["logtc_scatter_dwarfs"], rtol=0.01)
