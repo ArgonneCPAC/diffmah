@@ -7,7 +7,7 @@ from jax import vmap as jax_vmap
 from jax import grad as jax_grad
 from collections import OrderedDict
 
-__all__ = ("halo_logmpeak_vs_time",)
+__all__ = ("halo_mass_vs_time",)
 
 
 DEFAULT_MAH_PARAMS = OrderedDict(
@@ -26,7 +26,7 @@ LOGT0 = 1.14
 COSMIC_AGE_TODAY = 10 ** LOGT0
 
 
-def halo_logmpeak_vs_time(
+def halo_mass_vs_time(
     cosmic_time, logm0, t0=COSMIC_AGE_TODAY, mah_percentile=None, **kwargs
 ):
     """Median halo mass growth vs cosmic time.
@@ -44,7 +44,7 @@ def halo_logmpeak_vs_time(
 
     Returns
     -------
-    logmpeak : ndarray
+    logmh : ndarray
         Base-10 log of halo mass in Msun/h
 
     """
@@ -53,9 +53,8 @@ def halo_logmpeak_vs_time(
         logm0, mah_percentile=mah_percentile, **kwargs
     )
     params = logtc, logtk, dlogm_height, logm0
-
-    logmpeak = np.array(logmpeak_vs_time_jax(cosmic_time, t0, params))
-    return logmpeak
+    logmh = np.array(logmpeak_vs_time_jax(cosmic_time, t0, params))
+    return logmh
 
 
 def _logmpeak_vs_time_jax_kern(cosmic_time, t0, params):
@@ -69,7 +68,7 @@ def _logmpeak_vs_time_jax_kern(cosmic_time, t0, params):
     t0 : float
         Present-day age of the Universe in Gyr
 
-    params : 5-element sequence
+    params : 4-element sequence
         Parameters described in order below
 
     logtc : float or ndarray
@@ -83,13 +82,13 @@ def _logmpeak_vs_time_jax_kern(cosmic_time, t0, params):
     dlogm_height : float or ndarray
         Total gain in logmpeak until logt0
 
-    logmpeak_at_t0 : float or ndarray
-        Base-10 log of peak halo mass in Msun/h at the time of halo observation
+    logm0 : float or ndarray
+        Base-10 log of halo mass at t0
 
     Returns
     -------
     logmpeak : ndarray
-        Base-10 log of halo mass in Msun/h
+        Base-10 log of halo mass
 
     """
     logtc, logtk, dlogm_height, logm0 = params

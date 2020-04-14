@@ -1,7 +1,7 @@
 """
 """
 import numpy as np
-from ..halo_mass_assembly import halo_logmpeak_vs_time
+from ..halo_mass_assembly import halo_mass_vs_time
 from ..sigmoid_mah import logmpeak_from_logt as logmpeak_from_logt_np
 
 
@@ -20,7 +20,7 @@ def test_jax_mah_model_agrees_with_numpy_sigmoid_mah():
             logt, logtc, logtk, dlogm_height, logm0, logt0
         )
 
-        logmpeak_jax = halo_logmpeak_vs_time(
+        logmpeak_jax = halo_mass_vs_time(
             time, logm0, t0=t0, logtc=logtc, logtk=logtk, dlogm_height=dlogm_height,
         )
         assert np.allclose(logmpeak_np, logmpeak_jax, rtol=0.001)
