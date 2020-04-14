@@ -107,6 +107,47 @@ logmpeak_vs_time_jax = jax_jit(
 logmpeak_vs_time_jax.__doc__ = _logmpeak_vs_time_jax_kern.__doc__
 
 
+def _halo_dmhdt_integral(cosmic_time, t0, params):
+    return jax_np.power(10.0, _logmpeak_vs_time_jax_kern(cosmic_time, t0, params))
+
+
+halo_dmdt_vs_time_jax_kern = jax_grad(_halo_dmhdt_integral, argnums=0)
+halo_dmdt_vs_time_jax = jax_jit(
+    jax_vmap(halo_dmdt_vs_time_jax_kern, in_axes=(0, None, 0))
+)
+
+
+def halo_dmdt_vs_time(
+    cosmic_time, logm0, t0=COSMIC_AGE_TODAY, mah_percentile=None, **kwargs
+):
+    """Median halo mass accretion rate vs cosmic time.
+
+    Parameters
+    ----------
+    cosmic_time : float or ndarray
+        Age of the Universe in Gyr
+
+    logm0 : float or ndarray
+        Base-10 log of peak halo mass in Msun/h
+
+    t0 : float, optional
+        Present-day age of the Universe in Gyr. Default is 13.8.
+
+    Returns
+    -------
+    dmhdt : ndarray
+        dMhalo / dt in [Msun/yr]
+
+    """
+    cosmic_time, logm0 = _get_1d_arrays(cosmic_time, logm0, dtype="f4")
+    logtc, logtk, dlogm_height = _get_mah_sigmoid_params(
+        logm0, mah_percentile=mah_percentile, **kwargs
+    )
+    params = logtc, logtk, dlogm_height, logm0
+    dmhdt = np.array(halo_dmdt_vs_time_jax(cosmic_time, t0, params))
+    return dmhdt
+
+
 def _get_mah_sigmoid_params(logm0, mah_percentile=None, **kwargs):
     """MAH parameters for a halo with present-day mass logm0.
     """
