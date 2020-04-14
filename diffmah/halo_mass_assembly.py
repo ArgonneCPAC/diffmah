@@ -6,7 +6,6 @@ from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 from jax import grad as jax_grad
 from collections import OrderedDict
-from astropy.cosmology import Planck15
 
 __all__ = ("halo_logmpeak_vs_time",)
 
@@ -49,7 +48,7 @@ def halo_logmpeak_vs_time(
         Base-10 log of halo mass in Msun/h
 
     """
-    cosmic_time, logm0 = _get_1d_arrays(cosmic_time, logm0)
+    cosmic_time, logm0 = _get_1d_arrays(cosmic_time, logm0, dtype="f4")
     logtc, logtk, dlogm_height = _get_mah_sigmoid_params(
         logm0, mah_percentile=mah_percentile, **kwargs
     )
@@ -93,13 +92,13 @@ def _logmpeak_vs_time_jax_kern(cosmic_time, t0, params):
         Base-10 log of halo mass in Msun/h
 
     """
-    logtc, logtk, dlogm_height, logmpeak_at_logt0 = params
+    logtc, logtk, dlogm_height, logm0 = params
     logt = jax_np.log10(cosmic_time)
     logt0 = jax_np.log10(t0)
 
     dlogm = _jax_sigmoid(logt, logtc, logtk, -dlogm_height, 0)
     dlogm_at_logt0 = _jax_sigmoid(logt0, logtc, logtk, -dlogm_height, 0)
-    logmpeak = logmpeak_at_logt0 + (dlogm - dlogm_at_logt0)
+    logmpeak = logm0 + (dlogm - dlogm_at_logt0)
     return logmpeak
 
 
@@ -112,14 +111,15 @@ logmpeak_vs_time_jax.__doc__ = _logmpeak_vs_time_jax_kern.__doc__
 def _get_mah_sigmoid_params(logm0, mah_percentile=None, **kwargs):
     """MAH parameters for a halo with present-day mass logm0.
     """
-    logm0 = np.atleast_1d(logm0)
+    logm0 = np.atleast_1d(logm0).astype("f4")
 
     logtc_keys = ("logtc_logm0", "logtc_k", "logtc_ymin", "logtc_ymax")
     if mah_percentile is None:
         logtc_params = OrderedDict(
             [(key, kwargs.get(key, DEFAULT_MAH_PARAMS[key])) for key in logtc_keys]
         )
-        logtc = np.zeros_like(logm0) + _logtc_param_model(logm0, **logtc_params)
+        logtc_med = np.zeros_like(logm0) + _logtc_param_model(logm0, **logtc_params)
+        logtc = np.zeros_like(logm0) + kwargs.get("logtc", logtc_med)
     else:
         msg = "Do not pass mah_percentile argument and {0} argument"
         for key in logtc_keys:
@@ -188,7 +188,7 @@ def _jax_sigmoid(x, x0, k, ymin, ymax):
     return ymin + height_diff / (1 + jax_np.exp(-k * (x - x0)))
 
 
-def _get_1d_arrays(*args):
+def _get_1d_arrays(*args, dtype=None):
     """Return a list of ndarrays of the same length.
 
     Each arg must be either an ndarray of shape (npts, ), or a scalar.
@@ -199,4 +199,7 @@ def _get_1d_arrays(*args):
     npts = max(sizes)
     msg = "All input arguments should be either a float or ndarray of shape ({0}, )"
     assert set(sizes) <= set((1, npts)), msg.format(npts)
-    return [np.zeros(npts).astype(arr.dtype) + arr for arr in results]
+    if dtype is None:
+        return [np.zeros(npts).astype(arr.dtype) + arr for arr in results]
+    else:
+        return [np.zeros(npts).astype(dtype) + arr for arr in results]
