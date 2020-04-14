@@ -29,23 +29,23 @@ def test_jax_mah_model_agrees_with_numpy_sigmoid_mah():
 
 
 def test_halo_dmdt_vs_time_integrates_to_halo_mass_vs_time():
-    logtk, dlogm_height = 3, 5
-    logt0 = 1.14
-    t0 = 10 ** logt0
-    logtc = 0
+    t0 = 13.8
     time = np.linspace(0.1, t0, 200)
 
-    for logm0 in np.linspace(10, 15, 25):
-        logmpeak_jax = halo_mass_vs_time(
-            time, logm0, t0=t0, logtc=logtc, logtk=logtk, dlogm_height=dlogm_height,
-        )
-        dmhdt_jax = halo_dmdt_vs_time(
-            time, logm0, t0=t0, logtc=logtc, logtk=logtk, dlogm_height=dlogm_height,
-        )
-        assert logmpeak_jax.shape == dmhdt_jax.shape
+    p0 = dict(t0=t0, logtc=0, logtk=3, dlogm_height=5)
+    p1 = dict(t0=t0, logtc=0.5, logtk=3, dlogm_height=5)
+    p2 = dict(t0=t0, logtc=0, logtk=6, dlogm_height=5)
+    p3 = dict(t0=t0, logtc=0, logtk=3, dlogm_height=2)
 
-        integrated_logmh = np.log10(trapz(dmhdt_jax, x=time)) + 9
-        assert np.allclose(integrated_logmh, logm0)
+    param_list = [p0, p1, p2, p3]
+    for params in param_list:
+        for logm0 in np.linspace(8, 16.5, 25):
+            logmpeak_jax = halo_mass_vs_time(time, logm0, **params,)
+            dmhdt_jax = halo_dmdt_vs_time(time, logm0, **params,)
+            assert logmpeak_jax.shape == dmhdt_jax.shape
+
+            integrated_logmh = np.log10(trapz(dmhdt_jax, x=time)) + 9
+            assert np.allclose(integrated_logmh, logm0, rtol=0.001)
 
 
 def test_median_logmhalo_is_monotonic_at_z0():
