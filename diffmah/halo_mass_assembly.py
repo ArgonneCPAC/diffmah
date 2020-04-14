@@ -74,13 +74,18 @@ def _logmpeak_vs_time_jax_kern(cosmic_time, t0, params):
     logtc : float or ndarray
         Base-10 log of the critical time in Gyr.
         Smaller values of logtc produce halos with earlier formation times.
+        logtc ~ -0.25 is typical for logMhalo = 15
+        logtc ~ 0 is typical for logMhalo = 12
+        logtc ~ 0.5 is typical for logMhalo = 9
 
     logtk : float or ndarray
         Steepness of transition from fast- to slow-accretion regimes.
         Larger values of k produce quicker-transitioning halos.
+        logtk = 3 is typical for most halos.
 
     dlogm_height : float or ndarray
-        Total gain in logmpeak until logt0
+        Total gain in logmpeak until logt0.
+        dlogm_height = 5 is typical for most halos.
 
     logm0 : float or ndarray
         Base-10 log of halo mass at t0
