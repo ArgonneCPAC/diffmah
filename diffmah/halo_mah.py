@@ -12,9 +12,70 @@ __all__ = ("halo_mass_assembly_history",)
 DEFAULT_MAH_PARAMS = OrderedDict(
     dmhdt_x0=0.18, dmhdt_k=4.15, dmhdt_early_index=0.4, dmhdt_late_index=-1.25
 )
-
+MEDIAN_MAH_PARAMS = OrderedDict(
+    dmhdt_x0_c0=0.27,
+    dmhdt_x0_c1=0.12,
+    dmhdt_k_c0=4.7,
+    dmhdt_k_c1=0.5,
+    dmhdt_ylo_c0=0.7,
+    dmhdt_ylo_c1=0.25,
+    dmhdt_yhi_c0=-1.0,
+    dmhdt_yhi_c1=0.25,
+)
 LOGT0 = 1.14
 TODAY = 10.0 ** LOGT0
+
+
+def median_halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
+    """Rolling power-law model for halo mass accretion rate.
+
+    Parameters
+    ----------
+    logm0 : float
+        Base-10 log of halo mass at z=0 in units of Msun.
+
+    cosmic_time : ndarray of shape (n, )
+        Age of the universe in Gyr at which to evaluate the assembly history.
+
+    t0 : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logm0.
+        There must exist some entry of the input cosmic_time array within 50Myr of t0.
+        Default is ~13.8 Gyr.
+
+    *mah_params : float, optional
+        Any parameter in MEDIAN_MAH_PARAMS is an acceptable keyword argument.
+
+    Returns
+    -------
+    logmah : ndarray of shape (n, )
+        Base-10 log of halo mass at the input times.
+        Halo mass is in units of Msun.
+
+    log_dmhdt : ndarray of shape (n, )
+        Base-10 log of halo mass accretion rate at the input times
+        Accretion rate is in units of Msun/yr.
+        By construction, the time integral of log_dmhdt equals logmah.
+
+    Notes
+    -----
+    The logmah array has been normalized so that its value at t0 exactly equals logm0.
+
+    """
+    _x = _process_args(logm0, cosmic_time, t0, MEDIAN_MAH_PARAMS, **kwargs)
+    logt0, _tarr, present_time_indx, params = _x
+
+    gen = zip(MEDIAN_MAH_PARAMS.keys(), params)
+    p = OrderedDict([(key, value) for key, value in gen])
+    x0 = _get_dmhdt_param(logm0, p["dmhdt_x0_c0"], p["dmhdt_x0_c1"])
+    k = _get_dmhdt_param(logm0, p["dmhdt_k_c0"], p["dmhdt_k_c1"])
+    ylo = _get_dmhdt_param(logm0, p["dmhdt_ylo_c0"], p["dmhdt_ylo_c1"])
+    yhi = _get_dmhdt_param(logm0, p["dmhdt_yhi_c0"], p["dmhdt_yhi_c1"])
+
+    params = (x0, k, ylo, yhi)
+    logmah, log_dmhdt = _halo_mass_assembly_function(
+        params, _tarr, logm0, present_time_indx, logt0
+    )
+    return logmah, log_dmhdt
 
 
 def halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
@@ -52,7 +113,7 @@ def halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
     The logmah array has been normalized so that its value at t0 exactly equals logm0.
 
     """
-    _x = _process_args(logm0, cosmic_time, t0, **kwargs)
+    _x = _process_args(logm0, cosmic_time, t0, DEFAULT_MAH_PARAMS, **kwargs)
     logt0, _tarr, present_time_indx, params = _x
 
     logmah, log_dmhdt = _halo_mass_assembly_function(
@@ -91,16 +152,15 @@ def _jax_normed_dmah_kern(params, ti, tf, logt0):
 _jax_normed_dmah = jax_jit(jax_vmap(_jax_normed_dmah_kern, in_axes=(None, 0, 0, None)))
 
 
-def _process_args(logm0, cosmic_time, t0, **kwargs):
+def _process_args(logm0, cosmic_time, t0, param_dict, **kwargs):
     """
     """
     # Enforce no unexpected keywords
-    expected_kwargs = list(DEFAULT_MAH_PARAMS.keys())
     try:
-        assert set(kwargs) <= set(expected_kwargs)
+        assert set(kwargs) <= set(param_dict)
     except AssertionError:
         msg = "Unexpected keyword `{}` passed to halo_mass_assembly_history function"
-        unexpected_kwarg = list(set(kwargs) - set(expected_kwargs))[0]
+        unexpected_kwarg = list(set(kwargs) - set(param_dict))[0]
         raise KeyError(msg.format(unexpected_kwarg))
 
     # Bounds-check input cosmic_time
@@ -121,7 +181,11 @@ def _process_args(logm0, cosmic_time, t0, **kwargs):
     _tarr = np.insert(cosmic_time, 0, new_t_init)
 
     # Retrieve MAH params
-    params = tuple((kwargs.get(key, val) for key, val in DEFAULT_MAH_PARAMS.items()))
+    params = tuple((kwargs.get(key, val) for key, val in param_dict.items()))
 
     logt0 = np.log10(t0)
     return logt0, _tarr, present_time_indx, params
+
+
+def _get_dmhdt_param(logm0, c0, c1):
+    return c0 + c1 * (logm0 - 13)
