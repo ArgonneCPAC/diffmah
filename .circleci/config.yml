@@ -52,7 +52,7 @@ jobs:
               scipy \
               tqdm \
               pyyaml \
-              jax \
+              jax>=0.1.45 \
               pytest-runner \
               "halotools>=0.7" \
               "astropy>=4"
