@@ -154,7 +154,7 @@ def in_situ_galaxy_halo_history(
     epsilon = sfr_efficiency_function(10 ** logmah, zarr, **ms_params)
 
     sfr_ms_history = fb * dmdt * epsilon
-    sfr_q_history = sfr_ms_history * quenching_function(tarr, qtime)
+    sfr_q_history = sfr_ms_history * np.array(quenching_function(tarr, qtime))
 
     _mstar_ms_history = cumtrapz(sfr_ms_history, x=tarr)
     _mstar_q_history = cumtrapz(sfr_q_history, x=tarr)

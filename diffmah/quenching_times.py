@@ -66,7 +66,7 @@ def quenching_function(
 
     """
     t, qt = _get_1d_arrays(t, qt)
-    return np.array(_jax_sigmoid(t, qt, qfunc_k, qfunc_ylo, qfunc_yhi))
+    return _jax_sigmoid(t, qt, qfunc_k, qfunc_ylo, qfunc_yhi)
 
 
 def central_quenching_time(logm0, percentile, **kwargs):
@@ -264,12 +264,12 @@ def _jax_sigmoid(x, x0, k, ymin, ymax):
 
 def _get_1d_arrays(*args):
     """Return a list of ndarrays of the same length."""
-    results = [np.atleast_1d(arg) for arg in args]
+    results = [jax_np.atleast_1d(arg) for arg in args]
     sizes = [arr.size for arr in results]
     npts = max(sizes)
     msg = "All input arguments should be either a float or ndarray of shape ({0}, )"
     assert set(sizes) <= set((1, npts)), msg.format(npts)
-    return [np.zeros(npts).astype(arr.dtype) + arr for arr in results]
+    return [jax_np.zeros(npts).astype(arr.dtype) + arr for arr in results]
 
 
 def _get_default_quenching_time_param_dict(**kwargs):

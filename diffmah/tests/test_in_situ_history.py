@@ -57,7 +57,7 @@ def test1_in_situ_galaxy_halo_history_is_monotonic_in_mass():
 def test_in_situ_galaxy_halo_history_is_less_for_quenched_galaxies():
     """
     """
-    for logM in np.linspace(10, 15, 15):
+    for logM in np.linspace(10, 15, 6):
         X = in_situ_galaxy_halo_history(logM, qtime=1)
         mstarh_logm10, mstarh_logm10_q = X[-3], X[-2]
         assert np.all(mstarh_logm10 >= mstarh_logm10_q)
@@ -156,7 +156,7 @@ def test_in_situ_galaxy_halo_history_varies_with_SFR_efficiency_params():
 def test_in_situ_galaxy_halo_history_varies_with_qprob_params():
     """Present-day Mstar should change when each central quenching param is varied."""
 
-    for __ in range(10):
+    for __ in range(4):
         X1 = in_situ_galaxy_halo_history(12.5, fq_cens_logm_crit=12)
         X2 = in_situ_galaxy_halo_history(12.5, fq_cens_logm_crit=13)
         mstar_ms1, mstar_q1, qh1 = X1[-3:]
