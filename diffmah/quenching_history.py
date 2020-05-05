@@ -16,6 +16,28 @@ MEDIAN_HISTORY_PARAMS = OrderedDict(
 
 
 def log_ms_fraction_um_median(logm0, lgt, fms_ylo=0, fms_k=7, **kwargs):
+    """Main-sequence probability vs time for central galaxies.
+
+    Default values tuned to match UniverseMachine.
+
+    Parameters
+    ----------
+    logm0 : float
+
+    lgt : ndarray shape (n, )
+        Base-10 log of cosmic time in Gyr
+
+    **params : optional
+        Accepts float values for all keyworg arguments
+        appearing in MEDIAN_HISTORY_PARAMS dictionary.
+
+    Returns
+    -------
+    log_ms_frac : ndarray shape (n, )
+        Base-10 log of the probability the central galaxy is
+        on the main sequence at each input time.
+
+    """
     p = _get_params(MEDIAN_HISTORY_PARAMS, **kwargs)
 
     fms_x0 = _fms_logtc_vs_logm0(
