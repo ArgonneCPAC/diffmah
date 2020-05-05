@@ -58,6 +58,7 @@ def log_ms_fraction_um_median(
             p["fms_late_ylo"],
             p["fms_late_yhi"],
         )
+    fms_yhi = jax_np.where(fms_yhi >= 0, 0, fms_yhi)
     return _jax_sigmoid(lgt, fms_x0, fms_k, fms_ylo, fms_yhi)
 
 
