@@ -15,7 +15,9 @@ MEDIAN_HISTORY_PARAMS = OrderedDict(
 )
 
 
-def log_ms_fraction_um_median(logm0, lgt, fms_ylo=0, fms_k=7, **kwargs):
+def log_ms_fraction_um_median(
+    logm0, lgt, fms_x0=None, fms_k=7, fms_ylo=0, fms_yhi=None, **kwargs
+):
     """Main-sequence probability vs time for central galaxies.
 
     Default values tuned to match UniverseMachine.
@@ -40,16 +42,22 @@ def log_ms_fraction_um_median(logm0, lgt, fms_ylo=0, fms_k=7, **kwargs):
     """
     p = _get_params(MEDIAN_HISTORY_PARAMS, **kwargs)
 
-    fms_x0 = _fms_logtc_vs_logm0(
-        logm0,
-        p["fms_logtc_x0"],
-        p["fms_logtc_k"],
-        p["fms_logtc_ylo"],
-        p["fms_logtc_yhi"],
-    )
-    fms_yhi = _fms_late_vs_logm0(
-        logm0, p["fms_late_x0"], p["fms_late_k"], p["fms_late_ylo"], p["fms_late_yhi"],
-    )
+    if fms_x0 is None:
+        fms_x0 = _fms_logtc_vs_logm0(
+            logm0,
+            p["fms_logtc_x0"],
+            p["fms_logtc_k"],
+            p["fms_logtc_ylo"],
+            p["fms_logtc_yhi"],
+        )
+    if fms_yhi is None:
+        fms_yhi = _fms_late_vs_logm0(
+            logm0,
+            p["fms_late_x0"],
+            p["fms_late_k"],
+            p["fms_late_ylo"],
+            p["fms_late_yhi"],
+        )
     return _jax_sigmoid(lgt, fms_x0, fms_k, fms_ylo, fms_yhi)
 
 
