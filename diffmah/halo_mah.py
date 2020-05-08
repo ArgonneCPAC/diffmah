@@ -1,6 +1,7 @@
 """JAX implementation of double-power-law model of halo mass accretion rate."""
-import numpy as np
 from collections import OrderedDict
+from jax.ops import index_update as jax_index_update
+from jax.ops import index as jax_index
 from jax import numpy as jax_np
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
@@ -164,26 +165,31 @@ def _process_args(logm0, cosmic_time, t0, param_dict, **kwargs):
         raise KeyError(msg.format(unexpected_kwarg))
 
     # Bounds-check input cosmic_time
-    cosmic_time = np.atleast_1d(cosmic_time)
+    cosmic_time = jax_np.atleast_1d(cosmic_time)
     assert cosmic_time.size > 1, "Input cosmic_time must be an array"
 
     msg = "Input cosmic_time = {} must be strictly monotonic"
-    assert np.all(np.diff(cosmic_time) > 0), msg.format(cosmic_time)
+    assert jax_np.all(jax_np.diff(cosmic_time) > 0), msg.format(cosmic_time)
 
-    present_time_indx = min(np.searchsorted(cosmic_time, t0), cosmic_time.size - 1)
+    dt = cosmic_time[1] - cosmic_time[0]
+    present_time_indx = int((t0 - cosmic_time[0]) / dt)
+    msg = "t0 must lie in the range spanned by cosmic_time"
+    assert 0 <= present_time_indx <= cosmic_time.size - 1, msg
     implied_t0 = cosmic_time[present_time_indx]
     msg = "Input cosmic_time must have an entry within 50 Myr of t0 = {}"
-    assert np.allclose(t0, implied_t0, atol=0.05), msg.format(t0)
+    assert jax_np.allclose(t0, implied_t0, atol=0.05), msg.format(t0)
 
     t_init = cosmic_time[0]
     dt_init = cosmic_time[1] - t_init
     new_t_init = max(t_init - dt_init, 0.9 * t_init)
-    _tarr = np.insert(cosmic_time, 0, new_t_init)
+    _tarr = jax_np.zeros(cosmic_time.size + 1)
+    _tarr = jax_index_update(_tarr, 0, new_t_init)
+    _tarr = jax_index_update(_tarr, jax_index[1:], cosmic_time)
 
     # Retrieve MAH params
     params = tuple((kwargs.get(key, val) for key, val in param_dict.items()))
 
-    logt0 = np.log10(t0)
+    logt0 = jax_np.log10(t0)
     return logt0, _tarr, present_time_indx, params
 
 
