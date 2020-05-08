@@ -8,7 +8,7 @@ from ..halo_mah import median_halo_mass_assembly_history
 def test_halo_mah_evaluates_reasonably_with_default_args():
     """
     """
-    npts = 50
+    npts = 250
     for logm0 in (11, 12, 13, 14, 15):
         for t0 in (13.5, 14):
             cosmic_time = np.linspace(0.1, t0, npts)
@@ -20,7 +20,7 @@ def test_halo_mah_evaluates_reasonably_with_default_args():
 def test_median_halo_mah_evaluates_reasonably_with_default_args():
     """
     """
-    npts = 50
+    npts = 250
     for logm0 in (11, 12, 13, 14, 15):
         for t0 in (13.5, 14):
             cosmic_time = np.linspace(0.1, t0, npts)
