@@ -169,22 +169,28 @@ def _process_args(logm0, cosmic_time, t0, param_dict, **kwargs):
     assert cosmic_time.size > 1, "Input cosmic_time must be an array"
 
     msg = "Input cosmic_time = {} must be strictly monotonic"
-    assert jax_np.all(jax_np.diff(cosmic_time) > 0), msg.format(cosmic_time)
+    _dtarr = jax_np.diff(cosmic_time)
+    assert jax_np.all(_dtarr > 0), msg.format(cosmic_time)
 
-    dt = cosmic_time[1] - cosmic_time[0]
-    present_time_indx = int((t0 - cosmic_time[0]) / dt)
+    dt = jax_np.mean(_dtarr)
+    present_time_indx = int(jax_np.round((t0 - cosmic_time[0]) / dt))
     msg = "t0 must lie in the range spanned by cosmic_time"
     assert 0 <= present_time_indx <= cosmic_time.size - 1, msg
-    implied_t0 = cosmic_time[present_time_indx]
-    msg = "Input cosmic_time must have an entry within 50 Myr of t0 = {}"
-    assert jax_np.allclose(t0, implied_t0, atol=0.05), msg.format(t0)
 
-    t_init = cosmic_time[0]
-    dt_init = cosmic_time[1] - t_init
-    new_t_init = max(t_init - dt_init, 0.9 * t_init)
+    implied_t0 = cosmic_time[present_time_indx]
+    msg = (
+        "Input cosmic_time must have an entry within 50 Myr of t0 = {0}\n"
+        "cosmic_time entry with closest value = {1} at index = {2}"
+    )
+    assert jax_np.allclose(t0, implied_t0, atol=0.05), msg.format(
+        t0, implied_t0, present_time_indx
+    )
+
+    t_init = cosmic_time[0] - dt / 2
+    t_rem = cosmic_time + dt / 2
     _tarr = jax_np.zeros(cosmic_time.size + 1)
-    _tarr = jax_index_update(_tarr, 0, new_t_init)
-    _tarr = jax_index_update(_tarr, jax_index[1:], cosmic_time)
+    _tarr = jax_index_update(_tarr, 0, t_init)
+    _tarr = jax_index_update(_tarr, jax_index[1:], t_rem)
 
     # Retrieve MAH params
     params = tuple((kwargs.get(key, val) for key, val in param_dict.items()))
