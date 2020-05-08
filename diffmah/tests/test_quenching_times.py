@@ -1,5 +1,7 @@
 """
+
 """
+
 import numpy as np
 from ..quenching_times import central_quenching_time, satellite_quenching_time
 from ..quenching_times import quenching_function
