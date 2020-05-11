@@ -6,11 +6,11 @@ from copy import deepcopy
 from jax import value_and_grad
 from jax import numpy as jax_np
 from jax import jit as jax_jit
-from ..sfr_efficiency import log_sfr_efficiency_ms_jax
-from ..sfr_efficiency import DEFAULT_SFR_MS_PARAMS, MEAN_SFR_MS_PARAMS
-from ..sfr_efficiency import mean_log_sfr_efficiency_main_sequence
-from ..sfr_efficiency import log_sfr_efficiency_main_sequence
-from ..sfr_efficiency import mean_log_sfr_efficiency_ms_jax
+from ..main_sequence_sfr_eff import log_sfr_efficiency_ms_jax
+from ..main_sequence_sfr_eff import DEFAULT_SFR_MS_PARAMS, MEAN_SFR_MS_PARAMS
+from ..main_sequence_sfr_eff import mean_log_sfr_efficiency_main_sequence
+from ..main_sequence_sfr_eff import log_sfr_efficiency_main_sequence
+from ..main_sequence_sfr_eff import mean_log_sfr_efficiency_ms_jax
 
 
 def test_log_sfr_eff_ms():

@@ -5,7 +5,7 @@ import numpy as np
 from ..mean_sfr_history import _mean_log_mstar_history_jax_kern
 from ..mean_sfr_history import _mean_log_sfr_history_jax_kern
 from ..quenching_history import MEAN_Q_PARAMS
-from ..sfr_efficiency import MEAN_SFR_MS_PARAMS
+from ..main_sequence_sfr_eff import MEAN_SFR_MS_PARAMS
 from ..halo_assembly import MEAN_MAH_PARAMS
 from ..mean_sfr_history import get_mean_galaxy_history
 
