@@ -11,7 +11,7 @@ FB = 0.158
 def _mean_log_mstar_history_jax_kern(
     mean_mah_params,
     mean_sfr_eff_params,
-    q_params,
+    mean_q_params,
     logm0,
     logt_table,
     indx_t0,
@@ -19,7 +19,7 @@ def _mean_log_mstar_history_jax_kern(
     indx_pred,
 ):
     log_sfr_table = _mean_log_sfr_history_jax_kern(
-        mean_mah_params, mean_sfr_eff_params, q_params, logm0, logt_table, indx_t0
+        mean_mah_params, mean_sfr_eff_params, mean_q_params, logm0, logt_table, indx_t0
     )
     log_smh_table = (
         jax_np.log10(jax_np.cumsum(jax_np.power(10, log_sfr_table)) * dt) + 9
@@ -28,7 +28,7 @@ def _mean_log_mstar_history_jax_kern(
 
 
 def _mean_log_sfr_history_jax_kern(
-    mean_mah_params, mean_sfr_eff_params, q_params, logm0, logt, indx_t0
+    mean_mah_params, mean_sfr_eff_params, mean_q_params, logm0, logt, indx_t0
 ):
     tarr = jax_np.power(10, logt)
     logt0 = logt[indx_t0]
@@ -38,6 +38,6 @@ def _mean_log_sfr_history_jax_kern(
     )
     log_dmbdt = jax_np.log10(FB) + log_dmhdt + 9.0
     log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(mean_sfr_eff_params, logm0, logt)
-    log_frac_ms = _mean_log_main_sequence_fraction(q_params, logm0, logt)
+    log_frac_ms = _mean_log_main_sequence_fraction(mean_q_params, logm0, logt)
     log_sfr = log_dmbdt + log_sfr_eff_ms + log_frac_ms
     return log_sfr

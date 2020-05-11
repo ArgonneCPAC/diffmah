@@ -1,8 +1,8 @@
 """
 """
 import numpy as np
-from ..star_formation_history import _mean_log_mstar_history_jax_kern
-from ..star_formation_history import _mean_log_sfr_history_jax_kern
+from ..mean_sfr_history import _mean_log_mstar_history_jax_kern
+from ..mean_sfr_history import _mean_log_sfr_history_jax_kern
 from ..quenching_history import MEDIAN_HISTORY_PARAMS as MEAN_Q_PARAMS
 from ..sfr_efficiency import MEDIAN_SFR_MS_PARAMS
 from ..halo_assembly import MEAN_MAH_PARAMS
