@@ -74,9 +74,10 @@ def mean_halo_mass_assembly_history(
     logm0, tarr, logt0, indx_t0 = _x
 
     mean_mah_params = _get_mah_params(MEAN_MAH_PARAMS, strict, **kwargs)
-    mah_params = _get_individual_mah_params(mean_mah_params, logm0)
+    logmah, log_dmhdt = _mean_halo_assembly_function(
+        mean_mah_params, tarr, logm0, indx_t0, logt0
+    )
 
-    logmah, log_dmhdt = _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0)
     return logmah, log_dmhdt
 
 
@@ -148,6 +149,11 @@ def _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0):
     logmah = _logmah + rescaling_factor
     log_dmhdt = jax_np.log10(_dmhdt_at_tmid) + rescaling_factor
     return logmah, log_dmhdt
+
+
+def _mean_halo_assembly_function(mean_mah_params, tarr, logm0, indx_t0, logt0):
+    mah_params = _get_individual_mah_params(mean_mah_params, logm0)
+    return _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0)
 
 
 def _jax_normed_halo_dmdt_vs_time_kern(mah_params, logt, logt0):
