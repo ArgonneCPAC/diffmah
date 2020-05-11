@@ -12,7 +12,7 @@ FB = 0.158
 
 def get_mean_galaxy_history(logm0, cosmic_time, **kwargs):
     """Star formation rate and stellar mass as a function of time
-    for a central galaxy living in a halo with present-day mass logm0.
+    averaged over centrals living in halos with present-day mass logm0.
 
     Parameters
     ----------
