@@ -18,11 +18,7 @@ def _mean_log_sfr_history(
         mean_mah_params, tarr, logm0, indx_t0, logt0
     )
     log_dmbdt = jax_np.log10(FB) + log_dmhdt + 9.0
-
-    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logm0, logt, mean_sfr_eff_params)
-
-    q_data = logm0, logt
-    log_sfr_eff_ms = _mean_log_main_sequence_fraction(q_params, q_data)
-
-    log_sfr = log_dmbdt + log_sfr_eff_ms + log_sfr_eff_ms
+    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(mean_sfr_eff_params, logm0, logt)
+    log_frac_ms = _mean_log_main_sequence_fraction(q_params, logm0, logt)
+    log_sfr = log_dmbdt + log_sfr_eff_ms + log_frac_ms
     return log_sfr

@@ -102,7 +102,7 @@ def test_mean_sfr_efficiency_is_differentiable():
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(params, data):
         logm0, logt, target = data
-        log_sfr_eff = mean_log_sfr_efficiency_ms_jax(logm0, logt, params)
+        log_sfr_eff = mean_log_sfr_efficiency_ms_jax(params, logm0, logt)
         diff = target - log_sfr_eff
         return jax_np.sum(diff) / diff.size
 
@@ -111,7 +111,7 @@ def test_mean_sfr_efficiency_is_differentiable():
     logt0 = np.log10(13.85)
     logt = np.linspace(-1, logt0, npts)
     params = np.array(list(MEDIAN_SFR_MS_PARAMS.values())).astype("f4")
-    target = mean_log_sfr_efficiency_ms_jax(logm0, logt, params)
+    target = mean_log_sfr_efficiency_ms_jax(params, logm0, logt)
     data = logm0, logt, target
     loss_init, grads = value_and_grad(mse_loss, argnums=0)(params, data)
     params_new = params - 0.05 * grads

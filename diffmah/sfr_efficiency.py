@@ -58,7 +58,7 @@ def log_sfr_efficiency_ms_jax(logt, sfr_eff_params):
     return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
 
 
-def mean_log_sfr_efficiency_ms_jax(logm0, logt, mean_sfr_eff_params):
+def mean_log_sfr_efficiency_ms_jax(mean_sfr_eff_params, logm0, logt):
     sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
     return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
 

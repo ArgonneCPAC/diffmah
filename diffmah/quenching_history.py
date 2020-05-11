@@ -43,12 +43,10 @@ def mean_log_main_sequence_fraction(logm0, logt, **kwargs):
     """
     mean_q_param_dict = _get_param_dict(MEDIAN_HISTORY_PARAMS, **kwargs)
     mean_q_params = jax_np.array(list(mean_q_param_dict.values())).astype("f4")
-    data = logm0, logt
-    return _mean_log_main_sequence_fraction(mean_q_params, data)
+    return _mean_log_main_sequence_fraction(mean_q_params, logm0, logt)
 
 
-def _mean_log_main_sequence_fraction(params, data):
-    logm0, logt = data
+def _mean_log_main_sequence_fraction(params, logm0, logt):
     fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi = params[0:4]
     fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi = params[4:8]
 

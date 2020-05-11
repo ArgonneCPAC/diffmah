@@ -44,7 +44,7 @@ def test_mean_ms_frac_is_differentiable():
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(params, mse_loss_data):
         logm0, logt, target = mse_loss_data
-        log_prob_ms = _mean_log_main_sequence_fraction(params, (logm0, logt))
+        log_prob_ms = _mean_log_main_sequence_fraction(params, logm0, logt)
         diff = target - log_prob_ms
         return jax_np.sum(diff) / diff.size
 
@@ -54,7 +54,7 @@ def test_mean_ms_frac_is_differentiable():
     logt = np.linspace(-1, logt0, npts)
 
     params_fid = np.array(list(MEDIAN_HISTORY_PARAMS.values()))
-    target = _mean_log_main_sequence_fraction(params_fid, (logm0, logt))
+    target = _mean_log_main_sequence_fraction(params_fid, logm0, logt)
     params_init = params_fid * 0.9 - 0.05
     data = logm0, logt, target
     loss_init, grads = value_and_grad(mse_loss, argnums=0)(params_init, data)
