@@ -8,7 +8,7 @@ import numpy as np
 from ..quenching_history import mean_log_main_sequence_fraction
 from ..quenching_history import _log_main_sequence_fraction
 from ..quenching_history import _mean_log_main_sequence_fraction
-from ..quenching_history import MEDIAN_HISTORY_PARAMS
+from ..quenching_history import MEAN_Q_PARAMS
 
 
 def test_mean_log_main_sequence_fraction1():
@@ -53,7 +53,7 @@ def test_mean_ms_frac_is_differentiable():
     logt0 = np.log10(13.85)
     logt = np.linspace(-1, logt0, npts)
 
-    params_fid = np.array(list(MEDIAN_HISTORY_PARAMS.values()))
+    params_fid = np.array(list(MEAN_Q_PARAMS.values()))
     target = _mean_log_main_sequence_fraction(params_fid, logm0, logt)
     params_init = params_fid * 0.9 - 0.05
     data = logm0, logt, target

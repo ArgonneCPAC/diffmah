@@ -1,11 +1,21 @@
 """
 """
+import pytest
 import numpy as np
 from ..mean_sfr_history import _mean_log_mstar_history_jax_kern
 from ..mean_sfr_history import _mean_log_sfr_history_jax_kern
-from ..quenching_history import MEDIAN_HISTORY_PARAMS as MEAN_Q_PARAMS
+from ..quenching_history import MEAN_Q_PARAMS
 from ..sfr_efficiency import MEDIAN_SFR_MS_PARAMS
 from ..halo_assembly import MEAN_MAH_PARAMS
+from ..mean_sfr_history import mean_galaxy_history
+
+
+@pytest.mark.xfail
+def test_mean_galaxy_history():
+    tarr = np.linspace(0.1, 14, 500)
+    for logm0 in range(10, 16):
+        log_sfr, log_sm = mean_galaxy_history(logm0, tarr)
+        assert log_sfr.size == log_sm.size == tarr.size
 
 
 def test_mean_log_sfr_history():
