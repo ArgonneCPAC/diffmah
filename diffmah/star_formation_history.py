@@ -8,6 +8,25 @@ from .halo_assembly import _mean_halo_assembly_function
 FB = 0.158
 
 
+def _mean_log_mstar_history(
+    mean_mah_params,
+    mean_sfr_eff_params,
+    q_params,
+    logm0,
+    logt_table,
+    indx_t0,
+    dt,
+    indx_pred,
+):
+    log_sfr_table = _mean_log_sfr_history(
+        mean_mah_params, mean_sfr_eff_params, q_params, logm0, logt_table, indx_t0
+    )
+    log_smh_table = (
+        jax_np.log10(jax_np.cumsum(jax_np.power(10, log_sfr_table)) * dt) + 9
+    )
+    return log_sfr_table[indx_pred], log_smh_table[indx_pred]
+
+
 def _mean_log_sfr_history(
     mean_mah_params, mean_sfr_eff_params, q_params, logm0, logt, indx_t0
 ):
