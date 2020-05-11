@@ -1,16 +1,18 @@
 """
 """
+import numpy as np
 from jax import numpy as jax_np
-from .halo_assembly import _mean_halo_assembly_function
-from .halo_assembly import MEAN_MAH_PARAMS, _get_individual_mah_params
+from .halo_assembly import _mean_halo_assembly_function, TODAY
+from .halo_assembly import MEAN_MAH_PARAMS
 from .main_sequence_sfr_eff import mean_log_sfr_efficiency_ms_jax, MEAN_SFR_MS_PARAMS
 from .quenching_history import _mean_log_main_sequence_fraction, MEAN_Q_PARAMS
 from .utils import _get_param_dict
 
 FB = 0.158
+T_TABLE = np.linspace(0.1, TODAY, 250)
 
 
-def get_mean_galaxy_history(logm0, cosmic_time, **kwargs):
+def get_mean_galaxy_history(logm0, cosmic_time, t_table=T_TABLE, **kwargs):
     """Star formation rate and stellar mass as a function of time
     averaged over centrals living in halos with present-day mass logm0.
 
@@ -31,17 +33,44 @@ def get_mean_galaxy_history(logm0, cosmic_time, **kwargs):
         Base-10 log of in-situ stellar mass in units of Msun
 
     """
-    raise NotImplementedError()
+    logt_table, indx_t0, dt, indx_pred = _process_args(cosmic_time, t_table)
+
+    _x = _get_all_params(logm0, **kwargs)
+    mean_mah_params, mean_sfr_ms_params, mean_q_params = _x
+
+    galaxy_history = _mean_log_mstar_history_jax_kern(
+        mean_mah_params,
+        mean_sfr_ms_params,
+        mean_q_params,
+        logm0,
+        logt_table,
+        indx_t0,
+        dt,
+        indx_pred,
+    )
+    return galaxy_history
 
 
-def _get_all_param_dicts(logm0, **kwargs):
-    mean_mah_param_dict = _get_param_dict(MEAN_MAH_PARAMS, strict=False)
-    mean_sfr_param_dict = _get_param_dict(MEAN_SFR_MS_PARAMS, strict=False, **kwargs)
-    mean_q_param_dict = _get_param_dict(MEAN_Q_PARAMS, strict=False, **kwargs)
+def _process_args(cosmic_time, t_table):
+    logt_table = np.log10(t_table)
+    indx_t0 = np.argmin(np.abs(t_table - TODAY))
+    dt = np.median(np.diff(t_table))
 
-    _x = jax_np.zeros(list(mean_mah_param_dict.values()))
-    mah_param_dict = _get_individual_mah_params(_x, logm0)
-    return mah_param_dict, mean_sfr_param_dict, mean_q_param_dict
+    _indx_pred = [np.argmin(np.abs(t_table - t)) for t in cosmic_time]
+    indx_pred = np.array(_indx_pred).astype("i4")
+    return logt_table, indx_t0, dt, indx_pred
+
+
+def _get_all_params(logm0, **kwargs):
+    mean_mah_params = _get_param_ndarray(MEAN_MAH_PARAMS, **kwargs)
+    mean_sfr_ms_params = _get_param_ndarray(MEAN_SFR_MS_PARAMS, **kwargs)
+    mean_q_params = _get_param_ndarray(MEAN_Q_PARAMS, **kwargs)
+    return mean_mah_params, mean_sfr_ms_params, mean_q_params
+
+
+def _get_param_ndarray(defaults, **kwargs):
+    param_dict = _get_param_dict(defaults, strict=False, **kwargs)
+    return jax_np.array(list(param_dict.values()))
 
 
 def _mean_log_mstar_history_jax_kern(

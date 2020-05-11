@@ -1,6 +1,5 @@
 """
 """
-import pytest
 import numpy as np
 from ..mean_sfr_history import _mean_log_mstar_history_jax_kern
 from ..mean_sfr_history import _mean_log_sfr_history_jax_kern
@@ -10,7 +9,6 @@ from ..halo_assembly import MEAN_MAH_PARAMS
 from ..mean_sfr_history import get_mean_galaxy_history
 
 
-@pytest.mark.xfail
 def test_mean_galaxy_history():
     tarr = np.linspace(0.1, 14, 500)
     for logm0 in range(10, 16):
