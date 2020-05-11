@@ -7,7 +7,7 @@ from jax import value_and_grad
 from jax import numpy as jax_np
 from jax import jit as jax_jit
 from ..sfr_efficiency import log_sfr_efficiency_ms_jax
-from ..sfr_efficiency import DEFAULT_SFR_MS_PARAMS, MEDIAN_SFR_MS_PARAMS
+from ..sfr_efficiency import DEFAULT_SFR_MS_PARAMS, MEAN_SFR_MS_PARAMS
 from ..sfr_efficiency import mean_log_sfr_efficiency_main_sequence
 from ..sfr_efficiency import log_sfr_efficiency_main_sequence
 from ..sfr_efficiency import mean_log_sfr_efficiency_ms_jax
@@ -57,12 +57,12 @@ def test_sfr_efficiency_responds_to_params():
 
 
 def test_mean_sfr_efficiency_responds_to_params():
-    param_dict_fid = deepcopy(MEDIAN_SFR_MS_PARAMS)
+    param_dict_fid = deepcopy(MEAN_SFR_MS_PARAMS)
     logm0arr = (10, 12, 15)
     logt = np.linspace(-1, 1.14, 10)
 
     perfect_match = True
-    for key, default in MEDIAN_SFR_MS_PARAMS.items():
+    for key, default in MEAN_SFR_MS_PARAMS.items():
         perfect_match = False
         for logm0 in logm0arr:
             d = dict()
@@ -110,7 +110,7 @@ def test_mean_sfr_efficiency_is_differentiable():
     logm0 = 12
     logt0 = np.log10(13.85)
     logt = np.linspace(-1, logt0, npts)
-    params = np.array(list(MEDIAN_SFR_MS_PARAMS.values())).astype("f4")
+    params = np.array(list(MEAN_SFR_MS_PARAMS.values())).astype("f4")
     target = mean_log_sfr_efficiency_ms_jax(params, logm0, logt)
     data = logm0, logt, target
     loss_init, grads = value_and_grad(mse_loss, argnums=0)(params, data)

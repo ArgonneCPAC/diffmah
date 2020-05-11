@@ -15,7 +15,7 @@ MEAN_Q_PARAMS = OrderedDict(
     fms_late_yhi=-1.85,
 )
 
-DEFAULT_HISTORY_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5, fms_ylo=0, fms_yhi=-1.5)
+DEFAULT_Q_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5, fms_ylo=0, fms_yhi=-1.5)
 
 
 def mean_log_main_sequence_fraction(logm0, logt, **kwargs):

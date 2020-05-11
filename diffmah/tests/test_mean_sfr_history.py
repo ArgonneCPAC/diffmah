@@ -5,7 +5,7 @@ import numpy as np
 from ..mean_sfr_history import _mean_log_mstar_history_jax_kern
 from ..mean_sfr_history import _mean_log_sfr_history_jax_kern
 from ..quenching_history import MEAN_Q_PARAMS
-from ..sfr_efficiency import MEDIAN_SFR_MS_PARAMS
+from ..sfr_efficiency import MEAN_SFR_MS_PARAMS
 from ..halo_assembly import MEAN_MAH_PARAMS
 from ..mean_sfr_history import get_mean_galaxy_history
 
@@ -20,7 +20,7 @@ def test_mean_galaxy_history():
 
 def test_mean_log_sfr_history():
     mah_params = np.array(list(MEAN_MAH_PARAMS.values()))
-    mean_sfr_eff_params = np.array(list(MEDIAN_SFR_MS_PARAMS.values()))
+    mean_sfr_eff_params = np.array(list(MEAN_SFR_MS_PARAMS.values()))
     q_params = np.array(list(MEAN_Q_PARAMS.values()))
     logm0 = 12
     logt = np.linspace(0, 1.141, 50)
@@ -33,7 +33,7 @@ def test_mean_log_sfr_history():
 
 def test_mean_log_mstar_history():
     mah_params = np.array(list(MEAN_MAH_PARAMS.values()))
-    mean_sfr_eff_params = np.array(list(MEDIAN_SFR_MS_PARAMS.values()))
+    mean_sfr_eff_params = np.array(list(MEAN_SFR_MS_PARAMS.values()))
     q_params = np.array(list(MEAN_Q_PARAMS.values()))
     logm0 = 12
     tarr = np.linspace(0.1, 13.85, 50)

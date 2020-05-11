@@ -6,7 +6,7 @@ from .utils import jax_sigmoid, _get_param_dict
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 
-MEDIAN_SFR_MS_PARAMS = OrderedDict(
+MEAN_SFR_MS_PARAMS = OrderedDict(
     lge0_lgmc=13.2,
     lge0_at_lgmc=-1.5,
     lge0_early_slope=0.45,
@@ -38,7 +38,7 @@ DEFAULT_SFR_MS_PARAMS = OrderedDict(
 def mean_log_sfr_efficiency_main_sequence(logm0, logt, **kwargs):
     """
     """
-    mean_param_dict = _get_param_dict(MEDIAN_SFR_MS_PARAMS, **kwargs)
+    mean_param_dict = _get_param_dict(MEAN_SFR_MS_PARAMS, **kwargs)
     mean_sfr_eff_params = np.atleast_1d(list(mean_param_dict.values()))
     sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
     log_sfr_eff = log_sfr_efficiency_ms_jax(logt, sfr_eff_params)
