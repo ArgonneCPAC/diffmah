@@ -1,5 +1,6 @@
 """
 """
+import numpy as np
 from collections import OrderedDict
 from .utils import jax_sigmoid, _get_param_dict
 from jax import jit as jax_jit
@@ -34,12 +35,31 @@ DEFAULT_SFR_MS_PARAMS = OrderedDict(
 )
 
 
-def mean_log_sfr_efficiency_ms_jax(logm0, logt, mean_sfr_eff_params):
+def mean_log_sfr_efficiency_main_sequence(logm0, logt, **kwargs):
+    """
+    """
+    mean_param_dict = _get_param_dict(MEDIAN_SFR_MS_PARAMS, **kwargs)
+    mean_sfr_eff_params = np.atleast_1d(list(mean_param_dict.values()))
     sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
-    return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
+    log_sfr_eff = log_sfr_efficiency_ms_jax(logt, sfr_eff_params)
+    return log_sfr_eff
+
+
+def log_sfr_efficiency_main_sequence(logt, **kwargs):
+    """
+    """
+    param_dict = _get_param_dict(DEFAULT_SFR_MS_PARAMS, **kwargs)
+    sfr_eff_params = np.atleast_1d(list(param_dict.values()))
+    log_sfr_eff = log_sfr_efficiency_ms_jax(logt, sfr_eff_params)
+    return log_sfr_eff
 
 
 def log_sfr_efficiency_ms_jax(logt, sfr_eff_params):
+    return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
+
+
+def mean_log_sfr_efficiency_ms_jax(logm0, logt, mean_sfr_eff_params):
+    sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
     return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
 
 
