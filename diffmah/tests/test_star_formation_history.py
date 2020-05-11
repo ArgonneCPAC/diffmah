@@ -26,11 +26,18 @@ def test_mean_log_mstar_history():
     q_params = np.array(list(MEAN_Q_PARAMS.values()))
     logm0 = 12
     tarr = np.linspace(0.1, 13.85, 50)
-    logt = np.log10(tarr)
+    logt_table = np.log10(tarr)
     indx_t0 = -1
     dt = np.diff(tarr)[-1]
     indx_pred = np.array((10, 20, 30)).astype("i4")
     log_sfrh, log_smh = _mean_log_mstar_history(
-        mah_params, mean_sfr_eff_params, q_params, logm0, logt, indx_t0, dt, indx_pred
+        mah_params,
+        mean_sfr_eff_params,
+        q_params,
+        logm0,
+        logt_table,
+        indx_t0,
+        dt,
+        indx_pred,
     )
     assert log_sfrh.size == indx_pred.size == log_smh.size

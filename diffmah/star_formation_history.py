@@ -1,6 +1,8 @@
 """
 """
 from jax import numpy as jax_np
+from jax import jit as jax_jit
+from jax import vmap as jax_vmap
 from .quenching_history import _mean_log_main_sequence_fraction
 from .sfr_efficiency import mean_log_sfr_efficiency_ms_jax
 from .halo_assembly import _mean_halo_assembly_function
@@ -41,3 +43,8 @@ def _mean_log_sfr_history(
     log_frac_ms = _mean_log_main_sequence_fraction(q_params, logm0, logt)
     log_sfr = log_dmbdt + log_sfr_eff_ms + log_frac_ms
     return log_sfr
+
+
+mean_log_sfr_history = jax_jit(
+    jax_vmap(_mean_log_sfr_history, in_axes=(None, None, None, None, 0, None))
+)
