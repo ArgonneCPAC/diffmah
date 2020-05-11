@@ -5,4 +5,3 @@
 from .halo_vpeak_evolution import *
 from .main_sequence import *
 from .sigmoid_mah import *
-from .in_situ_history import *

@@ -128,11 +128,6 @@ def halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, strict=False, **kwa
     return logmah, log_dmhdt
 
 
-def _average_halo_assembly_function(mean_mah_params, tarr, logm0, indx_t0, logt0):
-    mah_params = _get_individual_mah_params(mean_mah_params, logm0)
-    return _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0)
-
-
 def _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0):
     """
     """
