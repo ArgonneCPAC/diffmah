@@ -3,7 +3,7 @@
 from jax import numpy as jax_np
 from .halo_assembly import _mean_halo_assembly_function
 from .halo_assembly import MEAN_MAH_PARAMS, _get_individual_mah_params
-from .sfr_efficiency import mean_log_sfr_efficiency_ms_jax, MEAN_SFR_MS_PARAMS
+from .main_sequence_sfr_eff import mean_log_sfr_efficiency_ms_jax, MEAN_SFR_MS_PARAMS
 from .quenching_history import _mean_log_main_sequence_fraction, MEAN_Q_PARAMS
 from .utils import _get_param_dict
 

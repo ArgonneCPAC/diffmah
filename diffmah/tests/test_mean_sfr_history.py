@@ -50,8 +50,3 @@ def test_mean_log_mstar_history():
         indx_pred,
     )
     assert log_sfrh.size == indx_pred.size == log_smh.size
-
-
-def test_differentiability():
-    msg = "MSE-loss based on _mean_log_mstar_history_jax_kern should be differentiable"
-    raise NotImplementedError(msg)

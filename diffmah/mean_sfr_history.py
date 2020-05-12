@@ -86,10 +86,8 @@ def _mean_log_mstar_history_jax_kern(
     log_sfr_table = _mean_log_sfr_history_jax_kern(
         mean_mah_params, mean_sfr_eff_params, mean_q_params, logm0, logt_table, indx_t0
     )
-    log_smh_table = (
-        jax_np.log10(jax_np.cumsum(jax_np.power(10, log_sfr_table)) * dt) + 9
-    )
-    return log_sfr_table[indx_pred], log_smh_table[indx_pred]
+    log_smh_table = jax_np.log10(jax_np.cumsum(jax_np.power(10, log_sfr_table)) * dt)
+    return log_sfr_table[indx_pred] - 9, log_smh_table[indx_pred]
 
 
 def _mean_log_sfr_history_jax_kern(
