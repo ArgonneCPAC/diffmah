@@ -11,7 +11,7 @@ MEAN_SFR_MS_PARAMS = OrderedDict(
     lge0_at_lgmc=-1.5,
     lge0_early_slope=0.45,
     lge0_late_slope=-1.0,
-    k_early_lgmc=11.75,
+    k_early_x0=11.75,
     k_early_k=3,
     k_early_ylo=5,
     k_early_yhi=9.5,
@@ -83,7 +83,7 @@ def _get_median_growth_params(
     lge0_at_lgmc,
     lge0_early_slope,
     lge0_late_slope,
-    k_early_lgmc,
+    k_early_x0,
     k_early_k,
     k_early_ylo,
     k_early_yhi,
@@ -105,7 +105,7 @@ def _get_median_growth_params(
         logm, lge0_lgmc, lge0_at_lgmc, lge0_early_slope, lge0_late_slope
     )
     k_early = _k_early_vs_lgm0_kern(
-        logm, k_early_lgmc, k_early_k, k_early_ylo, k_early_yhi
+        logm, k_early_x0, k_early_k, k_early_ylo, k_early_yhi
     )
     lgtc = _lgtc_vs_lgm0_kern(logm, lgtc_x0, lgtc_k, lgtc_ylo, lgtc_yhi)
     lgec = _lgec_vs_lgm0_kern(logm, lgec_x0, lgec_k, lgec_ylo, lgec_yhi)
@@ -122,8 +122,8 @@ def _lge0_vs_lgm0_kern(
     return jax_sigmoid(logm, lge0_lgmc, 5, ylo, yhi)
 
 
-def _k_early_vs_lgm0_kern(logm, k_early_lgmc, k_early_k, k_early_ylo, k_early_yhi):
-    return jax_sigmoid(logm, k_early_lgmc, k_early_k, k_early_ylo, k_early_yhi)
+def _k_early_vs_lgm0_kern(logm, k_early_x0, k_early_k, k_early_ylo, k_early_yhi):
+    return jax_sigmoid(logm, k_early_x0, k_early_k, k_early_ylo, k_early_yhi)
 
 
 def _lgtc_vs_lgm0_kern(logm, lgtc_x0, lgtc_k, lgtc_ylo, lgtc_yhi):
