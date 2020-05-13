@@ -1,0 +1,180 @@
+"""
+"""
+import numpy as np
+from collections import OrderedDict
+from .utils import jax_sigmoid, _get_param_dict
+from jax import jit as jax_jit
+from jax import vmap as jax_vmap
+
+MEAN_SFR_MS_PARAMS = OrderedDict(
+    lge0_lgmc=13.41,
+    lge0_at_lgmc=-1.1,
+    lge0_early_slope=0.46,
+    lge0_late_slope=-1.78,
+    k_early_x0=11.5,
+    k_early_k=3.0,
+    k_early_ylo=7.0,
+    k_early_yhi=7.0,
+    lgtc_x0=12.7,
+    lgtc_k=0.56,
+    lgtc_ylo=1.68,
+    lgtc_yhi=-0.64,
+    lgec_x0=12.5,
+    lgec_k=13.2,
+    lgec_ylo=-0.294,
+    lgec_yhi=-0.4,
+    k_trans_c0=7.5,
+    a_late_x0=15.16,
+    a_late_k=2.3,
+    a_late_ylo=-0.67,
+    a_late_yhi=-3.6,
+)
+
+DEFAULT_SFR_MS_PARAMS = OrderedDict(
+    lge0=-1.25, k_early=4, lgtc=0.5, lgec=-0.5, k_trans=7, a_late=-3
+)
+
+
+def mean_log_sfr_efficiency_main_sequence(logm0, logt, **kwargs):
+    """
+    Parameterized model for the star formation efficiency of main sequence centrals
+    averaged over halos of the same present-day mass.
+
+    Parameters
+    ----------
+    logm0 : float
+
+    logt : ndarray shape (n, )
+        Base-10 log of cosmic time in Gyr
+
+    **params : optional
+        Accepts float values for all keyword arguments
+        appearing in MEAN_SFR_MS_PARAMS dictionary.
+
+    Returns
+    -------
+    log_sfr_eff : ndarray shape (n, )
+        Base-10 log of SFR efficiency averaged over all main-sequence
+        centrals living in halos with present-day mass logm0.
+
+    """
+    mean_param_dict = _get_param_dict(MEAN_SFR_MS_PARAMS, **kwargs)
+    mean_sfr_eff_params = np.atleast_1d(list(mean_param_dict.values()))
+    sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
+    log_sfr_eff = log_sfr_efficiency_ms_jax(logt, sfr_eff_params)
+    return log_sfr_eff
+
+
+def log_sfr_efficiency_main_sequence(logt, **kwargs):
+    """
+    Parameterized model for the star formation efficiency of main sequence centrals.
+
+    Parameters
+    ----------
+    logm0 : float
+
+    logt : ndarray shape (n, )
+        Base-10 log of cosmic time in Gyr
+
+    **params : optional
+        Accepts float values for all keyword arguments
+        appearing in DEFAULT_SFR_MS_PARAMS dictionary.
+
+    Returns
+    -------
+    log_sfr_eff : ndarray shape (n, )
+        Base-10 log of SFR efficiency.
+
+    """
+    param_dict = _get_param_dict(DEFAULT_SFR_MS_PARAMS, **kwargs)
+    sfr_eff_params = np.atleast_1d(list(param_dict.values()))
+    log_sfr_eff = log_sfr_efficiency_ms_jax(logt, sfr_eff_params)
+    return log_sfr_eff
+
+
+def log_sfr_efficiency_ms_jax(logt, sfr_eff_params):
+    return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
+
+
+def mean_log_sfr_efficiency_ms_jax(mean_sfr_eff_params, logm0, logt):
+    sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
+    return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
+
+
+def _log_sfr_efficiency_ms_jax_kern(logt, lge0, k_early, lgtc, lgec, k_trans, a_late):
+    dy = lgec - lge0
+    epsilon_early = jax_sigmoid(logt, lgtc, k_early, lge0, lge0 + 2 * dy)
+    epsilon_late = a_late * (logt - lgtc) + lgec - 1 / 4
+    return jax_sigmoid(logt, lgtc, k_trans, epsilon_early, epsilon_late)
+
+
+_log_sfr_efficiency_ms_jax = jax_jit(
+    jax_vmap(
+        _log_sfr_efficiency_ms_jax_kern, in_axes=(0, None, None, None, None, None, None)
+    )
+)
+
+
+def _get_median_growth_params(
+    logm,
+    lge0_lgmc,
+    lge0_at_lgmc,
+    lge0_early_slope,
+    lge0_late_slope,
+    k_early_x0,
+    k_early_k,
+    k_early_ylo,
+    k_early_yhi,
+    lgtc_x0,
+    lgtc_k,
+    lgtc_ylo,
+    lgtc_yhi,
+    lgec_x0,
+    lgec_k,
+    lgec_ylo,
+    lgec_yhi,
+    k_trans_c0,
+    a_late_x0,
+    a_late_k,
+    a_late_ylo,
+    a_late_yhi,
+):
+    lge0 = _lge0_vs_lgm0_kern(
+        logm, lge0_lgmc, lge0_at_lgmc, lge0_early_slope, lge0_late_slope
+    )
+    k_early = _k_early_vs_lgm0_kern(
+        logm, k_early_x0, k_early_k, k_early_ylo, k_early_yhi
+    )
+    lgtc = _lgtc_vs_lgm0_kern(logm, lgtc_x0, lgtc_k, lgtc_ylo, lgtc_yhi)
+    lgec = _lgec_vs_lgm0_kern(logm, lgec_x0, lgec_k, lgec_ylo, lgec_yhi)
+    k_trans = _k_trans_vs_lgm0_kern(logm, k_trans_c0)
+    a_late = _a_late_vs_lgm0_kern(logm, a_late_x0, a_late_k, a_late_ylo, a_late_yhi)
+    return lge0, k_early, lgtc, lgec, k_trans, a_late
+
+
+def _lge0_vs_lgm0_kern(
+    logm, lge0_lgmc, lge0_at_lgmc, lge0_early_slope, lge0_late_slope
+):
+    ylo = lge0_at_lgmc + (logm - lge0_lgmc) * lge0_early_slope
+    yhi = lge0_at_lgmc + (logm - lge0_lgmc) * lge0_late_slope
+    return jax_sigmoid(logm, lge0_lgmc, 5, ylo, yhi)
+
+
+def _k_early_vs_lgm0_kern(logm, k_early_x0, k_early_k, k_early_ylo, k_early_yhi):
+    return jax_sigmoid(logm, k_early_x0, k_early_k, k_early_ylo, k_early_yhi)
+
+
+def _lgtc_vs_lgm0_kern(logm, lgtc_x0, lgtc_k, lgtc_ylo, lgtc_yhi):
+    return jax_sigmoid(logm, lgtc_x0, lgtc_k, lgtc_ylo, lgtc_yhi)
+
+
+def _lgec_vs_lgm0_kern(logm, lgec_x0, lgec_k, lgec_ylo, lgec_yhi):
+    return jax_sigmoid(logm, lgec_x0, lgec_k, lgec_ylo, lgec_yhi)
+
+
+def _k_trans_vs_lgm0_kern(logm, k_trans_c0):
+    return logm - logm + k_trans_c0
+
+
+def _a_late_vs_lgm0_kern(logm, a_late_x0, a_late_k, a_late_ylo, a_late_yhi):
+    return jax_sigmoid(logm, a_late_x0, a_late_k, a_late_ylo, a_late_yhi)

@@ -1,23 +1,24 @@
-"""
+"""Module implementing the mean_log_main_sequence_fraction function.
 """
 from collections import OrderedDict
 from jax import numpy as jax_np
+from .utils import _get_param_dict
 
-MEDIAN_HISTORY_PARAMS = OrderedDict(
-    fms_logtc_x0=12.3,
-    fms_logtc_k=1.5,
-    fms_logtc_ylo=1.25,
-    fms_logtc_yhi=0.475,
-    fms_late_x0=13.4,
-    fms_late_k=2,
-    fms_late_ylo=-0.1,
-    fms_late_yhi=-1.85,
+MEAN_Q_PARAMS = OrderedDict(
+    fms_logtc_x0=11.85,
+    fms_logtc_k=0.9,
+    fms_logtc_ylo=0.55,
+    fms_logtc_yhi=0.49,
+    fms_late_x0=13.78,
+    fms_late_k=2.25,
+    fms_late_ylo=0.11,
+    fms_late_yhi=-3.87,
 )
 
+DEFAULT_Q_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5, fms_ylo=0, fms_yhi=-1.5)
 
-def log_ms_fraction_um_median(
-    logm0, lgt, fms_x0=None, fms_k=7, fms_ylo=0, fms_yhi=None, **kwargs
-):
+
+def mean_log_main_sequence_fraction(logm0, logt, **kwargs):
     """Main-sequence probability vs time for central galaxies.
 
     Default values tuned to match UniverseMachine.
@@ -26,12 +27,12 @@ def log_ms_fraction_um_median(
     ----------
     logm0 : float
 
-    lgt : ndarray shape (n, )
+    logt : ndarray shape (n, )
         Base-10 log of cosmic time in Gyr
 
     **params : optional
-        Accepts float values for all keyworg arguments
-        appearing in MEDIAN_HISTORY_PARAMS dictionary.
+        Accepts float values for all keyword arguments
+        appearing in MEAN_Q_PARAMS dictionary.
 
     Returns
     -------
@@ -40,39 +41,45 @@ def log_ms_fraction_um_median(
         on the main sequence at each input time.
 
     """
-    p = _get_params(MEDIAN_HISTORY_PARAMS, **kwargs)
-
-    if fms_x0 is None:
-        fms_x0 = _fms_logtc_vs_logm0(
-            logm0,
-            p["fms_logtc_x0"],
-            p["fms_logtc_k"],
-            p["fms_logtc_ylo"],
-            p["fms_logtc_yhi"],
-        )
-    if fms_yhi is None:
-        fms_yhi = _fms_late_vs_logm0(
-            logm0,
-            p["fms_late_x0"],
-            p["fms_late_k"],
-            p["fms_late_ylo"],
-            p["fms_late_yhi"],
-        )
-    fms_yhi = jax_np.where(fms_yhi >= 0, 0, fms_yhi)
-    return _jax_sigmoid(lgt, fms_x0, fms_k, fms_ylo, fms_yhi)
+    mean_q_param_dict = _get_param_dict(MEAN_Q_PARAMS, **kwargs)
+    mean_q_params = jax_np.array(list(mean_q_param_dict.values())).astype("f4")
+    return _mean_log_main_sequence_fraction(mean_q_params, logm0, logt)
 
 
-def _log_main_sequence_fraction(logt, fms_logtc, fms_late):
-    fms_early = 0
-    fms_k = 7
-    return _jax_sigmoid(logt, fms_logtc, fms_k, fms_early, fms_late)
+def _mean_log_main_sequence_fraction(params, logm0, logt):
+    fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi = params[0:4]
+    fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi = params[4:8]
+
+    fms_x0 = _fms_logtc_vs_logm0(
+        logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi
+    )
+    fms_yhi = _fms_yhi_vs_logm0(
+        logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi
+    )
+
+    fms_yhi = jax_np.where(fms_yhi > 0, 0, fms_yhi)
+
+    return _jax_sigmoid(logt, fms_x0, 7, 0, fms_yhi)
+
+
+def _log_main_sequence_fraction(fms_x0, fms_yhi, logt):
+    fms_yhi = jax_np.where(fms_yhi > 0, 0, fms_yhi)
+    return _jax_sigmoid(logt, fms_x0, 7, 0, fms_yhi)
+
+
+def _get_mah_params(logm0, **kwargs):
+    mean_mah_params = _get_params(MEAN_Q_PARAMS, **kwargs)
+    all_mah_params = jax_np.array(list(mean_mah_params.values())).astype("f4")
+    fms_x0 = _fms_logtc_vs_logm0(logm0, *all_mah_params[0:4])
+    fms_yhi = _fms_yhi_vs_logm0(logm0, *all_mah_params[4:8])
+    return fms_x0, fms_yhi
 
 
 def _fms_logtc_vs_logm0(logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi):
     return _jax_sigmoid(logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi)
 
 
-def _fms_late_vs_logm0(logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi):
+def _fms_yhi_vs_logm0(logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi):
     return _jax_sigmoid(logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi)
 
 

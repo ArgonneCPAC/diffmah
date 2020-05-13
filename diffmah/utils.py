@@ -1,5 +1,6 @@
 import numpy as np
 from jax import numpy as jax_np
+from collections import OrderedDict
 
 
 def get_1d_arrays(*args):
@@ -73,3 +74,14 @@ def _enforce_no_extraneous_keywords(defaults, **kwargs):
             " passed to central_quenching_time function"
         )
         raise KeyError(msg.format(param))
+
+
+def _get_param_dict(defaults, strict=False, **kwargs):
+    """
+    """
+    param_dict = OrderedDict(
+        [(key, kwargs.get(key, val)) for key, val in defaults.items()]
+    )
+    if strict:
+        _enforce_no_extraneous_keywords(defaults, **kwargs)
+    return param_dict
