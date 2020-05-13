@@ -1,5 +1,4 @@
-"""
-"""
+"""Module implementing the get_mean_galaxy_history function."""
 import numpy as np
 from jax import numpy as jax_np
 from .halo_assembly import _mean_halo_assembly_function, TODAY

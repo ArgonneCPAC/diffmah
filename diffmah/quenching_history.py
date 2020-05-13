@@ -1,4 +1,4 @@
-"""
+"""Module implementing the mean_log_main_sequence_fraction function.
 """
 from collections import OrderedDict
 from jax import numpy as jax_np

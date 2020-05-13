@@ -37,6 +37,26 @@ DEFAULT_SFR_MS_PARAMS = OrderedDict(
 
 def mean_log_sfr_efficiency_main_sequence(logm0, logt, **kwargs):
     """
+    Parameterized model for the star formation efficiency of main sequence centrals
+    averaged over halos of the same present-day mass.
+
+    Parameters
+    ----------
+    logm0 : float
+
+    logt : ndarray shape (n, )
+        Base-10 log of cosmic time in Gyr
+
+    **params : optional
+        Accepts float values for all keyword arguments
+        appearing in MEAN_SFR_MS_PARAMS dictionary.
+
+    Returns
+    -------
+    log_sfr_eff : ndarray shape (n, )
+        Base-10 log of SFR efficiency averaged over all main-sequence
+        centrals living in halos with present-day mass logm0.
+
     """
     mean_param_dict = _get_param_dict(MEAN_SFR_MS_PARAMS, **kwargs)
     mean_sfr_eff_params = np.atleast_1d(list(mean_param_dict.values()))
@@ -47,6 +67,24 @@ def mean_log_sfr_efficiency_main_sequence(logm0, logt, **kwargs):
 
 def log_sfr_efficiency_main_sequence(logt, **kwargs):
     """
+    Parameterized model for the star formation efficiency of main sequence centrals.
+
+    Parameters
+    ----------
+    logm0 : float
+
+    logt : ndarray shape (n, )
+        Base-10 log of cosmic time in Gyr
+
+    **params : optional
+        Accepts float values for all keyword arguments
+        appearing in DEFAULT_SFR_MS_PARAMS dictionary.
+
+    Returns
+    -------
+    log_sfr_eff : ndarray shape (n, )
+        Base-10 log of SFR efficiency.
+
     """
     param_dict = _get_param_dict(DEFAULT_SFR_MS_PARAMS, **kwargs)
     sfr_eff_params = np.atleast_1d(list(param_dict.values()))
