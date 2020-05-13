@@ -5,14 +5,14 @@ from jax import numpy as jax_np
 from .utils import _get_param_dict
 
 MEAN_Q_PARAMS = OrderedDict(
-    fms_logtc_x0=12.3,
-    fms_logtc_k=1.5,
-    fms_logtc_ylo=1.25,
-    fms_logtc_yhi=0.475,
-    fms_late_x0=13.4,
-    fms_late_k=2,
-    fms_late_ylo=-0.1,
-    fms_late_yhi=-1.85,
+    fms_logtc_x0=11.85,
+    fms_logtc_k=0.9,
+    fms_logtc_ylo=0.55,
+    fms_logtc_yhi=0.49,
+    fms_late_x0=13.78,
+    fms_late_k=2.25,
+    fms_late_ylo=0.11,
+    fms_late_yhi=-3.87,
 )
 
 DEFAULT_Q_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5, fms_ylo=0, fms_yhi=-1.5)
