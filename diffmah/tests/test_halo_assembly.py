@@ -5,8 +5,12 @@ import numpy as np
 from jax import numpy as jax_np
 from jax import value_and_grad
 from jax import jit as jax_jit
-from ..halo_assembly import individual_halo_assembly_history, DEFAULT_MAH_PARAMS
-from ..halo_assembly import mean_halo_mass_assembly_history, _individual_halo_assembly
+from ..halo_assembly import individual_halo_assembly_history
+from ..halo_assembly import mean_halo_mass_assembly_history
+from ..halo_assembly import _mean_halo_assembly, _individual_halo_assembly
+from ..halo_assembly import _get_individual_mah_params
+from ..halo_assembly import DEFAULT_MAH_PARAMS, MEAN_MAH_PARAMS
+from ..utils import _get_param_array
 
 
 def test_halo_mah_evaluates_reasonably_with_default_args():
@@ -74,3 +78,14 @@ def test_individual_halo_assembly_differentiability():
     new_params = mah_params_init - 0.05 * mse_loss_grads
     loss_new = mse_loss(new_params, data)
     assert loss_new < loss_init
+
+
+def test_mean_mah_params_match_default_params_at_logm0_12():
+    """
+    """
+    mean_mah_param_arr = _get_param_array(MEAN_MAH_PARAMS)
+    default_mah_param_arr = _get_param_array(DEFAULT_MAH_PARAMS)
+    individual_mah_params = _get_individual_mah_params(mean_mah_param_arr, logm0=12)
+    assert np.allclose(default_mah_param_arr, individual_mah_params, atol=0.001)
+    individual_mah_params = _get_individual_mah_params(mean_mah_param_arr, logm0=12.1)
+    assert not np.allclose(default_mah_param_arr, individual_mah_params, atol=0.001)

@@ -7,7 +7,7 @@ from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 from jax.ops import index_update as jax_index_update
 from jax.ops import index as jax_index
-from .utils import jax_sigmoid, _get_param_dict
+from .utils import jax_sigmoid, _get_param_dict, _get_param_array
 
 
 __all__ = ("mean_halo_mass_assembly_history", "individual_halo_assembly_history")
@@ -68,9 +68,9 @@ def mean_halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
     _x = _process_halo_mah_args(logm0, cosmic_time, t0)
     logm0, tarr, logt0, indx_t0 = _x
 
-    mean_mah_params = _get_mah_params(MEAN_MAH_PARAMS, **kwargs)
+    mean_mah_param_arr = _get_param_array(MEAN_MAH_PARAMS, **kwargs)
     logmah, log_dmhdt = _mean_halo_assembly(
-        mean_mah_params, tarr, logm0, indx_t0, logt0
+        mean_mah_param_arr, tarr, logm0, indx_t0, logt0
     )
 
     return logmah, log_dmhdt
@@ -198,12 +198,6 @@ def _get_individual_mah_params(mean_mah_params, logm0):
 
 def _get_dmhdt_param(logm0, c0, c1):
     return c0 + c1 * (logm0 - 13)
-
-
-def _get_mah_params(defaults, **kwargs):
-    param_dict = _get_param_dict(defaults, **kwargs)
-    params = jax_np.atleast_1d(list(param_dict.values())).astype("f4")
-    return params
 
 
 def _process_halo_mah_args(logm0, cosmic_time, t0):
