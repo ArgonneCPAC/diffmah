@@ -81,7 +81,8 @@ def test_individual_halo_assembly_differentiability():
 
 
 def test_mean_mah_params_match_default_params_at_logm0_12():
-    """
+    """Enforce that the _get_individual_mah_params function
+    returns DEFAULT_MAH_PARAMS when logM0 = 12, and not otherwise.
     """
     mean_mah_param_arr = _get_param_array(MEAN_MAH_PARAMS)
     default_mah_param_arr = _get_param_array(DEFAULT_MAH_PARAMS)
