@@ -1,5 +1,6 @@
 """
 """
+import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
 from jax import jit as jax_jit
@@ -9,10 +10,10 @@ from jax.ops import index as jax_index
 from .utils import jax_sigmoid, _get_param_dict
 
 
-__all__ = ("mean_halo_mass_assembly_history", "halo_mass_assembly_history")
+__all__ = ("mean_halo_mass_assembly_history", "individual_halo_assembly_history")
 
 DEFAULT_MAH_PARAMS = OrderedDict(
-    dmhdt_x0=0.18, dmhdt_k=4.15, dmhdt_early_index=0.4, dmhdt_late_index=-1.25
+    dmhdt_x0=0.15, dmhdt_k=4.2, dmhdt_early_index=0.45, dmhdt_late_index=-1.25
 )
 MEAN_MAH_PARAMS = OrderedDict(
     dmhdt_x0_c0=0.27,
@@ -28,9 +29,7 @@ LOGT0 = 1.14
 TODAY = 10.0 ** LOGT0
 
 
-def mean_halo_mass_assembly_history(
-    logm0, cosmic_time, t0=TODAY, strict=False, **kwargs
-):
+def mean_halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
     """Rolling power-law model for halo mass accretion rate
     averaged over host halos with present-day mass logm0.
 
@@ -47,10 +46,6 @@ def mean_halo_mass_assembly_history(
         There must exist some entry of the input cosmic_time array within 50Myr of t0.
         Default is ~13.8 Gyr.
 
-    strict : bool, optional
-        If True, function will raise an exception if passed unrecognized keywords.
-        Default is False.
-
     *mah_params : float, optional
         Any parameter in DEFAULT_MAH_PARAMS is an acceptable keyword argument.
 
@@ -73,15 +68,15 @@ def mean_halo_mass_assembly_history(
     _x = _process_halo_mah_args(logm0, cosmic_time, t0)
     logm0, tarr, logt0, indx_t0 = _x
 
-    mean_mah_params = _get_mah_params(MEAN_MAH_PARAMS, strict, **kwargs)
-    logmah, log_dmhdt = _mean_halo_assembly_function(
+    mean_mah_params = _get_mah_params(MEAN_MAH_PARAMS, **kwargs)
+    logmah, log_dmhdt = _mean_halo_assembly(
         mean_mah_params, tarr, logm0, indx_t0, logt0
     )
 
     return logmah, log_dmhdt
 
 
-def halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, strict=False, **kwargs):
+def individual_halo_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
     """Rolling power-law model for halo mass accretion rate.
 
     Parameters
@@ -92,17 +87,26 @@ def halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, strict=False, **kwa
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
 
+    dmhdt_x0 : float, optional
+        Base-10 log of peak time of star formation.
+        Default is set according to mean value for logm0.
+
+    dmhdt_k : float, optional
+        Transition speed between early- and late-time power laws.
+        Default is set according to mean value for logm0.
+
+    dmhdt_early_index : float, optional
+        Early-time power-law index dMh/dt ~ t**dmhdt_early_index for logt << dmhdt_x0.
+        Default is set according to mean value for logm0.
+
+    dmhdt_late_index : float, optional
+        Late-time power-law index dMh/dt ~ t**dmhdt_late_index for logt >> dmhdt_x0.
+        Default is set according to mean value for logm0.
+
     t0 : float, optional
         Age of the universe in Gyr at the time halo mass attains the input logm0.
         There must exist some entry of the input cosmic_time array within 50Myr of t0.
-        Default is ~13.8 Gyr.
-
-    strict : bool, optional
-        If True, function will raise an exception if passed unrecognized keywords.
-        Default is False.
-
-    *mah_params : float, optional
-        Any parameter in DEFAULT_MAH_PARAMS is an acceptable keyword argument.
+        Default is ~13.85 Gyr.
 
     Returns
     -------
@@ -113,23 +117,29 @@ def halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, strict=False, **kwa
     log_dmhdt : ndarray of shape (n, )
         Base-10 log of halo mass accretion rate at the input times
         Accretion rate is in units of Msun/yr.
-        By construction, the time integral of log_dmhdt equals logmah.
+        By construction, the two returned arrays are mutually consistent
+        in that the time integral of log_dmhdt equals logmah.
 
     Notes
     -----
-    The logmah array has been normalized so that its value at t0 exactly equals logm0.
+    The returned logmah array has been normalized so that
+    its value at the input t0 exactly equals the input logm0.
 
     """
     _x = _process_halo_mah_args(logm0, cosmic_time, t0)
     logm0, tarr, logt0, indx_t0 = _x
 
-    mah_params = _get_mah_params(DEFAULT_MAH_PARAMS, strict, **kwargs)
+    mean_mah_param_dict = _get_param_dict(MEAN_MAH_PARAMS, **kwargs)
+    mean_mah_params = np.array(list(mean_mah_param_dict.values()))
+    mah_params = _get_individual_mah_params(mean_mah_params, logm0)
 
-    logmah, log_dmhdt = _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0)
+    logmah, log_dmhdt = _individual_halo_assembly(
+        mah_params, tarr, logm0, indx_t0, logt0
+    )
     return logmah, log_dmhdt
 
 
-def _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0):
+def _individual_halo_assembly(individual_mah_params, tarr, logm0, indx_t0, logt0):
     """
     """
     n = tarr.size
@@ -140,7 +150,7 @@ def _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0):
 
     logt0 = jax_np.log10(tarr[indx_t0])
     ti, tf = _tarr[:-1] + _half_step, _tarr[1:] + _half_step
-    _dmah, _dmhdt_at_tmid = _jax_normed_dmah(mah_params, ti, tf, logt0)
+    _dmah, _dmhdt_at_tmid = _jax_normed_dmah(individual_mah_params, ti, tf, logt0)
     _logmah = jax_np.log10(jax_np.cumsum(_dmah)) + 9
 
     #  Normalize Mh(t) and dMh/dt to integrate to logm0 at logt0
@@ -151,9 +161,9 @@ def _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0):
     return logmah, log_dmhdt
 
 
-def _mean_halo_assembly_function(mean_mah_params, tarr, logm0, indx_t0, logt0):
-    mah_params = _get_individual_mah_params(mean_mah_params, logm0)
-    return _halo_assembly_function(mah_params, tarr, logm0, indx_t0, logt0)
+def _mean_halo_assembly(mean_mah_params, tarr, logm0, indx_t0, logt0):
+    individual_mah_params = _get_individual_mah_params(mean_mah_params, logm0)
+    return _individual_halo_assembly(individual_mah_params, tarr, logm0, indx_t0, logt0)
 
 
 def _jax_normed_halo_dmdt_vs_time_kern(mah_params, logt, logt0):
@@ -190,8 +200,8 @@ def _get_dmhdt_param(logm0, c0, c1):
     return c0 + c1 * (logm0 - 13)
 
 
-def _get_mah_params(defaults, strict, **kwargs):
-    param_dict = _get_param_dict(defaults, strict=strict, **kwargs)
+def _get_mah_params(defaults, **kwargs):
+    param_dict = _get_param_dict(defaults, **kwargs)
     params = jax_np.atleast_1d(list(param_dict.values())).astype("f4")
     return params
 

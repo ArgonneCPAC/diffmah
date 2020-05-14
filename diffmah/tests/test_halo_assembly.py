@@ -5,8 +5,8 @@ import numpy as np
 from jax import numpy as jax_np
 from jax import value_and_grad
 from jax import jit as jax_jit
-from ..halo_assembly import halo_mass_assembly_history, DEFAULT_MAH_PARAMS
-from ..halo_assembly import mean_halo_mass_assembly_history, _halo_assembly_function
+from ..halo_assembly import individual_halo_assembly_history, DEFAULT_MAH_PARAMS
+from ..halo_assembly import mean_halo_mass_assembly_history, _individual_halo_assembly
 
 
 def test_halo_mah_evaluates_reasonably_with_default_args():
@@ -16,7 +16,9 @@ def test_halo_mah_evaluates_reasonably_with_default_args():
     for logm0 in (11, 12, 13, 14, 15):
         for t0 in (13.5, 14):
             cosmic_time = np.linspace(0.1, t0, npts)
-            logmah, log_dmhdt = halo_mass_assembly_history(logm0, cosmic_time, t0=t0)
+            logmah, log_dmhdt = individual_halo_assembly_history(
+                logm0, cosmic_time, t0=t0
+            )
             assert logmah.size == npts == log_dmhdt.size
             assert np.allclose(logmah[-1], logm0, atol=0.01)
 
@@ -35,14 +37,14 @@ def test_avg_halo_mah_evaluates_reasonably_with_default_args():
             assert np.allclose(logmah[-1], logm0, atol=0.01)
 
 
-def test_halo_assembly_function_differentiability():
+def test_individual_halo_assembly_differentiability():
     """
     """
 
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(mah_params, data):
         tarr, logm0, indx_t0, logt0, logmah_target = data
-        logmah, log_dmhdt = _halo_assembly_function(
+        logmah, log_dmhdt = _individual_halo_assembly(
             mah_params, tarr, logm0, indx_t0, logt0
         )
         diff_logmah = logmah - logmah_target
@@ -55,7 +57,7 @@ def test_halo_assembly_function_differentiability():
     logt0 = np.log10(t0)
     indx_t0 = -1
     default_params = np.array(list(DEFAULT_MAH_PARAMS.values()))
-    logmah_target = _halo_assembly_function(
+    logmah_target = _individual_halo_assembly(
         default_params, tarr, logm0, indx_t0, logt0
     )[0]
 
