@@ -5,7 +5,7 @@ from ..mean_sfr_history import _mean_log_mstar_history_jax_kern
 from ..mean_sfr_history import _mean_log_sfr_history_jax_kern
 from ..quenching_history import MEAN_Q_PARAMS
 from ..main_sequence_sfr_eff import MEAN_SFR_MS_PARAMS
-from ..halo_assembly import MEAN_MAH_PARAMS
+from ..halo_assembly import MEAN_MAH_PARAMS, _get_dt_array
 from ..mean_sfr_history import get_mean_galaxy_history
 
 
@@ -22,9 +22,10 @@ def test_mean_log_sfr_history():
     q_params = np.array(list(MEAN_Q_PARAMS.values()))
     logm0 = 12
     logt = np.linspace(0, 1.141, 50)
+    dtarr = _get_dt_array(10 ** logt)
     indx_t0 = -1
     log_sfrh = _mean_log_sfr_history_jax_kern(
-        mah_params, mean_sfr_eff_params, q_params, logm0, logt, indx_t0
+        mah_params, mean_sfr_eff_params, q_params, logm0, logt, dtarr, indx_t0
     )
     assert np.all(np.isfinite(log_sfrh))
 

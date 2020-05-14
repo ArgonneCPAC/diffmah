@@ -1,6 +1,7 @@
 """
 """
 from collections import OrderedDict
+import numpy as np
 from jax import numpy as jax_np
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
@@ -76,7 +77,7 @@ def mean_halo_mass_assembly_history(
     The logmah array has been normalized so that its value at t0 exactly equals logm0.
 
     """
-    logm0, tarr, logt0, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
+    logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
     mean_mah_params = (
         dmhdt_x0_c0,
@@ -88,12 +89,9 @@ def mean_halo_mass_assembly_history(
         dmhdt_yhi_c0,
         dmhdt_yhi_c1,
     )
-
-    logmah, log_dmhdt = _mean_halo_assembly(
-        mean_mah_params, tarr, logm0, indx_t0, logt0
-    )
-
-    return logmah, log_dmhdt
+    _x = _mean_halo_assembly(mean_mah_params, logm0, logt, dtarr, indx_t0)
+    logmah, log_dmhdt = _x
+    return np.array(logmah), np.array(log_dmhdt)
 
 
 def individual_halo_assembly_history(
@@ -154,15 +152,19 @@ def individual_halo_assembly_history(
     its value at the input t0 exactly equals the input logm0.
 
     """
-    _x = _process_halo_mah_args(logm0, cosmic_time, t0)
-    logm0, tarr, logt0, indx_t0 = _x
+    logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
-    mah_params = dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index
-
-    logmah, log_dmhdt = _individual_halo_assembly(
-        mah_params, tarr, logm0, indx_t0, logt0
+    logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
+        logm0,
+        dmhdt_x0,
+        dmhdt_k,
+        dmhdt_early_index,
+        dmhdt_late_index,
+        logt,
+        dtarr,
+        indx_t0,
     )
-    return logmah, log_dmhdt
+    return np.array(logmah), np.array(log_dmhdt)
 
 
 def _individual_halo_assembly(individual_mah_params, tarr, logm0, indx_t0, logt0):
@@ -187,9 +189,42 @@ def _individual_halo_assembly(individual_mah_params, tarr, logm0, indx_t0, logt0
     return logmah, log_dmhdt
 
 
-def _mean_halo_assembly(mean_mah_params, tarr, logm0, indx_t0, logt0):
+@jax_jit
+def _individual_halo_assembly_jax_kern(
+    logm0, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index, logt, dtarr, indx_t0
+):
+    slope = jax_sigmoid(logt, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index)
+    _log_dmhdt_unnnormed = slope * (logt - logt[indx_t0])
+
+    # This works but it might be faster with jax_np.logcumsumexp (currently DNE)
+    _dmhdt_unnnormed = jax_np.power(10, _log_dmhdt_unnnormed)
+    _dmah_integrand = _dmhdt_unnnormed * dtarr
+    _mah = jax_np.cumsum(_dmah_integrand) * 1e9
+    _logmah = jax_np.log10(_mah)
+
+    # Normalize Mh(t) and dMh/dt to integrate to logm0 at logt0
+    _logm0 = _logmah[indx_t0]
+    rescaling_factor = logm0 - _logm0
+    logmah = _logmah + rescaling_factor
+    log_dmhdt = jax_np.log10(_dmhdt_unnnormed) + rescaling_factor
+    return logmah, log_dmhdt
+
+
+def _mean_halo_assembly(mean_mah_params, logm0, logt, dtarr, indx_t0):
     individual_mah_params = _get_individual_mah_params(mean_mah_params, logm0)
-    return _individual_halo_assembly(individual_mah_params, tarr, logm0, indx_t0, logt0)
+    dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = individual_mah_params
+
+    logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
+        logm0,
+        dmhdt_x0,
+        dmhdt_k,
+        dmhdt_early_index,
+        dmhdt_late_index,
+        logt,
+        dtarr,
+        indx_t0,
+    )
+    return logmah, log_dmhdt
 
 
 def _jax_normed_halo_dmdt_vs_time_kern(mah_params, logt, logt0):
@@ -227,22 +262,30 @@ def _get_dmhdt_param(logm0, c0, c1):
 
 
 def _process_halo_mah_args(logm0, cosmic_time, t0):
-    cosmic_time = jax_np.atleast_1d(cosmic_time).astype("f4")
+    cosmic_time = np.atleast_1d(cosmic_time).astype("f4")
     assert cosmic_time.size > 1, "Input cosmic_time must be an array"
 
     msg = "Input cosmic_time = {} must be strictly monotonic"
-    _dtarr = jax_np.diff(cosmic_time)
-    assert jax_np.all(_dtarr > 0), msg.format(cosmic_time)
+    _dtarr = np.diff(cosmic_time)
+    assert np.all(_dtarr > 0), msg.format(cosmic_time)
 
-    msg = "cosmic_time must be linearly spaced"
-    assert jax_np.allclose(_dtarr, _dtarr.mean(), atol=0.05), msg
+    logt = np.log10(cosmic_time)
+    dtarr = _get_dt_array(cosmic_time)
+    present_time_indx = np.argmin(np.abs(cosmic_time - TODAY))
 
-    dt = jax_np.mean(_dtarr)
-    present_time_indx = int(jax_np.round((t0 - cosmic_time[0]) / dt))
-    msg = "t0 must lie in the range spanned by cosmic_time"
-    assert 0 <= present_time_indx <= cosmic_time.size - 1, msg
+    assert cosmic_time[-1] >= t0 - 0.1, "cosmic_time must span t0"
 
-    implied_t0 = cosmic_time[present_time_indx]
-    logt0 = jax_np.log10(implied_t0)
+    return logm0, logt, dtarr, present_time_indx
 
-    return logm0, cosmic_time, logt0, present_time_indx
+
+def _get_dt_array(t):
+    n = t.size
+    dt = np.zeros(n)
+    tlo = t[0] - (t[1] - t[0]) / 2
+    for i in range(n - 1):
+        thi = (t[i + 1] + t[i]) / 2
+        dt[i] = thi - tlo
+        tlo = thi
+    thi = t[n - 1] + dt[n - 2] / 2
+    dt[n - 1] = thi - tlo
+    return dt
