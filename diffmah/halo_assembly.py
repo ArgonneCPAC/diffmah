@@ -1,13 +1,12 @@
 """
 """
-import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 from jax.ops import index_update as jax_index_update
 from jax.ops import index as jax_index
-from .utils import jax_sigmoid, _get_param_dict, _get_param_array
+from .utils import jax_sigmoid
 
 
 __all__ = ("mean_halo_mass_assembly_history", "individual_halo_assembly_history")
@@ -29,7 +28,19 @@ LOGT0 = 1.14
 TODAY = 10.0 ** LOGT0
 
 
-def mean_halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
+def mean_halo_mass_assembly_history(
+    logm0,
+    cosmic_time,
+    t0=TODAY,
+    dmhdt_x0_c0=MEAN_MAH_PARAMS["dmhdt_x0_c0"],
+    dmhdt_x0_c1=MEAN_MAH_PARAMS["dmhdt_x0_c1"],
+    dmhdt_k_c0=MEAN_MAH_PARAMS["dmhdt_k_c0"],
+    dmhdt_k_c1=MEAN_MAH_PARAMS["dmhdt_k_c1"],
+    dmhdt_ylo_c0=MEAN_MAH_PARAMS["dmhdt_ylo_c0"],
+    dmhdt_ylo_c1=MEAN_MAH_PARAMS["dmhdt_ylo_c1"],
+    dmhdt_yhi_c0=MEAN_MAH_PARAMS["dmhdt_yhi_c0"],
+    dmhdt_yhi_c1=MEAN_MAH_PARAMS["dmhdt_yhi_c1"],
+):
     """Rolling power-law model for halo mass accretion rate
     averaged over host halos with present-day mass logm0.
 
@@ -65,18 +76,35 @@ def mean_halo_mass_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
     The logmah array has been normalized so that its value at t0 exactly equals logm0.
 
     """
-    _x = _process_halo_mah_args(logm0, cosmic_time, t0)
-    logm0, tarr, logt0, indx_t0 = _x
+    logm0, tarr, logt0, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
-    mean_mah_param_arr = _get_param_array(MEAN_MAH_PARAMS, **kwargs)
+    mean_mah_params = (
+        dmhdt_x0_c0,
+        dmhdt_x0_c1,
+        dmhdt_k_c0,
+        dmhdt_k_c1,
+        dmhdt_ylo_c0,
+        dmhdt_ylo_c1,
+        dmhdt_yhi_c0,
+        dmhdt_yhi_c1,
+    )
+
     logmah, log_dmhdt = _mean_halo_assembly(
-        mean_mah_param_arr, tarr, logm0, indx_t0, logt0
+        mean_mah_params, tarr, logm0, indx_t0, logt0
     )
 
     return logmah, log_dmhdt
 
 
-def individual_halo_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
+def individual_halo_assembly_history(
+    logm0,
+    cosmic_time,
+    dmhdt_x0=DEFAULT_MAH_PARAMS["dmhdt_x0"],
+    dmhdt_k=DEFAULT_MAH_PARAMS["dmhdt_k"],
+    dmhdt_early_index=DEFAULT_MAH_PARAMS["dmhdt_early_index"],
+    dmhdt_late_index=DEFAULT_MAH_PARAMS["dmhdt_late_index"],
+    t0=TODAY,
+):
     """Rolling power-law model for halo mass accretion rate.
 
     Parameters
@@ -129,8 +157,7 @@ def individual_halo_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
     _x = _process_halo_mah_args(logm0, cosmic_time, t0)
     logm0, tarr, logt0, indx_t0 = _x
 
-    mean_mah_params = _get_param_array(MEAN_MAH_PARAMS, **kwargs)
-    mah_params = _get_individual_mah_params(mean_mah_params, logm0)
+    mah_params = dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index
 
     logmah, log_dmhdt = _individual_halo_assembly(
         mah_params, tarr, logm0, indx_t0, logt0
