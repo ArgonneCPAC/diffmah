@@ -100,7 +100,7 @@ def _mean_log_sfr_history_jax_kern(
     mean_mah_params, mean_sfr_eff_params, mean_q_params, logm0, logt, dtarr, indx_t0
 ):
     logmah, log_dmhdt = _mean_halo_assembly_jax_kern(
-        mean_mah_params, logm0, logt, dtarr, indx_t0
+        logm0, *mean_mah_params, logt, dtarr, indx_t0
     )
 
     log_dmbdt = jax_np.log10(FB) + log_dmhdt + 9.0

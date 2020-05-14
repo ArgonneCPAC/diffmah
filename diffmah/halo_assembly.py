@@ -90,7 +90,8 @@ def mean_halo_mass_assembly_history(
     """
     logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
-    mean_mah_params = (
+    _x = _mean_halo_assembly_jax_kern(
+        logm0,
         dmhdt_x0_c0,
         dmhdt_x0_c1,
         dmhdt_k_c0,
@@ -99,8 +100,10 @@ def mean_halo_mass_assembly_history(
         dmhdt_ylo_c1,
         dmhdt_yhi_c0,
         dmhdt_yhi_c1,
+        logt,
+        dtarr,
+        indx_t0,
     )
-    _x = _mean_halo_assembly_jax_kern(mean_mah_params, logm0, logt, dtarr, indx_t0)
     logmah, log_dmhdt = _x
     return np.array(logmah), np.array(log_dmhdt)
 
@@ -176,7 +179,7 @@ def individual_halo_assembly_history(
 def _individual_halo_assembly_jax_kern(
     logm0, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index, logt, dtarr, indx_t0
 ):
-    """JAX kernel for the mass assembly history of individual dark matter halos."""
+    """JAX kernel for the MAH of individual dark matter halos."""
     #  Use a sigmoid to model log10(dMh/dt) with arbitrary normalization
     slope = jax_sigmoid(logt, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index)
     _log_dmhdt_unnnormed = slope * (logt - logt[indx_t0])
@@ -196,9 +199,32 @@ def _individual_halo_assembly_jax_kern(
     return logmah, log_dmhdt
 
 
-def _mean_halo_assembly_jax_kern(mean_mah_params, logm0, logt, dtarr, indx_t0):
-    individual_mah_params = _get_individual_mah_params(mean_mah_params, logm0)
-    dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = individual_mah_params
+def _mean_halo_assembly_jax_kern(
+    logm0,
+    dmhdt_x0_c0,
+    dmhdt_x0_c1,
+    dmhdt_k_c0,
+    dmhdt_k_c1,
+    dmhdt_ylo_c0,
+    dmhdt_ylo_c1,
+    dmhdt_yhi_c0,
+    dmhdt_yhi_c1,
+    logt,
+    dtarr,
+    indx_t0,
+):
+    """JAX kernel for the average MAH of halos with present-day mass logm0."""
+    dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = _get_individual_mah_params(
+        logm0,
+        dmhdt_x0_c0,
+        dmhdt_x0_c1,
+        dmhdt_k_c0,
+        dmhdt_k_c1,
+        dmhdt_ylo_c0,
+        dmhdt_ylo_c1,
+        dmhdt_yhi_c0,
+        dmhdt_yhi_c1,
+    )
 
     logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
         logm0,
@@ -213,22 +239,24 @@ def _mean_halo_assembly_jax_kern(mean_mah_params, logm0, logt, dtarr, indx_t0):
     return logmah, log_dmhdt
 
 
-def _get_individual_mah_params(mean_mah_params, logm0):
-    dmhdt_x0_c0, dmhdt_x0_c1 = mean_mah_params[0:2]
-    dmhdt_k_c0, dmhdt_k_c1 = mean_mah_params[2:4]
-    dmhdt_ylo_c0, dmhdt_ylo_c1 = mean_mah_params[4:6]
-    dmhdt_yhi_c0, dmhdt_yhi_c1 = mean_mah_params[6:8]
-
-    dmhdt_x0 = _get_dmhdt_param(logm0, dmhdt_x0_c0, dmhdt_x0_c1)
-    dmhdt_k = _get_dmhdt_param(logm0, dmhdt_k_c0, dmhdt_k_c1)
-    dmhdt_ylo = _get_dmhdt_param(logm0, dmhdt_ylo_c0, dmhdt_ylo_c1)
-    dmhdt_yhi = _get_dmhdt_param(logm0, dmhdt_yhi_c0, dmhdt_yhi_c1)
-
+def _get_individual_mah_params(
+    logm0,
+    dmhdt_x0_c0,
+    dmhdt_x0_c1,
+    dmhdt_k_c0,
+    dmhdt_k_c1,
+    dmhdt_ylo_c0,
+    dmhdt_ylo_c1,
+    dmhdt_yhi_c0,
+    dmhdt_yhi_c1,
+):
+    """Calculate the rolling power-law params for the input logm0."""
+    x = logm0 - 13
+    dmhdt_x0 = dmhdt_x0_c0 + dmhdt_x0_c1 * x
+    dmhdt_k = dmhdt_k_c0 + dmhdt_k_c1 * x
+    dmhdt_ylo = dmhdt_ylo_c0 + dmhdt_ylo_c1 * x
+    dmhdt_yhi = dmhdt_yhi_c0 + dmhdt_yhi_c1 * x
     return dmhdt_x0, dmhdt_k, dmhdt_ylo, dmhdt_yhi
-
-
-def _get_dmhdt_param(logm0, c0, c1):
-    return c0 + c1 * (logm0 - 13)
 
 
 def _process_halo_mah_args(logm0, cosmic_time, t0):

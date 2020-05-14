@@ -12,8 +12,6 @@ from ..halo_assembly import _get_individual_mah_params, _get_dt_array
 from ..halo_assembly import DEFAULT_MAH_PARAMS, MEAN_MAH_PARAMS
 from ..utils import _get_param_array
 
-# dmhdt_x0_c0, dmhdt_x0_c1, dmhdt_k_c0, dmhdt_k_c1, dmhdt_ylo_c0, dmhdt_ylo_c1, dmhdt_yhi_c0, dmhdt_yhi_c1
-
 
 def test_halo_mah_evaluates_reasonably_with_default_args():
     """
@@ -107,7 +105,7 @@ def test_mean_mah_params_match_default_params_at_logm0_12():
     """
     mean_mah_param_arr = _get_param_array(MEAN_MAH_PARAMS)
     default_mah_param_arr = _get_param_array(DEFAULT_MAH_PARAMS)
-    individual_mah_params = _get_individual_mah_params(mean_mah_param_arr, logm0=12)
+    individual_mah_params = _get_individual_mah_params(12, *mean_mah_param_arr)
     assert np.allclose(default_mah_param_arr, individual_mah_params, atol=0.001)
-    individual_mah_params = _get_individual_mah_params(mean_mah_param_arr, logm0=12.1)
+    individual_mah_params = _get_individual_mah_params(12.1, *mean_mah_param_arr)
     assert not np.allclose(default_mah_param_arr, individual_mah_params, atol=0.001)
