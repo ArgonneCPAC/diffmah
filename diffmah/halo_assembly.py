@@ -129,8 +129,7 @@ def individual_halo_assembly_history(logm0, cosmic_time, t0=TODAY, **kwargs):
     _x = _process_halo_mah_args(logm0, cosmic_time, t0)
     logm0, tarr, logt0, indx_t0 = _x
 
-    mean_mah_param_dict = _get_param_dict(MEAN_MAH_PARAMS, **kwargs)
-    mean_mah_params = np.array(list(mean_mah_param_dict.values()))
+    mean_mah_params = _get_param_array(MEAN_MAH_PARAMS, **kwargs)
     mah_params = _get_individual_mah_params(mean_mah_params, logm0)
 
     logmah, log_dmhdt = _individual_halo_assembly(
