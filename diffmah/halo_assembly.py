@@ -1,4 +1,11 @@
-"""
+"""Models for the mass assembly of dark matter halos.
+
+The individual_halo_assembly_history function implements a model for
+dMh(t)/dt and Mh(t) of individual halos.
+
+The mean_halo_mass_assembly_history function implements a model for
+<dMh(t)/dt|M0> and <Mh(t)|M0>, the average assembly of halos of present-day mass M0.
+
 """
 from collections import OrderedDict
 import numpy as np
@@ -7,7 +14,6 @@ from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 from jax.ops import index_update as jax_index_update
 from jax.ops import index as jax_index
-from .utils import jax_sigmoid
 
 
 __all__ = ("mean_halo_mass_assembly_history", "individual_halo_assembly_history")
@@ -289,3 +295,7 @@ def _get_dt_array(t):
     thi = t[n - 1] + dt[n - 2] / 2
     dt[n - 1] = thi - tlo
     return dt
+
+
+def jax_sigmoid(x, x0, k, ylo, yhi):
+    return ylo + (yhi - ylo) / (1 + jax_np.exp(-k * (x - x0)))
