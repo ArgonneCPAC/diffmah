@@ -1,7 +1,7 @@
 """Module implementing the get_mean_galaxy_history function."""
 import numpy as np
 from jax import numpy as jax_np
-from .halo_assembly import _mean_halo_assembly, TODAY
+from .halo_assembly import _mean_halo_assembly_jax_kern, TODAY
 from .halo_assembly import MEAN_MAH_PARAMS, _get_dt_array
 from .main_sequence_sfr_eff import mean_log_sfr_efficiency_ms_jax, MEAN_SFR_MS_PARAMS
 from .quenching_history import _mean_log_main_sequence_fraction, MEAN_Q_PARAMS
@@ -99,7 +99,7 @@ def _mean_log_mstar_history_jax_kern(
 def _mean_log_sfr_history_jax_kern(
     mean_mah_params, mean_sfr_eff_params, mean_q_params, logm0, logt, dtarr, indx_t0
 ):
-    logmah, log_dmhdt = _mean_halo_assembly(
+    logmah, log_dmhdt = _mean_halo_assembly_jax_kern(
         mean_mah_params, logm0, logt, dtarr, indx_t0
     )
 

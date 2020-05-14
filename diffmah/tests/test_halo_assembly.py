@@ -7,10 +7,12 @@ from jax import value_and_grad
 from jax import jit as jax_jit
 from ..halo_assembly import individual_halo_assembly_history
 from ..halo_assembly import mean_halo_mass_assembly_history
-from ..halo_assembly import _mean_halo_assembly, _individual_halo_assembly
-from ..halo_assembly import _get_individual_mah_params
+from ..halo_assembly import _individual_halo_assembly_jax_kern
+from ..halo_assembly import _get_individual_mah_params, _get_dt_array
 from ..halo_assembly import DEFAULT_MAH_PARAMS, MEAN_MAH_PARAMS
 from ..utils import _get_param_array
+
+# dmhdt_x0_c0, dmhdt_x0_c1, dmhdt_k_c0, dmhdt_k_c1, dmhdt_ylo_c0, dmhdt_ylo_c1, dmhdt_yhi_c0, dmhdt_yhi_c1
 
 
 def test_halo_mah_evaluates_reasonably_with_default_args():
@@ -47,25 +49,44 @@ def test_individual_halo_assembly_differentiability():
 
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(mah_params, data):
-        tarr, logm0, indx_t0, logt0, logmah_target = data
-        logmah, log_dmhdt = _individual_halo_assembly(
-            mah_params, tarr, logm0, indx_t0, logt0
+        logm0, logt, dtarr, indx_t0, logt0, logmah_target = data
+        dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = mah_params
+        logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
+            logm0,
+            dmhdt_x0,
+            dmhdt_k,
+            dmhdt_early_index,
+            dmhdt_late_index,
+            logt,
+            dtarr,
+            indx_t0,
         )
+
         diff_logmah = logmah - logmah_target
         return jax_np.sum(diff_logmah * diff_logmah) / diff_logmah.size
 
-    npts = 250
+    npts = 100
     logm0 = 12
     t0 = 13.85
     tarr = np.linspace(0.1, t0, npts)
+    logt = np.log10(tarr)
+    dtarr = _get_dt_array(tarr)
     logt0 = np.log10(t0)
     indx_t0 = -1
     default_params = np.array(list(DEFAULT_MAH_PARAMS.values()))
-    logmah_target = _individual_halo_assembly(
-        default_params, tarr, logm0, indx_t0, logt0
+    dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = default_params
+    logmah_target = _individual_halo_assembly_jax_kern(
+        logm0,
+        dmhdt_x0,
+        dmhdt_k,
+        dmhdt_early_index,
+        dmhdt_late_index,
+        logt,
+        dtarr,
+        indx_t0,
     )[0]
 
-    data = tarr, logm0, indx_t0, logt0, logmah_target
+    data = logm0, logt, dtarr, indx_t0, logt0, logmah_target
     loss_fid = mse_loss(default_params, data)
     assert np.allclose(loss_fid, 0, atol=0.01)
 
