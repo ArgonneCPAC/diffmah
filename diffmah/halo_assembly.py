@@ -11,9 +11,6 @@ from collections import OrderedDict
 import numpy as np
 from jax import numpy as jax_np
 from jax import jit as jax_jit
-from jax import vmap as jax_vmap
-from jax.ops import index_update as jax_index_update
-from jax.ops import index as jax_index
 
 
 __all__ = ("mean_halo_mass_assembly_history", "individual_halo_assembly_history")
@@ -216,22 +213,6 @@ def _mean_halo_assembly_jax_kern(mean_mah_params, logm0, logt, dtarr, indx_t0):
     return logmah, log_dmhdt
 
 
-def _jax_normed_halo_dmdt_vs_time_kern(mah_params, logt, logt0):
-    x0, k, ylo, yhi = mah_params
-    return jax_sigmoid(logt, x0, k, ylo, yhi) * (logt - logt0)
-
-
-def _jax_normed_dmah_kern(mah_params, ti, tf, logt0):
-    logtmid = jax_np.log10(0.5 * (ti + tf))
-    _dlogmh_dt_at_tmid = _jax_normed_halo_dmdt_vs_time_kern(mah_params, logtmid, logt0)
-    _dmhdt_at_tmid = jax_np.power(10, _dlogmh_dt_at_tmid)
-    _dmah = _dmhdt_at_tmid * (tf - ti)  # midpoint rule
-    return _dmah, _dmhdt_at_tmid
-
-
-_jax_normed_dmah = jax_jit(jax_vmap(_jax_normed_dmah_kern, in_axes=(None, 0, 0, None)))
-
-
 def _get_individual_mah_params(mean_mah_params, logm0):
     dmhdt_x0_c0, dmhdt_x0_c1 = mean_mah_params[0:2]
     dmhdt_k_c0, dmhdt_k_c1 = mean_mah_params[2:4]
@@ -251,23 +232,38 @@ def _get_dmhdt_param(logm0, c0, c1):
 
 
 def _process_halo_mah_args(logm0, cosmic_time, t0):
+    """Do some bounds-checks and calculate the arrays needed by the MAH kernel."""
     cosmic_time = np.atleast_1d(cosmic_time).astype("f4")
     assert cosmic_time.size > 1, "Input cosmic_time must be an array"
 
-    msg = "Input cosmic_time = {} must be strictly monotonic"
-    _dtarr = np.diff(cosmic_time)
-    assert np.all(_dtarr > 0), msg.format(cosmic_time)
+    msg = "Input cosmic_time = {} must be strictly positive and monotonic"
+    assert np.all(np.diff(cosmic_time) > 0), msg.format(cosmic_time)
+    assert np.all(cosmic_time > 0), msg.format(cosmic_time)
+
+    assert cosmic_time[-1] >= t0 - 0.1, "cosmic_time must span t0"
 
     logt = np.log10(cosmic_time)
     dtarr = _get_dt_array(cosmic_time)
     present_time_indx = np.argmin(np.abs(cosmic_time - TODAY))
 
-    assert cosmic_time[-1] >= t0 - 0.1, "cosmic_time must span t0"
-
     return logm0, logt, dtarr, present_time_indx
 
 
 def _get_dt_array(t):
+    """Compute delta time from input time.
+
+    Parameters
+    ----------
+    t : ndarray of shape (n, )
+
+    Returns
+    -------
+    dt : ndarray of shape (n, )
+
+    Returned dt is defined by time interval (t_lo, t_hi),
+    where t_lo^i = 0.5(t_i-1 + t_i) and t_hi^i = 0.5(t_i + t_i+1)
+
+    """
     n = t.size
     dt = np.zeros(n)
     tlo = t[0] - (t[1] - t[0]) / 2
