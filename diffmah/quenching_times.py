@@ -69,6 +69,14 @@ def quenching_function(
     return _jax_sigmoid(t, qt, qfunc_k, qfunc_ylo, qfunc_yhi)
 
 
+def _jax_quenching_function(t, qt):
+    return _jax_sigmoid(t, qt, 10, 1, 0)
+
+
+def _jax_log_quenching_function(logt, log_qtime, log_qfrac=-2):
+    return _jax_sigmoid(logt, log_qtime, 200, 0, log_qfrac)
+
+
 def central_quenching_time(logm0, percentile, **kwargs):
     """Quenching time of central galaxies.
 

@@ -1,8 +1,8 @@
 """Module implementing the mean_log_main_sequence_fraction function.
 """
+import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
-from .utils import _get_param_dict
 
 MEAN_Q_PARAMS = OrderedDict(
     fms_logtc_x0=11.85,
@@ -15,10 +15,21 @@ MEAN_Q_PARAMS = OrderedDict(
     fms_late_yhi=-3.87,
 )
 
-DEFAULT_Q_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5, fms_ylo=0, fms_yhi=-1.5)
+DEFAULT_Q_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5.0, fms_ylo=0.0, fms_yhi=-1.5)
 
 
-def mean_log_main_sequence_fraction(logm0, logt, **kwargs):
+def mean_log_main_sequence_fraction(
+    logm0,
+    logt,
+    fms_logtc_x0=MEAN_Q_PARAMS["fms_logtc_x0"],
+    fms_logtc_k=MEAN_Q_PARAMS["fms_logtc_k"],
+    fms_logtc_ylo=MEAN_Q_PARAMS["fms_logtc_ylo"],
+    fms_logtc_yhi=MEAN_Q_PARAMS["fms_logtc_yhi"],
+    fms_late_x0=MEAN_Q_PARAMS["fms_late_x0"],
+    fms_late_k=MEAN_Q_PARAMS["fms_late_k"],
+    fms_late_ylo=MEAN_Q_PARAMS["fms_late_ylo"],
+    fms_late_yhi=MEAN_Q_PARAMS["fms_late_yhi"],
+):
     """Main-sequence probability vs time for central galaxies.
 
     Default values tuned to match UniverseMachine.
@@ -41,14 +52,35 @@ def mean_log_main_sequence_fraction(logm0, logt, **kwargs):
         on the main sequence at each input time.
 
     """
-    mean_q_param_dict = _get_param_dict(MEAN_Q_PARAMS, **kwargs)
-    mean_q_params = jax_np.array(list(mean_q_param_dict.values())).astype("f4")
-    return _mean_log_main_sequence_fraction(mean_q_params, logm0, logt)
+    logm0 = float(logm0)
+    logt = jax_np.atleast_1d(logt).astype("f4")
+    params = jax_np.array(
+        (
+            fms_logtc_x0,
+            fms_logtc_k,
+            fms_logtc_ylo,
+            fms_logtc_yhi,
+            fms_late_x0,
+            fms_late_k,
+            fms_late_ylo,
+            fms_late_yhi,
+        )
+    ).astype("f4")
+    return np.array(_mean_log_main_sequence_fraction(logm0, *params, logt,))
 
 
-def _mean_log_main_sequence_fraction(params, logm0, logt):
-    fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi = params[0:4]
-    fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi = params[4:8]
+def _mean_log_main_sequence_fraction(
+    logm0,
+    fms_logtc_x0,
+    fms_logtc_k,
+    fms_logtc_ylo,
+    fms_logtc_yhi,
+    fms_late_x0,
+    fms_late_k,
+    fms_late_ylo,
+    fms_late_yhi,
+    logt,
+):
 
     fms_x0 = _fms_logtc_vs_logm0(
         logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi
@@ -67,14 +99,6 @@ def _log_main_sequence_fraction(fms_x0, fms_yhi, logt):
     return _jax_sigmoid(logt, fms_x0, 7, 0, fms_yhi)
 
 
-def _get_mah_params(logm0, **kwargs):
-    mean_mah_params = _get_params(MEAN_Q_PARAMS, **kwargs)
-    all_mah_params = jax_np.array(list(mean_mah_params.values())).astype("f4")
-    fms_x0 = _fms_logtc_vs_logm0(logm0, *all_mah_params[0:4])
-    fms_yhi = _fms_yhi_vs_logm0(logm0, *all_mah_params[4:8])
-    return fms_x0, fms_yhi
-
-
 def _fms_logtc_vs_logm0(logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi):
     return _jax_sigmoid(logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi)
 
@@ -86,7 +110,3 @@ def _fms_yhi_vs_logm0(logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi
 def _jax_sigmoid(x, x0, k, ymin, ymax):
     height_diff = ymax - ymin
     return ymin + height_diff / (1 + jax_np.exp(-k * (x - x0)))
-
-
-def _get_params(defaults, **kwargs):
-    return OrderedDict([(key, kwargs.get(key, val)) for key, val in defaults.items()])

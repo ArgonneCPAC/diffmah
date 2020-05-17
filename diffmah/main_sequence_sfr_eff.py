@@ -1,8 +1,8 @@
-"""
-"""
+"""Model for time-evolution of SFR efficiency of main sequence centrals,
+averaged over halos of the same present-day mass logm0."""
 import numpy as np
 from collections import OrderedDict
-from .utils import jax_sigmoid, _get_param_dict
+from .utils import jax_sigmoid
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 
@@ -31,11 +31,35 @@ MEAN_SFR_MS_PARAMS = OrderedDict(
 )
 
 DEFAULT_SFR_MS_PARAMS = OrderedDict(
-    lge0=-1.25, k_early=4, lgtc=0.5, lgec=-0.5, k_trans=7, a_late=-3
+    lge0=-1.75, k_early=7, lgtc=0.75, lgec=-0.3, k_trans=7.5, a_late=-0.7
 )
 
 
-def mean_log_sfr_efficiency_main_sequence(logm0, logt, **kwargs):
+def mean_log_sfr_efficiency_main_sequence(
+    logm0,
+    logt,
+    lge0_lgmc=MEAN_SFR_MS_PARAMS["lge0_lgmc"],
+    lge0_at_lgmc=MEAN_SFR_MS_PARAMS["lge0_at_lgmc"],
+    lge0_early_slope=MEAN_SFR_MS_PARAMS["lge0_early_slope"],
+    lge0_late_slope=MEAN_SFR_MS_PARAMS["lge0_late_slope"],
+    k_early_x0=MEAN_SFR_MS_PARAMS["k_early_x0"],
+    k_early_k=MEAN_SFR_MS_PARAMS["k_early_k"],
+    k_early_ylo=MEAN_SFR_MS_PARAMS["k_early_ylo"],
+    k_early_yhi=MEAN_SFR_MS_PARAMS["k_early_yhi"],
+    lgtc_x0=MEAN_SFR_MS_PARAMS["lgtc_x0"],
+    lgtc_k=MEAN_SFR_MS_PARAMS["lgtc_k"],
+    lgtc_ylo=MEAN_SFR_MS_PARAMS["lgtc_ylo"],
+    lgtc_yhi=MEAN_SFR_MS_PARAMS["lgtc_yhi"],
+    lgec_x0=MEAN_SFR_MS_PARAMS["lgec_x0"],
+    lgec_k=MEAN_SFR_MS_PARAMS["lgec_k"],
+    lgec_ylo=MEAN_SFR_MS_PARAMS["lgec_ylo"],
+    lgec_yhi=MEAN_SFR_MS_PARAMS["lgec_yhi"],
+    k_trans_c0=MEAN_SFR_MS_PARAMS["k_trans_c0"],
+    a_late_x0=MEAN_SFR_MS_PARAMS["a_late_x0"],
+    a_late_k=MEAN_SFR_MS_PARAMS["a_late_k"],
+    a_late_ylo=MEAN_SFR_MS_PARAMS["a_late_ylo"],
+    a_late_yhi=MEAN_SFR_MS_PARAMS["a_late_yhi"],
+):
     """
     Parameterized model for the star formation efficiency of main sequence centrals
     averaged over halos of the same present-day mass.
@@ -58,14 +82,44 @@ def mean_log_sfr_efficiency_main_sequence(logm0, logt, **kwargs):
         centrals living in halos with present-day mass logm0.
 
     """
-    mean_param_dict = _get_param_dict(MEAN_SFR_MS_PARAMS, **kwargs)
-    mean_sfr_eff_params = np.atleast_1d(list(mean_param_dict.values()))
-    sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
-    log_sfr_eff = log_sfr_efficiency_ms_jax(logt, sfr_eff_params)
-    return log_sfr_eff
+
+    log_sfr_eff = mean_log_sfr_efficiency_ms_jax(
+        logm0,
+        lge0_lgmc,
+        lge0_at_lgmc,
+        lge0_early_slope,
+        lge0_late_slope,
+        k_early_x0,
+        k_early_k,
+        k_early_ylo,
+        k_early_yhi,
+        lgtc_x0,
+        lgtc_k,
+        lgtc_ylo,
+        lgtc_yhi,
+        lgec_x0,
+        lgec_k,
+        lgec_ylo,
+        lgec_yhi,
+        k_trans_c0,
+        a_late_x0,
+        a_late_k,
+        a_late_ylo,
+        a_late_yhi,
+        logt,
+    )
+    return np.array(log_sfr_eff).astype("f4")
 
 
-def log_sfr_efficiency_main_sequence(logt, **kwargs):
+def log_sfr_efficiency_main_sequence(
+    logt,
+    lge0=DEFAULT_SFR_MS_PARAMS["lge0"],
+    k_early=DEFAULT_SFR_MS_PARAMS["k_early"],
+    lgtc=DEFAULT_SFR_MS_PARAMS["lgtc"],
+    lgec=DEFAULT_SFR_MS_PARAMS["lgec"],
+    k_trans=DEFAULT_SFR_MS_PARAMS["k_trans"],
+    a_late=DEFAULT_SFR_MS_PARAMS["a_late"],
+):
     """
     Parameterized model for the star formation efficiency of main sequence centrals.
 
@@ -76,9 +130,19 @@ def log_sfr_efficiency_main_sequence(logt, **kwargs):
     logt : ndarray shape (n, )
         Base-10 log of cosmic time in Gyr
 
-    **params : optional
-        Accepts float values for all keyword arguments
-        appearing in DEFAULT_SFR_MS_PARAMS dictionary.
+    lge0 : float, optional
+        Asymptotic value of SFR efficiency at early times
+
+    lgtc : float, optional
+        Time of peak star formation in Gyr.
+
+    lgec : float, optional
+        Normalization of SFR efficiency at the time of peak SFR.
+
+    a_late : float, optional
+        Late-time power-law index of SFR efficiency.
+
+    Default values set in DEFAULT_SFR_MS_PARAMS dictionary.
 
     Returns
     -------
@@ -86,18 +150,61 @@ def log_sfr_efficiency_main_sequence(logt, **kwargs):
         Base-10 log of SFR efficiency.
 
     """
-    param_dict = _get_param_dict(DEFAULT_SFR_MS_PARAMS, **kwargs)
-    sfr_eff_params = np.atleast_1d(list(param_dict.values()))
-    log_sfr_eff = log_sfr_efficiency_ms_jax(logt, sfr_eff_params)
-    return log_sfr_eff
+    log_sfr_eff = _log_sfr_efficiency_ms_jax(
+        logt, lge0, k_early, lgtc, lgec, k_trans, a_late
+    )
+    return np.array(log_sfr_eff).astype("f4")
 
 
-def log_sfr_efficiency_ms_jax(logt, sfr_eff_params):
-    return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
-
-
-def mean_log_sfr_efficiency_ms_jax(mean_sfr_eff_params, logm0, logt):
-    sfr_eff_params = _get_median_growth_params(logm0, *mean_sfr_eff_params)
+def mean_log_sfr_efficiency_ms_jax(
+    logm0,
+    lge0_lgmc,
+    lge0_at_lgmc,
+    lge0_early_slope,
+    lge0_late_slope,
+    k_early_x0,
+    k_early_k,
+    k_early_ylo,
+    k_early_yhi,
+    lgtc_x0,
+    lgtc_k,
+    lgtc_ylo,
+    lgtc_yhi,
+    lgec_x0,
+    lgec_k,
+    lgec_ylo,
+    lgec_yhi,
+    k_trans_c0,
+    a_late_x0,
+    a_late_k,
+    a_late_ylo,
+    a_late_yhi,
+    logt,
+):
+    sfr_eff_params = _get_median_growth_params(
+        logm0,
+        lge0_lgmc,
+        lge0_at_lgmc,
+        lge0_early_slope,
+        lge0_late_slope,
+        k_early_x0,
+        k_early_k,
+        k_early_ylo,
+        k_early_yhi,
+        lgtc_x0,
+        lgtc_k,
+        lgtc_ylo,
+        lgtc_yhi,
+        lgec_x0,
+        lgec_k,
+        lgec_ylo,
+        lgec_yhi,
+        k_trans_c0,
+        a_late_x0,
+        a_late_k,
+        a_late_ylo,
+        a_late_yhi,
+    )
     return _log_sfr_efficiency_ms_jax(logt, *sfr_eff_params)
 
 
