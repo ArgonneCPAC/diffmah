@@ -1,17 +1,60 @@
-"""Module implementing the get_mean_galaxy_history function."""
+"""Module implementing the mean_sfr_history function for the SFR history of
+central galaxies averaged over halos of the same present-day mass."""
 import numpy as np
 from jax import numpy as jax_np
-from .halo_assembly import _mean_halo_assembly_jax_kern, TODAY
-from .halo_assembly import MEAN_MAH_PARAMS, _get_dt_array
-from .main_sequence_sfr_eff import mean_log_sfr_efficiency_ms_jax, MEAN_SFR_MS_PARAMS
-from .quenching_history import _mean_log_main_sequence_fraction, MEAN_Q_PARAMS
-from .utils import _get_param_dict
+from .halo_assembly import _mean_halo_assembly_jax_kern
+from .main_sequence_sfr_eff import mean_log_sfr_efficiency_ms_jax
+from .quenching_history import _mean_log_main_sequence_fraction
+from .halo_assembly import _process_halo_mah_args
+from .halo_assembly import MEAN_MAH_PARAMS, TODAY
+from .main_sequence_sfr_eff import MEAN_SFR_MS_PARAMS
+from .quenching_history import MEAN_Q_PARAMS
 
 FB = 0.158
-T_TABLE = np.linspace(0.1, TODAY, 250)
 
 
-def get_mean_galaxy_history(logm0, cosmic_time, t_table=T_TABLE, **kwargs):
+def mean_sfr_history(
+    logm0,
+    cosmic_time,
+    dmhdt_x0_c0=MEAN_MAH_PARAMS["dmhdt_x0_c0"],
+    dmhdt_x0_c1=MEAN_MAH_PARAMS["dmhdt_x0_c1"],
+    dmhdt_k_c0=MEAN_MAH_PARAMS["dmhdt_k_c0"],
+    dmhdt_k_c1=MEAN_MAH_PARAMS["dmhdt_k_c1"],
+    dmhdt_ylo_c0=MEAN_MAH_PARAMS["dmhdt_ylo_c0"],
+    dmhdt_ylo_c1=MEAN_MAH_PARAMS["dmhdt_ylo_c1"],
+    dmhdt_yhi_c0=MEAN_MAH_PARAMS["dmhdt_yhi_c0"],
+    dmhdt_yhi_c1=MEAN_MAH_PARAMS["dmhdt_yhi_c1"],
+    lge0_lgmc=MEAN_SFR_MS_PARAMS["lge0_lgmc"],
+    lge0_at_lgmc=MEAN_SFR_MS_PARAMS["lge0_at_lgmc"],
+    lge0_early_slope=MEAN_SFR_MS_PARAMS["lge0_early_slope"],
+    lge0_late_slope=MEAN_SFR_MS_PARAMS["lge0_late_slope"],
+    k_early_x0=MEAN_SFR_MS_PARAMS["k_early_x0"],
+    k_early_k=MEAN_SFR_MS_PARAMS["k_early_k"],
+    k_early_ylo=MEAN_SFR_MS_PARAMS["k_early_ylo"],
+    k_early_yhi=MEAN_SFR_MS_PARAMS["k_early_yhi"],
+    lgtc_x0=MEAN_SFR_MS_PARAMS["lgtc_x0"],
+    lgtc_k=MEAN_SFR_MS_PARAMS["lgtc_k"],
+    lgtc_ylo=MEAN_SFR_MS_PARAMS["lgtc_ylo"],
+    lgtc_yhi=MEAN_SFR_MS_PARAMS["lgtc_yhi"],
+    lgec_x0=MEAN_SFR_MS_PARAMS["lgec_x0"],
+    lgec_k=MEAN_SFR_MS_PARAMS["lgec_k"],
+    lgec_ylo=MEAN_SFR_MS_PARAMS["lgec_ylo"],
+    lgec_yhi=MEAN_SFR_MS_PARAMS["lgec_yhi"],
+    k_trans_c0=MEAN_SFR_MS_PARAMS["k_trans_c0"],
+    a_late_x0=MEAN_SFR_MS_PARAMS["a_late_x0"],
+    a_late_k=MEAN_SFR_MS_PARAMS["a_late_k"],
+    a_late_ylo=MEAN_SFR_MS_PARAMS["a_late_ylo"],
+    a_late_yhi=MEAN_SFR_MS_PARAMS["a_late_yhi"],
+    fms_logtc_x0=MEAN_Q_PARAMS["fms_logtc_x0"],
+    fms_logtc_k=MEAN_Q_PARAMS["fms_logtc_k"],
+    fms_logtc_ylo=MEAN_Q_PARAMS["fms_logtc_ylo"],
+    fms_logtc_yhi=MEAN_Q_PARAMS["fms_logtc_yhi"],
+    fms_late_x0=MEAN_Q_PARAMS["fms_late_x0"],
+    fms_late_k=MEAN_Q_PARAMS["fms_late_k"],
+    fms_late_ylo=MEAN_Q_PARAMS["fms_late_ylo"],
+    fms_late_yhi=MEAN_Q_PARAMS["fms_late_yhi"],
+    t0=TODAY,
+):
     """Star formation rate and stellar mass as a function of time
     averaged over centrals living in halos with present-day mass logm0.
 
@@ -23,88 +66,120 @@ def get_mean_galaxy_history(logm0, cosmic_time, t_table=T_TABLE, **kwargs):
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
 
+        The size n should be large enough so that the log_sm integration
+        can be accurately calculated with the midpoint rule.
+        Typically n >~100 is sufficient for most purposes.
+
+    **mean_mah_params : floats, optional
+        Any keyword of halo_assembly.MEAN_MAH_PARAMS is accepted
+
+    **mean_sfr_ms_params : floats, optional
+        Any keyword of main_sequence_sfr_eff.MEAN_SFR_MS_PARAMS is accepted
+
+    **mean_q_params : floats, optional
+        Any keyword of quenching_history.MEAN_Q_PARAMS is accepted
+
+    t0 : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logm0.
+        There must exist some entry of the input cosmic_time array within 50Myr of t0.
+        Default is ~13.85 Gyr.
+
     Returns
     -------
     log_sfr : ndarray of shape (n, )
-        Base-10 log of SFR in units of Msun/yr
+        Base-10 log of <SFR|M0,t> in units of Msun/yr
 
     log_sm : ndarray of shape (n, )
-        Base-10 log of in-situ stellar mass in units of Msun
+        Base-10 log of <M*|M0,t> in units of Msun
+
+    Notes
+    -----
+    If you only need to predict SFR or M* at a small handful of redshifts,
+    you should use this function to build an interpolation table with n>~100
 
     """
-    logt_table, indx_t0, dtarr, indx_pred = _process_args(cosmic_time, t_table)
+    logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
-    _x = _get_all_params(logm0, **kwargs)
-    mean_mah_params, mean_sfr_ms_params, mean_q_params = _x
+    mean_mah_params = jax_np.array(
+        (
+            dmhdt_x0_c0,
+            dmhdt_x0_c1,
+            dmhdt_k_c0,
+            dmhdt_k_c1,
+            dmhdt_ylo_c0,
+            dmhdt_ylo_c1,
+            dmhdt_yhi_c0,
+            dmhdt_yhi_c1,
+        )
+    ).astype("f4")
 
-    galaxy_history = _mean_log_mstar_history_jax_kern(
-        mean_mah_params,
-        mean_sfr_ms_params,
-        mean_q_params,
-        logm0,
-        logt_table,
-        indx_t0,
-        dtarr,
-        indx_pred,
+    mean_sfr_ms_params = jax_np.array(
+        (
+            lge0_lgmc,
+            lge0_at_lgmc,
+            lge0_early_slope,
+            lge0_late_slope,
+            k_early_x0,
+            k_early_k,
+            k_early_ylo,
+            k_early_yhi,
+            lgtc_x0,
+            lgtc_k,
+            lgtc_ylo,
+            lgtc_yhi,
+            lgec_x0,
+            lgec_k,
+            lgec_ylo,
+            lgec_yhi,
+            k_trans_c0,
+            a_late_x0,
+            a_late_k,
+            a_late_ylo,
+            a_late_yhi,
+        )
+    ).astype("f4")
+
+    mean_q_params = jax_np.array(
+        (
+            fms_logtc_x0,
+            fms_logtc_k,
+            fms_logtc_ylo,
+            fms_logtc_yhi,
+            fms_late_x0,
+            fms_late_k,
+            fms_late_ylo,
+            fms_late_yhi,
+        )
+    ).astype("f4")
+
+    log_sfr, log_smh = _mean_log_mstar_history_jax_kern(
+        logm0, mean_mah_params, mean_sfr_ms_params, mean_q_params, logt, dtarr, indx_t0
     )
 
-    return galaxy_history
-
-
-def _process_args(cosmic_time, t_table):
-    logt_table = np.log10(t_table)
-    indx_t0 = np.argmin(np.abs(t_table - TODAY))
-    dtarr = _get_dt_array(t_table)
-
-    _indx_pred = [np.argmin(np.abs(t_table - t)) for t in cosmic_time]
-    indx_pred = np.array(_indx_pred).astype("i4")
-    return logt_table, indx_t0, dtarr, indx_pred
-
-
-def _get_all_params(logm0, **kwargs):
-    mean_mah_params = _get_param_ndarray(MEAN_MAH_PARAMS, **kwargs)
-    mean_sfr_ms_params = _get_param_ndarray(MEAN_SFR_MS_PARAMS, **kwargs)
-    mean_q_params = _get_param_ndarray(MEAN_Q_PARAMS, **kwargs)
-    return mean_mah_params, mean_sfr_ms_params, mean_q_params
-
-
-def _get_param_ndarray(defaults, **kwargs):
-    param_dict = _get_param_dict(defaults, strict=False, **kwargs)
-    return jax_np.array(list(param_dict.values()))
+    return np.array(log_sfr), np.array(log_smh)
 
 
 def _mean_log_mstar_history_jax_kern(
-    mean_mah_params,
-    mean_sfr_eff_params,
-    mean_q_params,
-    logm0,
-    logt_table,
-    indx_t0,
-    dtarr,
-    indx_pred,
+    logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
 ):
-    log_sfr_table = _mean_log_sfr_history_jax_kern(
-        mean_mah_params,
-        mean_sfr_eff_params,
-        mean_q_params,
-        logm0,
-        logt_table,
-        dtarr,
-        indx_t0,
+    log_sfr = _mean_log_sfr_history_jax_kern(
+        logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
     )
-    log_smh_table = jax_np.log10(jax_np.cumsum(jax_np.power(10, log_sfr_table)) * dtarr)
-    return log_sfr_table[indx_pred] - 9, log_smh_table[indx_pred]
+    log_smh = _calculate_cumulative_in_situ_mass(log_sfr, dtarr)
+    return log_sfr, log_smh
 
 
 def _mean_log_sfr_history_jax_kern(
-    mean_mah_params, mean_sfr_eff_params, mean_q_params, logm0, logt, dtarr, indx_t0
+    logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
 ):
-    logmah, log_dmhdt = _mean_halo_assembly_jax_kern(
-        logm0, *mean_mah_params, logt, dtarr, indx_t0
-    )
-
-    log_dmbdt = jax_np.log10(FB) + log_dmhdt + 9.0
-    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(mean_sfr_eff_params, logm0, logt)
-    log_frac_ms = _mean_log_main_sequence_fraction(mean_q_params, logm0, logt)
+    _x = _mean_halo_assembly_jax_kern(logm0, *mean_mah_params, logt, dtarr, indx_t0)
+    log_dmbdt = jax_np.log10(FB) + _x[1]
+    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logm0, *mean_sfr_eff_params, logt)
+    log_frac_ms = _mean_log_main_sequence_fraction(logm0, *mean_q_params, logt)
     log_sfr = log_dmbdt + log_sfr_eff_ms + log_frac_ms
     return log_sfr
+
+
+def _calculate_cumulative_in_situ_mass(log_sfr, dtarr):
+    log_smh = jax_np.log10(jax_np.cumsum(jax_np.power(10, log_sfr)) * dtarr) + 9.0
+    return log_smh
