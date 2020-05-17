@@ -1,5 +1,7 @@
 import numpy as np
 from jax import numpy as jax_np
+from jax import grad as jax_grad
+from jax.experimental import optimizers as jax_opt
 from collections import OrderedDict
 
 
@@ -101,3 +103,54 @@ def _get_param_array(defaults, strict=False, dtype="f4", jax_arrays=True, **kwar
     else:
         param_array = np.array(list(param_dict.values())).astype(dtype)
     return param_array
+
+
+def jax_adam_wrapper(mse_loss_func, params_init, mse_loss_data, n_step, step_size=1e-3):
+    """Convenience function wrapping JAX's Adam optimizer used to
+    minimize the loss function mse_loss_func.
+
+    Starting from params_init, we take n_step steps down the gradient
+    to calculate the returned value params_step_n.
+
+    Parameters
+    ----------
+    mse_loss_func : callable
+        Differentiable function to minimize.
+
+        Must accept inputs (params, data) and return a scalar,
+        and be differentiable using jax.grad.
+
+    params_init : ndarray of shape (n_params, )
+        Initial guess at the parameters
+
+    mse_loss_data : sequence
+        Sequence of floats and arrays storing whatever data is needed
+        to compute mse_loss_func(params_init, mse_loss_data)
+
+    n_step : int
+        Number of steps to walk down the gradient
+
+    step_size : float, optional
+        Step size parameter in the Adam algorithm. Default is 1e-3
+
+    Returns
+    -------
+    params_step_n : ndarray of shape (n_params, )
+        Value of the parameters after walking n_step steps down the gradient
+        with a learning rate given by Adam
+
+    loss : float
+        Value returned by mse_loss_func(params_step_n, mse_loss_data)
+
+    """
+    opt_init, opt_update, get_params = jax_opt.adam(step_size)
+    opt_state = opt_init(params_init)
+
+    for istep in range(n_step):
+        p = get_params(opt_state)
+        grads = jax_grad(mse_loss_func, argnums=0)(p, mse_loss_data)
+        opt_state = opt_update(istep, grads, opt_state)
+
+    params_step_n = get_params(opt_state)
+    loss = mse_loss_func(params_step_n, mse_loss_data)
+    return params_step_n, loss
