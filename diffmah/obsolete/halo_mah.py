@@ -5,7 +5,7 @@ from jax.ops import index as jax_index
 from jax import numpy as jax_np
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
-from .utils import jax_sigmoid
+from ..utils import jax_sigmoid
 
 __all__ = ("halo_mass_assembly_history",)
 
