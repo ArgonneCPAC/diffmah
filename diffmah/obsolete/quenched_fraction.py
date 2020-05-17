@@ -2,9 +2,9 @@
 """
 import numpy as np
 from collections import OrderedDict
-from .quenching_times import central_quenching_time
-from .quenching_times import DEFAULT_CENS_PARAMS as DEFAULT_QTIME_CENS_PARAMS
-from .quenching_times import quenching_function
+from ..quenching_times import central_quenching_time
+from ..quenching_times import DEFAULT_CENS_PARAMS as DEFAULT_QTIME_CENS_PARAMS
+from ..quenching_times import quenching_function
 from .quenching_probability import quenching_prob_cens
 from .quenching_probability import DEFAULT_CENS_PARAMS as DEFAULT_QPROB_CENS_PARAMS
 
