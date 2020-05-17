@@ -4,7 +4,7 @@ from collections import OrderedDict
 from jax import numpy as jax_np
 import jax
 
-from .utils import get_1d_arrays, jax_sigmoid
+from ..utils import get_1d_arrays, jax_sigmoid
 
 
 __all__ = ("quenching_prob", "quenching_prob_cens", "quenching_prob_sats")
