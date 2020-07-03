@@ -1,6 +1,7 @@
 import numpy as np
 from jax import numpy as jax_np
 from jax import grad as jax_grad
+from jax import jit as jax_jit
 from jax.experimental import optimizers as jax_opt
 from collections import OrderedDict
 
@@ -69,6 +70,20 @@ def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
     """
     lnarg = (yhi - ylo) / (y - ylo) - 1
     return x0 - jax_np.log(lnarg) / k
+
+
+@jax_jit
+def _jax_triweight_sigmoid_kernel(y):
+    val = jax_np.where(
+        y < 3,
+        -5 * y ** 7 / 69984
+        + 7 * y ** 5 / 2592
+        - 35 * y ** 3 / 864
+        + 35 * y / 96
+        + 1 / 2,
+        1,
+    )
+    return jax_np.where(y > -3, val, 0)
 
 
 def _enforce_no_extraneous_keywords(defaults, **kwargs):
