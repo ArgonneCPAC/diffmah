@@ -28,7 +28,7 @@ def test_individual_sfr_history_agrees_with_umachine_milky_way_halos():
     evaluated at logMhalo=12.
     """
     t_table = np.linspace(0.1, 14, 500)
-    log_sfr_table, log_sm_table = individual_sfr_history(12, t_table)
+    log_sfr_table, log_sm_table = individual_sfr_history(t_table, 12)
     assert np.all(np.isfinite(log_sfr_table))
     assert np.all(np.isfinite(log_sm_table))
 

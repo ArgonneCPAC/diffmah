@@ -20,8 +20,8 @@ DEFAULT_SFRH_PARAMS.update(QUENCHING_DICT)
 
 
 def individual_sfr_history(
-    logmp,
     cosmic_time,
+    logmp,
     dmhdt_x0=DEFAULT_SFRH_PARAMS["dmhdt_x0"],
     dmhdt_k=DEFAULT_SFRH_PARAMS["dmhdt_k"],
     dmhdt_early_index=DEFAULT_SFRH_PARAMS["dmhdt_early_index"],
