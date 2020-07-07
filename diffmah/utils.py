@@ -1,6 +1,6 @@
 import numpy as np
 from jax import numpy as jax_np
-from jax import grad as value_and_grad
+from jax import value_and_grad
 from jax import jit as jax_jit
 from jax.experimental import optimizers as jax_opt
 from collections import OrderedDict
