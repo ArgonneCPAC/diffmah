@@ -93,7 +93,7 @@ def central_quenching_time(logmp, percentile, **kwargs):
     Parameters
     ----------
     logmp : float or ndarray of shape (n, )
-        Base-10 log of halo mass at z=0
+        Base-10 log of peak halo mass in units of Msun
 
     percentile : float or ndarray of shape (n, )
         percentile = Prob(< y | logmp) for some halo property y.
@@ -146,7 +146,7 @@ def inverse_central_quenching_time(logmp, qthresh, **kwargs):
     Parameters
     ----------
     logmp : float or ndarray of shape (n, )
-        Base-10 log of halo mass at z=0
+        Base-10 log of peak halo mass in units of Msun
 
     qthresh : float or ndarray of shape (n, )
         Prob(qtime < qthresh | logmp).

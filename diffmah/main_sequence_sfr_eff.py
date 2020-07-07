@@ -71,7 +71,7 @@ def mean_log_sfr_efficiency_main_sequence(
         Base-10 log of cosmic time in Gyr
 
     logmp : float
-        Base-10 log of peak halo mass at z=0 in units of Msun.
+        Base-10 log of peak halo mass in units of Msun
 
     **params : optional
         Accepts float values for all keyword arguments
@@ -131,6 +131,7 @@ def log_sfr_efficiency_main_sequence(
         Base-10 log of cosmic time in Gyr
 
     logmp : float
+        Base-10 log of peak halo mass in units of Msun
 
     lge0 : float, optional
         Asymptotic value of SFR efficiency at early times

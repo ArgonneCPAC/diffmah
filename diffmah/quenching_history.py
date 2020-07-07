@@ -40,6 +40,7 @@ def mean_log_main_sequence_fraction(
         Base-10 log of cosmic time in Gyr
 
     logmp : float
+        Base-10 log of peak halo mass in units of Msun
 
     **params : optional
         Accepts float values for all keyword arguments

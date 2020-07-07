@@ -44,7 +44,7 @@ def individual_sfr_history(
         Age of the universe in Gyr at which to evaluate the assembly history.
 
     logmp : float
-        Base-10 log of peak halo mass at z=0 in units of Msun.
+        Base-10 log of peak halo mass in units of Msun
 
     qtime : float, optional
         Quenching time in units of Gyr.

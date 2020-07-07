@@ -54,7 +54,7 @@ def mean_halo_mass_assembly_history(
         Age of the universe in Gyr at which to evaluate the assembly history.
 
     logmp : float
-        Base-10 log of peak halo mass at z=0 in units of Msun.
+        Base-10 log of peak halo mass in units of Msun
 
     tmp : float, optional
         Age of the universe in Gyr at the time halo mass attains the input logmp.
@@ -125,7 +125,7 @@ def individual_halo_assembly_history(
         Age of the universe in Gyr at which to evaluate the assembly history.
 
     logmp : float
-        Base-10 log of halo mass at z=0 in units of Msun.
+        Base-10 log of peak halo mass in units of Msun
 
     dmhdt_x0 : float, optional
         Base-10 log of the time of peak star formation.

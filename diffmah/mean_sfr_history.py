@@ -68,7 +68,7 @@ def mean_sfr_history(
         Typically n >~100 is sufficient for most purposes.
 
     logmp : float
-        Base-10 log of halo mass at z=0 in units of Msun.
+        Base-10 log of peak halo mass in units of Msun
 
     t0 : float, optional
         Age of the universe in Gyr at the time halo mass attains the input logmp.
