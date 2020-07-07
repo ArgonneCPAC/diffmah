@@ -14,8 +14,9 @@ FB = 0.158
 
 
 def mean_sfr_history(
-    logm0,
     cosmic_time,
+    logm0,
+    t0=TODAY,
     dmhdt_x0_c0=MEAN_MAH_PARAMS["dmhdt_x0_c0"],
     dmhdt_x0_c1=MEAN_MAH_PARAMS["dmhdt_x0_c1"],
     dmhdt_k_c0=MEAN_MAH_PARAMS["dmhdt_k_c0"],
@@ -53,7 +54,6 @@ def mean_sfr_history(
     fms_late_k=MEAN_Q_PARAMS["fms_late_k"],
     fms_late_ylo=MEAN_Q_PARAMS["fms_late_ylo"],
     fms_late_yhi=MEAN_Q_PARAMS["fms_late_yhi"],
-    t0=TODAY,
 ):
     """Star formation rate and stellar mass as a function of time
     averaged over centrals living in halos with present-day mass logm0.
@@ -153,29 +153,29 @@ def mean_sfr_history(
     ).astype("f4")
 
     log_sfr, log_smh = _mean_log_mstar_history_jax_kern(
-        logm0, mean_mah_params, mean_sfr_ms_params, mean_q_params, logt, dtarr, indx_t0
+        logt, dtarr, logm0, mean_mah_params, mean_sfr_ms_params, mean_q_params, indx_t0
     )
 
     return np.array(log_sfr), np.array(log_smh)
 
 
 def _mean_log_mstar_history_jax_kern(
-    logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
+    logt, dtarr, logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_t0
 ):
     log_sfr = _mean_log_sfr_history_jax_kern(
-        logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
+        logt, dtarr, logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_t0
     )
     log_smh = _calculate_cumulative_in_situ_mass(log_sfr, dtarr)
     return log_sfr, log_smh
 
 
 def _mean_log_sfr_history_jax_kern(
-    logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
+    logt, dtarr, logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_t0
 ):
     _x = _mean_halo_assembly_jax_kern(logt, dtarr, logm0, *mean_mah_params, indx_t0)
     log_dmbdt = jax_np.log10(FB) + _x[1]
-    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logm0, *mean_sfr_eff_params, logt)
-    log_frac_ms = _mean_log_main_sequence_fraction(logm0, *mean_q_params, logt)
+    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logt, logm0, *mean_sfr_eff_params)
+    log_frac_ms = _mean_log_main_sequence_fraction(logt, logm0, *mean_q_params)
     log_sfr = log_dmbdt + log_sfr_eff_ms + log_frac_ms
     return log_sfr
 

@@ -90,6 +90,8 @@ def individual_sfr_history(
     logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
     log_sfr, log_sm = _individual_log_mstar_history_jax_kern(
+        logt,
+        dtarr,
         logm0,
         dmhdt_x0,
         dmhdt_k,
@@ -103,8 +105,6 @@ def individual_sfr_history(
         a_late,
         log_qtime,
         qspeed,
-        logt,
-        dtarr,
         indx_t0,
     )
     log_sfr, log_sm = np.array(log_sfr), np.array(log_sm)
@@ -112,6 +112,8 @@ def individual_sfr_history(
 
 
 def _individual_log_sfr_history_jax_kern(
+    logt,
+    dtarr,
     logm0,
     dmhdt_x0,
     dmhdt_k,
@@ -125,8 +127,6 @@ def _individual_log_sfr_history_jax_kern(
     a_late,
     log_qtime,
     qspeed,
-    logt,
-    dtarr,
     indx_t0,
 ):
 
@@ -157,6 +157,8 @@ def _calculate_cumulative_in_situ_mass(log_sfr, dtarr):
 
 
 def _individual_log_mstar_history_jax_kern(
+    logt,
+    dtarr,
     logm0,
     dmhdt_x0,
     dmhdt_k,
@@ -170,11 +172,11 @@ def _individual_log_mstar_history_jax_kern(
     a_late,
     log_qtime,
     qspeed,
-    logt,
-    dtarr,
     indx_t0,
 ):
     log_sfr = _individual_log_sfr_history_jax_kern(
+        logt,
+        dtarr,
         logm0,
         dmhdt_x0,
         dmhdt_k,
@@ -188,8 +190,6 @@ def _individual_log_mstar_history_jax_kern(
         a_late,
         log_qtime,
         qspeed,
-        logt,
-        dtarr,
         indx_t0,
     )
     log_smh = _calculate_cumulative_in_situ_mass(log_sfr, dtarr)

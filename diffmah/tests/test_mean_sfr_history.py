@@ -12,7 +12,7 @@ from ..mean_sfr_history import mean_sfr_history
 def test_mean_sfr_history():
     tarr = np.linspace(0.1, 14, 500)
     for logm0 in range(10, 16):
-        log_sfr, log_sm = mean_sfr_history(logm0, tarr)
+        log_sfr, log_sm = mean_sfr_history(tarr, logm0)
         assert np.all(np.isfinite(log_sfr))
         assert np.all(np.isfinite(log_sm))
         assert log_sfr.size == log_sm.size == tarr.size
@@ -27,7 +27,7 @@ def test_mean_log_sfr_history():
     dtarr = _get_dt_array(10 ** logt)
     indx_t0 = -1
     log_sfrh = _mean_log_sfr_history_jax_kern(
-        logm0, mah_params, mean_sfr_eff_params, q_params, logt, dtarr, indx_t0
+        logt, dtarr, logm0, mah_params, mean_sfr_eff_params, q_params, indx_t0
     )
     assert np.all(np.isfinite(log_sfrh))
 
@@ -43,12 +43,12 @@ def test_mean_log_mstar_history():
     indx_t0 = -1
 
     log_sfr, log_sm = _mean_log_mstar_history_jax_kern(
+        logt,
+        dtarr,
         logm0,
         mean_mah_params,
         mean_sfr_eff_params,
         mean_q_params,
-        logt,
-        dtarr,
         indx_t0,
     )
     assert np.all(np.isfinite(log_sfr))
@@ -90,7 +90,7 @@ def test_reasonable_fiducial_values_of_mean_sfr_history_milky_way():
             10.58462598,
         ]
     )
-    _log_sfr_pred_logm12, _log_sm_pred_logm12 = mean_sfr_history(12, t_table)
+    _log_sfr_pred_logm12, _log_sm_pred_logm12 = mean_sfr_history(t_table, 12)
     _log_ssfr_pred_logm12 = _log_sfr_pred_logm12 - _log_sm_pred_logm12
     log_ssfr_pred_logm12 = np.interp(tobs, t_table, _log_ssfr_pred_logm12)
     log_sm_pred_logm12 = np.interp(tobs, t_table, _log_sm_pred_logm12)
@@ -140,7 +140,7 @@ def test_reasonable_fiducial_values_of_mean_sfr_history_groups():
         ]
     )
 
-    _log_sfr_pred_logm13, _log_sm_pred_logm13 = mean_sfr_history(13, t_table)
+    _log_sfr_pred_logm13, _log_sm_pred_logm13 = mean_sfr_history(t_table, 13)
     _log_ssfr_pred_logm13 = _log_sfr_pred_logm13 - _log_sm_pred_logm13
     log_ssfr_pred_logm13 = np.interp(tobs, t_table, _log_ssfr_pred_logm13)
     log_sm_pred_logm13 = np.interp(tobs, t_table, _log_sm_pred_logm13)

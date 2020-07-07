@@ -19,8 +19,8 @@ DEFAULT_Q_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5.0, fms_ylo=0.0, fms_yhi=-1
 
 
 def mean_log_main_sequence_fraction(
-    logm0,
     logt,
+    logm0,
     fms_logtc_x0=MEAN_Q_PARAMS["fms_logtc_x0"],
     fms_logtc_k=MEAN_Q_PARAMS["fms_logtc_k"],
     fms_logtc_ylo=MEAN_Q_PARAMS["fms_logtc_ylo"],
@@ -66,10 +66,11 @@ def mean_log_main_sequence_fraction(
             fms_late_yhi,
         )
     ).astype("f4")
-    return np.array(_mean_log_main_sequence_fraction(logm0, *params, logt,))
+    return np.array(_mean_log_main_sequence_fraction(logt, logm0, *params,))
 
 
 def _mean_log_main_sequence_fraction(
+    logt,
     logm0,
     fms_logtc_x0,
     fms_logtc_k,
@@ -79,7 +80,6 @@ def _mean_log_main_sequence_fraction(
     fms_late_k,
     fms_late_ylo,
     fms_late_yhi,
-    logt,
 ):
 
     fms_x0 = _fms_logtc_vs_logm0(
