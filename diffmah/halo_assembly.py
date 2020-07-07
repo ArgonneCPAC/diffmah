@@ -91,6 +91,8 @@ def mean_halo_mass_assembly_history(
     logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
     _x = _mean_halo_assembly_jax_kern(
+        logt,
+        dtarr,
         logm0,
         dmhdt_x0_c0,
         dmhdt_x0_c1,
@@ -100,8 +102,6 @@ def mean_halo_mass_assembly_history(
         dmhdt_ylo_c1,
         dmhdt_yhi_c0,
         dmhdt_yhi_c1,
-        logt,
-        dtarr,
         indx_t0,
     )
     logmah, log_dmhdt = _x
@@ -200,6 +200,8 @@ def _individual_halo_assembly_jax_kern(
 
 
 def _mean_halo_assembly_jax_kern(
+    logt,
+    dtarr,
     logm0,
     dmhdt_x0_c0,
     dmhdt_x0_c1,
@@ -209,8 +211,6 @@ def _mean_halo_assembly_jax_kern(
     dmhdt_ylo_c1,
     dmhdt_yhi_c0,
     dmhdt_yhi_c1,
-    logt,
-    dtarr,
     indx_t0,
 ):
     """JAX kernel for the average MAH of halos with present-day mass logm0."""

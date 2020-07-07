@@ -172,7 +172,7 @@ def _mean_log_mstar_history_jax_kern(
 def _mean_log_sfr_history_jax_kern(
     logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
 ):
-    _x = _mean_halo_assembly_jax_kern(logm0, *mean_mah_params, logt, dtarr, indx_t0)
+    _x = _mean_halo_assembly_jax_kern(logt, dtarr, logm0, *mean_mah_params, indx_t0)
     log_dmbdt = jax_np.log10(FB) + _x[1]
     log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logm0, *mean_sfr_eff_params, logt)
     log_frac_ms = _mean_log_main_sequence_fraction(logm0, *mean_q_params, logt)
