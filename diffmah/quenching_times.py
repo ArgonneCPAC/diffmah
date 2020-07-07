@@ -7,7 +7,7 @@ from jax.scipy.special import erf as jax_erf
 from jax import jit as jax_jit
 from jax import vmap as jax_vmap
 from .utils import _enforce_no_extraneous_keywords
-from .utils import jax_inverse_sigmoid
+from .utils import jax_inverse_sigmoid, _jax_triweight_sigmoid_kernel
 
 
 DEFAULT_PARAMS = OrderedDict(
@@ -75,6 +75,12 @@ def _jax_quenching_function(t, qt):
 
 def _jax_log_quenching_function(logt, log_qtime, log_qfrac=-2):
     return _jax_sigmoid(logt, log_qtime, 200, 0, log_qfrac)
+
+
+def _jax_gradual_quenching(logt, logtq, qspeed):
+    z = (logt - logtq) * qspeed
+    zq = logtq + 2  # Shift to the 95% point
+    return -_jax_triweight_sigmoid_kernel(z - zq)
 
 
 def central_quenching_time(logm0, percentile, **kwargs):
