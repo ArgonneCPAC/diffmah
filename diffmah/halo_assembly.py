@@ -50,11 +50,11 @@ def mean_halo_mass_assembly_history(
 
     Parameters
     ----------
-    logm0 : float
-        Base-10 log of halo mass at z=0 in units of Msun.
-
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
+
+    logm0 : float
+        Base-10 log of halo mass at z=0 in units of Msun.
 
     t0 : float, optional
         Age of the universe in Gyr at the time halo mass attains the input logm0.
@@ -121,11 +121,11 @@ def individual_halo_assembly_history(
 
     Parameters
     ----------
-    logm0 : float
-        Base-10 log of halo mass at z=0 in units of Msun.
-
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
+
+    logm0 : float
+        Base-10 log of halo mass at z=0 in units of Msun.
 
     dmhdt_x0 : float, optional
         Base-10 log of the time of peak star formation.

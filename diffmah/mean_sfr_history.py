@@ -60,15 +60,20 @@ def mean_sfr_history(
 
     Parameters
     ----------
-    logm0 : float
-        Base-10 log of halo mass at z=0 in units of Msun.
-
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
 
         The size n should be large enough so that the log_sm integration
         can be accurately calculated with the midpoint rule.
         Typically n >~100 is sufficient for most purposes.
+
+    logm0 : float
+        Base-10 log of halo mass at z=0 in units of Msun.
+
+    t0 : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logm0.
+        There must exist some entry of the input cosmic_time array within 50Myr of t0.
+        Default is ~13.85 Gyr.
 
     **mean_mah_params : floats, optional
         Any keyword of halo_assembly.MEAN_MAH_PARAMS is accepted
@@ -78,11 +83,6 @@ def mean_sfr_history(
 
     **mean_q_params : floats, optional
         Any keyword of quenching_history.MEAN_Q_PARAMS is accepted
-
-    t0 : float, optional
-        Age of the universe in Gyr at the time halo mass attains the input logm0.
-        There must exist some entry of the input cosmic_time array within 50Myr of t0.
-        Default is ~13.85 Gyr.
 
     Returns
     -------

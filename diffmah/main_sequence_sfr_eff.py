@@ -126,10 +126,10 @@ def log_sfr_efficiency_main_sequence(
 
     Parameters
     ----------
-    logm0 : float
-
     logt : ndarray shape (n, )
         Base-10 log of cosmic time in Gyr
+
+    logm0 : float
 
     lge0 : float, optional
         Asymptotic value of SFR efficiency at early times

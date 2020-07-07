@@ -40,11 +40,11 @@ def individual_sfr_history(
 
     Parameters
     ----------
-    logm0 : float
-        Base-10 log of halo mass at z=0 in units of Msun.
-
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
+
+    logm0 : float
+        Base-10 log of halo mass at z=0 in units of Msun.
 
     qtime : float, optional
         Quenching time in units of Gyr.
