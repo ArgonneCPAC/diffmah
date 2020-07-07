@@ -50,13 +50,13 @@ def test_individual_halo_assembly_differentiability():
         logm0, logt, dtarr, indx_t0, logt0, logmah_target = data
         dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = mah_params
         logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
+            logt,
+            dtarr,
             logm0,
             dmhdt_x0,
             dmhdt_k,
             dmhdt_early_index,
             dmhdt_late_index,
-            logt,
-            dtarr,
             indx_t0,
         )
 
@@ -74,13 +74,13 @@ def test_individual_halo_assembly_differentiability():
     default_params = np.array(list(DEFAULT_MAH_PARAMS.values()))
     dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = default_params
     logmah_target = _individual_halo_assembly_jax_kern(
+        logt,
+        dtarr,
         logm0,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        logt,
-        dtarr,
         indx_t0,
     )[0]
 

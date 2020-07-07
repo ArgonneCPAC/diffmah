@@ -131,13 +131,13 @@ def _individual_log_sfr_history_jax_kern(
 ):
 
     log_dmhdt = _individual_halo_assembly_jax_kern(
+        logt,
+        dtarr,
         logm0,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        logt,
-        dtarr,
         indx_t0,
     )[1]
     log_dmbdt = jax_np.log10(FB) + log_dmhdt

@@ -163,13 +163,13 @@ def individual_halo_assembly_history(
     logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
 
     logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
+        logt,
+        dtarr,
         logm0,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        logt,
-        dtarr,
         indx_t0,
     )
     return np.array(logmah), np.array(log_dmhdt)
@@ -177,7 +177,7 @@ def individual_halo_assembly_history(
 
 @jax_jit
 def _individual_halo_assembly_jax_kern(
-    logm0, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index, logt, dtarr, indx_t0
+    logt, dtarr, logm0, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index, indx_t0
 ):
     """JAX kernel for the MAH of individual dark matter halos."""
     #  Use a sigmoid to model log10(dMh/dt) with arbitrary normalization
@@ -227,13 +227,13 @@ def _mean_halo_assembly_jax_kern(
     )
 
     logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
+        logt,
+        dtarr,
         logm0,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        logt,
-        dtarr,
         indx_t0,
     )
     return logmah, log_dmhdt
