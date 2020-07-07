@@ -19,8 +19,8 @@ DEFAULT_Q_PARAMS = OrderedDict(fms_logtc=0.5, fms_k=5.0, fms_ylo=0.0, fms_yhi=-1
 
 
 def mean_log_main_sequence_fraction(
-    logm0,
     logt,
+    logmp,
     fms_logtc_x0=MEAN_Q_PARAMS["fms_logtc_x0"],
     fms_logtc_k=MEAN_Q_PARAMS["fms_logtc_k"],
     fms_logtc_ylo=MEAN_Q_PARAMS["fms_logtc_ylo"],
@@ -36,10 +36,11 @@ def mean_log_main_sequence_fraction(
 
     Parameters
     ----------
-    logm0 : float
-
     logt : ndarray shape (n, )
         Base-10 log of cosmic time in Gyr
+
+    logmp : float
+        Base-10 log of peak halo mass in units of Msun
 
     **params : optional
         Accepts float values for all keyword arguments
@@ -52,7 +53,7 @@ def mean_log_main_sequence_fraction(
         on the main sequence at each input time.
 
     """
-    logm0 = float(logm0)
+    logmp = float(logmp)
     logt = jax_np.atleast_1d(logt).astype("f4")
     params = jax_np.array(
         (
@@ -66,11 +67,12 @@ def mean_log_main_sequence_fraction(
             fms_late_yhi,
         )
     ).astype("f4")
-    return np.array(_mean_log_main_sequence_fraction(logm0, *params, logt,))
+    return np.array(_mean_log_main_sequence_fraction(logt, logmp, *params,))
 
 
 def _mean_log_main_sequence_fraction(
-    logm0,
+    logt,
+    logmp,
     fms_logtc_x0,
     fms_logtc_k,
     fms_logtc_ylo,
@@ -79,14 +81,13 @@ def _mean_log_main_sequence_fraction(
     fms_late_k,
     fms_late_ylo,
     fms_late_yhi,
-    logt,
 ):
 
-    fms_x0 = _fms_logtc_vs_logm0(
-        logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi
+    fms_x0 = _fms_logtc_vs_logmp(
+        logmp, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi
     )
-    fms_yhi = _fms_yhi_vs_logm0(
-        logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi
+    fms_yhi = _fms_yhi_vs_logmp(
+        logmp, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi
     )
 
     fms_yhi = jax_np.where(fms_yhi > 0, 0, fms_yhi)
@@ -99,12 +100,12 @@ def _log_main_sequence_fraction(fms_x0, fms_yhi, logt):
     return _jax_sigmoid(logt, fms_x0, 7, 0, fms_yhi)
 
 
-def _fms_logtc_vs_logm0(logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi):
-    return _jax_sigmoid(logm0, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi)
+def _fms_logtc_vs_logmp(logmp, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi):
+    return _jax_sigmoid(logmp, fms_logtc_x0, fms_logtc_k, fms_logtc_ylo, fms_logtc_yhi)
 
 
-def _fms_yhi_vs_logm0(logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi):
-    return _jax_sigmoid(logm0, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi)
+def _fms_yhi_vs_logmp(logmp, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi):
+    return _jax_sigmoid(logmp, fms_late_x0, fms_late_k, fms_late_ylo, fms_late_yhi)
 
 
 def _jax_sigmoid(x, x0, k, ymin, ymax):

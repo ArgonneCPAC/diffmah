@@ -14,8 +14,9 @@ FB = 0.158
 
 
 def mean_sfr_history(
-    logm0,
     cosmic_time,
+    logmp,
+    tmp=TODAY,
     dmhdt_x0_c0=MEAN_MAH_PARAMS["dmhdt_x0_c0"],
     dmhdt_x0_c1=MEAN_MAH_PARAMS["dmhdt_x0_c1"],
     dmhdt_k_c0=MEAN_MAH_PARAMS["dmhdt_k_c0"],
@@ -53,22 +54,26 @@ def mean_sfr_history(
     fms_late_k=MEAN_Q_PARAMS["fms_late_k"],
     fms_late_ylo=MEAN_Q_PARAMS["fms_late_ylo"],
     fms_late_yhi=MEAN_Q_PARAMS["fms_late_yhi"],
-    t0=TODAY,
 ):
     """Star formation rate and stellar mass as a function of time
-    averaged over centrals living in halos with present-day mass logm0.
+    averaged over centrals living in halos with present-day mass logmp.
 
     Parameters
     ----------
-    logm0 : float
-        Base-10 log of halo mass at z=0 in units of Msun.
-
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
 
         The size n should be large enough so that the log_sm integration
         can be accurately calculated with the midpoint rule.
         Typically n >~100 is sufficient for most purposes.
+
+    logmp : float
+        Base-10 log of peak halo mass in units of Msun
+
+    tmp : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logmp.
+        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
+        Default is ~13.85 Gyr.
 
     **mean_mah_params : floats, optional
         Any keyword of halo_assembly.MEAN_MAH_PARAMS is accepted
@@ -78,11 +83,6 @@ def mean_sfr_history(
 
     **mean_q_params : floats, optional
         Any keyword of quenching_history.MEAN_Q_PARAMS is accepted
-
-    t0 : float, optional
-        Age of the universe in Gyr at the time halo mass attains the input logm0.
-        There must exist some entry of the input cosmic_time array within 50Myr of t0.
-        Default is ~13.85 Gyr.
 
     Returns
     -------
@@ -98,7 +98,7 @@ def mean_sfr_history(
     you should use this function to build an interpolation table with n>~100
 
     """
-    logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
+    logmp, logt, dtarr, indx_tmp = _process_halo_mah_args(logmp, cosmic_time, tmp)
 
     mean_mah_params = jax_np.array(
         (
@@ -153,29 +153,35 @@ def mean_sfr_history(
     ).astype("f4")
 
     log_sfr, log_smh = _mean_log_mstar_history_jax_kern(
-        logm0, mean_mah_params, mean_sfr_ms_params, mean_q_params, logt, dtarr, indx_t0
+        logt, dtarr, logmp, mean_mah_params, mean_sfr_ms_params, mean_q_params, indx_tmp
     )
 
     return np.array(log_sfr), np.array(log_smh)
 
 
 def _mean_log_mstar_history_jax_kern(
-    logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
+    logt, dtarr, logmp, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_tmp
 ):
     log_sfr = _mean_log_sfr_history_jax_kern(
-        logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
+        logt,
+        dtarr,
+        logmp,
+        mean_mah_params,
+        mean_sfr_eff_params,
+        mean_q_params,
+        indx_tmp,
     )
     log_smh = _calculate_cumulative_in_situ_mass(log_sfr, dtarr)
     return log_sfr, log_smh
 
 
 def _mean_log_sfr_history_jax_kern(
-    logm0, mean_mah_params, mean_sfr_eff_params, mean_q_params, logt, dtarr, indx_t0
+    logt, dtarr, logmp, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_tmp
 ):
-    _x = _mean_halo_assembly_jax_kern(logm0, *mean_mah_params, logt, dtarr, indx_t0)
+    _x = _mean_halo_assembly_jax_kern(logt, dtarr, logmp, *mean_mah_params, indx_tmp)
     log_dmbdt = jax_np.log10(FB) + _x[1]
-    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logm0, *mean_sfr_eff_params, logt)
-    log_frac_ms = _mean_log_main_sequence_fraction(logm0, *mean_q_params, logt)
+    log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logt, logmp, *mean_sfr_eff_params)
+    log_frac_ms = _mean_log_main_sequence_fraction(logt, logmp, *mean_q_params)
     log_sfr = log_dmbdt + log_sfr_eff_ms + log_frac_ms
     return log_sfr
 

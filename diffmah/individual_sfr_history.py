@@ -20,8 +20,8 @@ DEFAULT_SFRH_PARAMS.update(QUENCHING_DICT)
 
 
 def individual_sfr_history(
-    logm0,
     cosmic_time,
+    logmp,
     dmhdt_x0=DEFAULT_SFRH_PARAMS["dmhdt_x0"],
     dmhdt_k=DEFAULT_SFRH_PARAMS["dmhdt_k"],
     dmhdt_early_index=DEFAULT_SFRH_PARAMS["dmhdt_early_index"],
@@ -34,17 +34,17 @@ def individual_sfr_history(
     a_late=DEFAULT_SFRH_PARAMS["a_late"],
     log_qtime=DEFAULT_SFRH_PARAMS["log_qtime"],
     qspeed=DEFAULT_SFRH_PARAMS["qspeed"],
-    t0=TODAY,
+    tmp=TODAY,
 ):
-    """Model for star formation history vs time for a halo with present-day mass logm0.
+    """Model for star formation history vs time for a halo with present-day mass logmp.
 
     Parameters
     ----------
-    logm0 : float
-        Base-10 log of halo mass at z=0 in units of Msun.
-
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
+
+    logmp : float
+        Base-10 log of peak halo mass in units of Msun
 
     qtime : float, optional
         Quenching time in units of Gyr.
@@ -70,15 +70,15 @@ def individual_sfr_history(
             dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index
 
         Unspecified MAH parameters will be set according to the
-        median growth history for a halo of mass logm0.
+        median growth history for a halo of mass logmp.
 
         See halo_assembly.DEFAULT_MAH_PARAMS for more info on MAH parameters
         See main_sequence_sfr_eff.DEFAULT_SFR_MS_PARAMS
         for more info on SFR efficiency  parameters
 
-    t0 : float, optional
-        Age of the universe in Gyr at the time halo mass attains the input logm0.
-        There must exist some entry of the input cosmic_time array within 50Myr of t0.
+    tmp : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logmp.
+        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
         Default is ~13.85 Gyr.
 
     Returns
@@ -87,10 +87,12 @@ def individual_sfr_history(
         Base-10 log of star formation rate in units of Msun/yr
 
     """
-    logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
+    logmp, logt, dtarr, indx_tmp = _process_halo_mah_args(logmp, cosmic_time, tmp)
 
     log_sfr, log_sm = _individual_log_mstar_history_jax_kern(
-        logm0,
+        logt,
+        dtarr,
+        logmp,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
@@ -103,16 +105,16 @@ def individual_sfr_history(
         a_late,
         log_qtime,
         qspeed,
-        logt,
-        dtarr,
-        indx_t0,
+        indx_tmp,
     )
     log_sfr, log_sm = np.array(log_sfr), np.array(log_sm)
     return log_sfr, log_sm
 
 
 def _individual_log_sfr_history_jax_kern(
-    logm0,
+    logt,
+    dtarr,
+    logmp,
     dmhdt_x0,
     dmhdt_k,
     dmhdt_early_index,
@@ -125,20 +127,18 @@ def _individual_log_sfr_history_jax_kern(
     a_late,
     log_qtime,
     qspeed,
-    logt,
-    dtarr,
-    indx_t0,
+    indx_tmp,
 ):
 
     log_dmhdt = _individual_halo_assembly_jax_kern(
-        logm0,
+        logt,
+        dtarr,
+        logmp,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        logt,
-        dtarr,
-        indx_t0,
+        indx_tmp,
     )[1]
     log_dmbdt = jax_np.log10(FB) + log_dmhdt
 
@@ -157,7 +157,9 @@ def _calculate_cumulative_in_situ_mass(log_sfr, dtarr):
 
 
 def _individual_log_mstar_history_jax_kern(
-    logm0,
+    logt,
+    dtarr,
+    logmp,
     dmhdt_x0,
     dmhdt_k,
     dmhdt_early_index,
@@ -170,12 +172,12 @@ def _individual_log_mstar_history_jax_kern(
     a_late,
     log_qtime,
     qspeed,
-    logt,
-    dtarr,
-    indx_t0,
+    indx_tmp,
 ):
     log_sfr = _individual_log_sfr_history_jax_kern(
-        logm0,
+        logt,
+        dtarr,
+        logmp,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
@@ -188,9 +190,7 @@ def _individual_log_mstar_history_jax_kern(
         a_late,
         log_qtime,
         qspeed,
-        logt,
-        dtarr,
-        indx_t0,
+        indx_tmp,
     )
     log_smh = _calculate_cumulative_in_situ_mass(log_sfr, dtarr)
     return log_sfr, log_smh
