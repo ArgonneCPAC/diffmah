@@ -1,5 +1,5 @@
 """Model for time-evolution of SFR efficiency of main sequence centrals,
-averaged over halos of the same present-day mass logm0."""
+averaged over halos of the same present-day mass logmp."""
 import numpy as np
 from collections import OrderedDict
 from .utils import jax_sigmoid
@@ -38,7 +38,7 @@ DEFAULT_SFR_MS_PARAMS = OrderedDict(
 
 def mean_log_sfr_efficiency_main_sequence(
     logt,
-    logm0,
+    logmp,
     lge0_lgmc=MEAN_SFR_MS_PARAMS["lge0_lgmc"],
     lge0_at_lgmc=MEAN_SFR_MS_PARAMS["lge0_at_lgmc"],
     lge0_early_slope=MEAN_SFR_MS_PARAMS["lge0_early_slope"],
@@ -70,7 +70,8 @@ def mean_log_sfr_efficiency_main_sequence(
     logt : ndarray shape (n, )
         Base-10 log of cosmic time in Gyr
 
-    logm0 : float
+    logmp : float
+        Base-10 log of peak halo mass at z=0 in units of Msun.
 
     **params : optional
         Accepts float values for all keyword arguments
@@ -80,13 +81,13 @@ def mean_log_sfr_efficiency_main_sequence(
     -------
     log_sfr_eff : ndarray shape (n, )
         Base-10 log of SFR efficiency averaged over all main-sequence
-        centrals living in halos with present-day mass logm0.
+        centrals living in halos with present-day mass logmp.
 
     """
 
     log_sfr_eff = mean_log_sfr_efficiency_ms_jax(
         logt,
-        logm0,
+        logmp,
         lge0_lgmc,
         lge0_at_lgmc,
         lge0_early_slope,
@@ -129,7 +130,7 @@ def log_sfr_efficiency_main_sequence(
     logt : ndarray shape (n, )
         Base-10 log of cosmic time in Gyr
 
-    logm0 : float
+    logmp : float
 
     lge0 : float, optional
         Asymptotic value of SFR efficiency at early times
@@ -159,7 +160,7 @@ def log_sfr_efficiency_main_sequence(
 
 def mean_log_sfr_efficiency_ms_jax(
     logt,
-    logm0,
+    logmp,
     lge0_lgmc,
     lge0_at_lgmc,
     lge0_early_slope,
@@ -183,7 +184,7 @@ def mean_log_sfr_efficiency_ms_jax(
     a_late_yhi,
 ):
     sfr_eff_params = _get_median_growth_params(
-        logm0,
+        logmp,
         lge0_lgmc,
         lge0_at_lgmc,
         lge0_early_slope,

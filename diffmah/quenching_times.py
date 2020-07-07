@@ -83,7 +83,7 @@ def _jax_gradual_quenching(logt, logtq, qspeed):
     return -_jax_triweight_sigmoid_kernel(z - zq)
 
 
-def central_quenching_time(logm0, percentile, **kwargs):
+def central_quenching_time(logmp, percentile, **kwargs):
     """Quenching time of central galaxies.
 
     In this model, the quenching time decreases with increasing mass,
@@ -92,11 +92,11 @@ def central_quenching_time(logm0, percentile, **kwargs):
 
     Parameters
     ----------
-    logm0 : float or ndarray of shape (n, )
+    logmp : float or ndarray of shape (n, )
         Base-10 log of halo mass at z=0
 
     percentile : float or ndarray of shape (n, )
-        percentile = Prob(< y | logm0) for some halo property y.
+        percentile = Prob(< y | logmp) for some halo property y.
         For the median quenching time use percentile = 0.5.
 
     qt_lgmc : float or ndarray, optional
@@ -129,15 +129,15 @@ def central_quenching_time(logm0, percentile, **kwargs):
         Age of the universe at the time of quenching in units of Gyr
 
     """
-    logm0, percentile = _get_1d_arrays(logm0, percentile)
+    logmp, percentile = _get_1d_arrays(logmp, percentile)
     param_dict = _get_default_quenching_time_param_dict(**kwargs)
     params = tuple(param_dict.values())
-    qtime = central_quenching_time_jax(logm0, percentile, params)
+    qtime = central_quenching_time_jax(logmp, percentile, params)
     return np.asarray(qtime)
 
 
-def inverse_central_quenching_time(logm0, qthresh, **kwargs):
-    """Calculate Prob(qtime < qthresh | logm0) for central galaxies.
+def inverse_central_quenching_time(logmp, qthresh, **kwargs):
+    """Calculate Prob(qtime < qthresh | logmp) for central galaxies.
 
     In this model, the quenching time decreases with increasing mass,
     such that massive BCGs have earlier quenching times relative to
@@ -145,11 +145,11 @@ def inverse_central_quenching_time(logm0, qthresh, **kwargs):
 
     Parameters
     ----------
-    logm0 : float or ndarray of shape (n, )
+    logmp : float or ndarray of shape (n, )
         Base-10 log of halo mass at z=0
 
     qthresh : float or ndarray of shape (n, )
-        Prob(qtime < qthresh | logm0).
+        Prob(qtime < qthresh | logmp).
         For the median quenching time use percentile = 0.5.
 
     qt_lgmc : float or ndarray, optional
@@ -179,34 +179,34 @@ def inverse_central_quenching_time(logm0, qthresh, **kwargs):
     Returns
     -------
     percentile : float or ndarray of shape (n, )
-        percentile = Prob(qtime < qthresh | logm0).
-        When qthresh is the median qtime for a halo of mass logm0,
+        percentile = Prob(qtime < qthresh | logmp).
+        When qthresh is the median qtime for a halo of mass logmp,
         function returns 0.5
 
     """
-    logm0, qthresh = _get_1d_arrays(logm0, qthresh)
+    logmp, qthresh = _get_1d_arrays(logmp, qthresh)
     param_dict = _get_default_quenching_time_param_dict(**kwargs)
     params = tuple(param_dict.values())
-    percentile = inverse_central_quenching_time_jax(logm0, qthresh, params)
+    percentile = inverse_central_quenching_time_jax(logmp, qthresh, params)
     return np.asarray(percentile)
 
 
-def _central_quenching_time_kern(logm0, percentile, params):
+def _central_quenching_time_kern(logmp, percentile, params):
     qt_params, qt_scatter_params = params[0:4], params[4:]
-    logtq_med = jax_np.log10(_median_quenching_time_kern(logm0, qt_params))
-    logtq_scale = _quenching_time_scatter_kern(logm0, qt_scatter_params)
+    logtq_med = jax_np.log10(_median_quenching_time_kern(logmp, qt_params))
+    logtq_scale = _quenching_time_scatter_kern(logmp, qt_scatter_params)
     ylo, yhi = logtq_med - logtq_scale, logtq_med + logtq_scale
     z = _z_score_from_percentile(percentile)
     log_qt = _jax_sigmoid(z, 0, 1, ylo, yhi)
     return jax_np.power(10, log_qt)
 
 
-def _inverse_central_quenching_time_kern(logm0, qtime, params):
+def _inverse_central_quenching_time_kern(logmp, qtime, params):
     qt_params, qt_scatter_params = params[0:4], params[4:]
     log_qt = jax_np.log10(qtime)
 
-    log_qt_med = jax_np.log10(_median_quenching_time_kern(logm0, qt_params))
-    log_tq_scale = _quenching_time_scatter_kern(logm0, qt_scatter_params)
+    log_qt_med = jax_np.log10(_median_quenching_time_kern(logmp, qt_params))
+    log_tq_scale = _quenching_time_scatter_kern(logmp, qt_scatter_params)
     ylo, yhi = log_qt_med - log_tq_scale, log_qt_med + log_tq_scale
 
     qtime_z_score = jax_inverse_sigmoid(log_qt, 0, 1, ylo, yhi)
@@ -224,25 +224,25 @@ inverse_central_quenching_time_jax = jax_jit(
 )
 
 
-def satellite_quenching_time(logm0, percentile, infall_time, **kwargs):
+def satellite_quenching_time(logmp, percentile, infall_time, **kwargs):
     """Quenching time of satellite galaxies.
 
     Minimum of infall time and the corresponding central_quenching_time.
 
     """
-    qtime_cens = central_quenching_time(logm0, percentile, **kwargs)
+    qtime_cens = central_quenching_time(logmp, percentile, **kwargs)
     return jax_np.minimum(qtime_cens, infall_time)
 
 
-def _median_quenching_time_kern(logm0, params):
+def _median_quenching_time_kern(logmp, params):
     qt_lgmc, qt_k, qt_dwarfs, qt_clusters = params
-    return _jax_sigmoid(logm0, qt_lgmc, qt_k, qt_dwarfs, qt_clusters)
+    return _jax_sigmoid(logmp, qt_lgmc, qt_k, qt_dwarfs, qt_clusters)
 
 
-def _quenching_time_scatter_kern(logm0, params):
+def _quenching_time_scatter_kern(logmp, params):
     qt_scatter_lgmc, qt_scatter_k, qt_scatter_dwarfs, qt_scatter_clusters = params
     return _jax_sigmoid(
-        logm0, qt_scatter_lgmc, qt_scatter_k, qt_scatter_dwarfs, qt_scatter_clusters
+        logmp, qt_scatter_lgmc, qt_scatter_k, qt_scatter_dwarfs, qt_scatter_clusters
     )
 
 

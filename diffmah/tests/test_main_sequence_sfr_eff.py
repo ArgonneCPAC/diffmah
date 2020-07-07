@@ -29,9 +29,9 @@ def test_log_sfr_eff_ms_wrapper():
 
 
 def test_mean_log_sfr_eff_ms_wrapper():
-    logm0 = 12
+    logmp = 12
     logt = np.linspace(-1, 1.14, 50)
-    mean_log_sfr_eff = mean_log_sfr_efficiency_main_sequence(logt, logm0)
+    mean_log_sfr_eff = mean_log_sfr_efficiency_main_sequence(logt, logmp)
     assert np.all(np.isfinite(mean_log_sfr_eff))
 
 
@@ -58,17 +58,17 @@ def test_sfr_efficiency_responds_to_params():
 
 def test_mean_sfr_efficiency_responds_to_params():
     param_dict_fid = deepcopy(MEAN_SFR_MS_PARAMS)
-    logm0arr = (10, 12, 15)
+    logmparr = (10, 12, 15)
     logt = np.linspace(-1, 1.14, 10)
 
     perfect_match = True
     for key, default in MEAN_SFR_MS_PARAMS.items():
         perfect_match = False
-        for logm0 in logm0arr:
+        for logmp in logmparr:
             d = dict()
             d[key] = param_dict_fid[key] / 2 - 0.1
-            y1 = mean_log_sfr_efficiency_main_sequence(logt, logm0)
-            y2 = mean_log_sfr_efficiency_main_sequence(logt, logm0, **d)
+            y1 = mean_log_sfr_efficiency_main_sequence(logt, logmp)
+            y2 = mean_log_sfr_efficiency_main_sequence(logt, logmp, **d)
             if not np.allclose(y1, y2):
                 perfect_match = False
         assert not perfect_match, key
@@ -103,18 +103,18 @@ def test_sfr_efficiency_is_differentiable():
 def test_mean_sfr_efficiency_is_differentiable():
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(params, data):
-        logm0, logt, target = data
-        log_sfr_eff = mean_log_sfr_efficiency_ms_jax(logt, logm0, *params)
+        logmp, logt, target = data
+        log_sfr_eff = mean_log_sfr_efficiency_ms_jax(logt, logmp, *params)
         diff = target - log_sfr_eff
         return jax_np.sum(diff) / diff.size
 
     npts = 250
-    logm0 = 12
+    logmp = 12
     logt0 = np.log10(13.85)
     logt = np.linspace(-1, logt0, npts)
     params = np.array(list(MEAN_SFR_MS_PARAMS.values())).astype("f4")
-    target = mean_log_sfr_efficiency_ms_jax(logt, logm0, *params)
-    data = logm0, logt, target
+    target = mean_log_sfr_efficiency_ms_jax(logt, logmp, *params)
+    data = logmp, logt, target
     loss_init, grads = value_and_grad(mse_loss, argnums=0)(params, data)
     params_new = params - 0.05 * grads
     loss_new, grads = value_and_grad(mse_loss, argnums=0)(params_new, data)

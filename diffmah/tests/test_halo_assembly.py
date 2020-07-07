@@ -17,28 +17,28 @@ def test_halo_mah_evaluates_reasonably_with_default_args():
     """
     """
     npts = 250
-    for logm0 in (11, 12, 13, 14, 15):
-        for t0 in (13.5, 14):
-            cosmic_time = np.linspace(0.1, t0, npts)
+    for logmp in (11, 12, 13, 14, 15):
+        for tmp in (13.5, 14):
+            cosmic_time = np.linspace(0.1, tmp, npts)
             logmah, log_dmhdt = individual_halo_assembly_history(
-                cosmic_time, logm0, t0=t0
+                cosmic_time, logmp, tmp=tmp
             )
             assert logmah.size == npts == log_dmhdt.size
-            assert np.allclose(logmah[-1], logm0, atol=0.01)
+            assert np.allclose(logmah[-1], logmp, atol=0.01)
 
 
 def test_avg_halo_mah_evaluates_reasonably_with_default_args():
     """
     """
     npts = 250
-    for logm0 in (11, 12, 13, 14, 15):
-        for t0 in (13.5, 14):
-            cosmic_time = np.linspace(0.1, t0, npts)
+    for logmp in (11, 12, 13, 14, 15):
+        for tmp in (13.5, 14):
+            cosmic_time = np.linspace(0.1, tmp, npts)
             logmah, log_dmhdt = mean_halo_mass_assembly_history(
-                cosmic_time, logm0, t0=t0
+                cosmic_time, logmp, tmp=tmp
             )
             assert logmah.size == npts == log_dmhdt.size
-            assert np.allclose(logmah[-1], logm0, atol=0.01)
+            assert np.allclose(logmah[-1], logmp, atol=0.01)
 
 
 def test_individual_halo_assembly_differentiability():
@@ -47,44 +47,44 @@ def test_individual_halo_assembly_differentiability():
 
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(mah_params, data):
-        logm0, logt, dtarr, indx_t0, logt0, logmah_target = data
+        logmp, logt, dtarr, indx_tmp, logtmp, logmah_target = data
         dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = mah_params
         logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
             logt,
             dtarr,
-            logm0,
+            logmp,
             dmhdt_x0,
             dmhdt_k,
             dmhdt_early_index,
             dmhdt_late_index,
-            indx_t0,
+            indx_tmp,
         )
 
         diff_logmah = logmah - logmah_target
         return jax_np.sum(diff_logmah * diff_logmah) / diff_logmah.size
 
     npts = 100
-    logm0 = 12
-    t0 = 13.85
-    tarr = np.linspace(0.1, t0, npts)
+    logmp = 12
+    tmp = 13.85
+    tarr = np.linspace(0.1, tmp, npts)
     logt = np.log10(tarr)
     dtarr = _get_dt_array(tarr)
-    logt0 = np.log10(t0)
-    indx_t0 = -1
+    logtmp = np.log10(tmp)
+    indx_tmp = -1
     default_params = np.array(list(DEFAULT_MAH_PARAMS.values()))
     dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = default_params
     logmah_target = _individual_halo_assembly_jax_kern(
         logt,
         dtarr,
-        logm0,
+        logmp,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        indx_t0,
+        indx_tmp,
     )[0]
 
-    data = logm0, logt, dtarr, indx_t0, logt0, logmah_target
+    data = logmp, logt, dtarr, indx_tmp, logtmp, logmah_target
     loss_fid = mse_loss(default_params, data)
     assert np.allclose(loss_fid, 0, atol=0.01)
 
@@ -99,9 +99,9 @@ def test_individual_halo_assembly_differentiability():
     assert loss_new < loss_init
 
 
-def test_mean_mah_params_match_default_params_at_logm0_12():
+def test_mean_mah_params_match_default_params_at_logmp_12():
     """Enforce that the _get_individual_mah_params function
-    returns DEFAULT_MAH_PARAMS when logM0 = 12, and not otherwise.
+    returns DEFAULT_MAH_PARAMS when logmp = 12, and not otherwise.
     """
     mean_mah_param_arr = _get_param_array(MEAN_MAH_PARAMS)
     default_mah_param_arr = _get_param_array(DEFAULT_MAH_PARAMS)

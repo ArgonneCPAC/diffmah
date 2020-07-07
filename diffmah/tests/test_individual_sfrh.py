@@ -22,7 +22,7 @@ LOG_SMH_UM_LOGM12 = np.array(
 
 def test_individual_sfr_history_agrees_with_umachine_milky_way_halos():
     """Enforce reasonable agreement with a hard-coded tabulation of
-    the mean SFR history of UniverseMachine centrals with logm0=12.
+    the mean SFR history of UniverseMachine centrals with logmp=12.
     These should agree because the values of DEFAULT_SFRH_PARAMS
     have been set according to the calibrated value of the global model
     evaluated at logMhalo=12.

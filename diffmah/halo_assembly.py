@@ -28,14 +28,14 @@ MEAN_MAH_PARAMS = OrderedDict(
     dmhdt_yhi_c0=-1.0,
     dmhdt_yhi_c1=0.25,
 )
-LOGT0 = 1.14
-TODAY = 10.0 ** LOGT0
+LOGTODAY = 1.14
+TODAY = 10.0 ** LOGTODAY
 
 
 def mean_halo_mass_assembly_history(
     cosmic_time,
-    logm0,
-    t0=TODAY,
+    logmp,
+    tmp=TODAY,
     dmhdt_x0_c0=MEAN_MAH_PARAMS["dmhdt_x0_c0"],
     dmhdt_x0_c1=MEAN_MAH_PARAMS["dmhdt_x0_c1"],
     dmhdt_k_c0=MEAN_MAH_PARAMS["dmhdt_k_c0"],
@@ -46,25 +46,25 @@ def mean_halo_mass_assembly_history(
     dmhdt_yhi_c1=MEAN_MAH_PARAMS["dmhdt_yhi_c1"],
 ):
     """Rolling power-law model for halo mass accretion rate
-    averaged over host halos with present-day mass logm0.
+    averaged over host halos with present-day mass logmp.
 
     Parameters
     ----------
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
 
-    logm0 : float
-        Base-10 log of halo mass at z=0 in units of Msun.
+    logmp : float
+        Base-10 log of peak halo mass at z=0 in units of Msun.
 
-    t0 : float, optional
-        Age of the universe in Gyr at the time halo mass attains the input logm0.
-        There must exist some entry of the input cosmic_time array within 50Myr of t0.
+    tmp : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logmp.
+        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
         Default is ~13.85 Gyr.
 
     *mah_params : float, optional
         The slope of dMh(t)/dt is a sigmoid described by 4 parameters: x0, k, ylo, yhi.
         Each of these 4 parameters exhibits power-law scaling with halo mass,
-        so that there are 8 total parameters in addition to logm0. They are, in order:
+        so that there are 8 total parameters in addition to logmp. They are, in order:
 
         dmhdt_x0_c0, dmhdt_x0_c1, dmhdt_k_c0, dmhdt_k_c1,
         dmhdt_ylo_c0, dmhdt_ylo_c1, dmhdt_yhi_c0, dmhdt_yhi_c1
@@ -85,15 +85,15 @@ def mean_halo_mass_assembly_history(
     Notes
     -----
     The returned logmah array has been normalized so that
-    its value at the input t0 exactly equals the input logm0.
+    its value at the input tmp exactly equals the input logmp.
 
     """
-    logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
+    logmp, logt, dtarr, indx_tmp = _process_halo_mah_args(logmp, cosmic_time, tmp)
 
     _x = _mean_halo_assembly_jax_kern(
         logt,
         dtarr,
-        logm0,
+        logmp,
         dmhdt_x0_c0,
         dmhdt_x0_c1,
         dmhdt_k_c0,
@@ -102,7 +102,7 @@ def mean_halo_mass_assembly_history(
         dmhdt_ylo_c1,
         dmhdt_yhi_c0,
         dmhdt_yhi_c1,
-        indx_t0,
+        indx_tmp,
     )
     logmah, log_dmhdt = _x
     return np.array(logmah), np.array(log_dmhdt)
@@ -110,8 +110,8 @@ def mean_halo_mass_assembly_history(
 
 def individual_halo_assembly_history(
     cosmic_time,
-    logm0,
-    t0=TODAY,
+    logmp,
+    tmp=TODAY,
     dmhdt_x0=DEFAULT_MAH_PARAMS["dmhdt_x0"],
     dmhdt_k=DEFAULT_MAH_PARAMS["dmhdt_k"],
     dmhdt_early_index=DEFAULT_MAH_PARAMS["dmhdt_early_index"],
@@ -124,7 +124,7 @@ def individual_halo_assembly_history(
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
 
-    logm0 : float
+    logmp : float
         Base-10 log of halo mass at z=0 in units of Msun.
 
     dmhdt_x0 : float, optional
@@ -139,9 +139,9 @@ def individual_halo_assembly_history(
     dmhdt_late_index : float, optional
         Late-time power-law index dMh/dt ~ t**dmhdt_late_index for logt >> dmhdt_x0.
 
-    t0 : float, optional
-        Age of the universe in Gyr at the time halo mass attains the input logm0.
-        There must exist some entry of the input cosmic_time array within 50Myr of t0.
+    tmp : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logmp.
+        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
         Default is ~13.85 Gyr.
 
     Returns
@@ -157,32 +157,32 @@ def individual_halo_assembly_history(
     Notes
     -----
     The returned logmah array has been normalized so that
-    its value at the input t0 exactly equals the input logm0.
+    its value at the input tmp exactly equals the input logmp.
 
     """
-    logm0, logt, dtarr, indx_t0 = _process_halo_mah_args(logm0, cosmic_time, t0)
+    logmp, logt, dtarr, indx_tmp = _process_halo_mah_args(logmp, cosmic_time, tmp)
 
     logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
         logt,
         dtarr,
-        logm0,
+        logmp,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        indx_t0,
+        indx_tmp,
     )
     return np.array(logmah), np.array(log_dmhdt)
 
 
 @jax_jit
 def _individual_halo_assembly_jax_kern(
-    logt, dtarr, logm0, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index, indx_t0
+    logt, dtarr, logmp, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index, indx_tmp
 ):
     """JAX kernel for the MAH of individual dark matter halos."""
     #  Use a sigmoid to model log10(dMh/dt) with arbitrary normalization
     slope = jax_sigmoid(logt, dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index)
-    _log_dmhdt_unnnormed = slope * (logt - logt[indx_t0])
+    _log_dmhdt_unnnormed = slope * (logt - logt[indx_tmp])
 
     # Integrate dMh/dt to calculate Mh(t) with arbitrary normalization
     _dmhdt_unnnormed = jax_np.power(10, _log_dmhdt_unnnormed)
@@ -191,9 +191,9 @@ def _individual_halo_assembly_jax_kern(
     _mah_unnnormed = jax_np.cumsum(_dmah_unnnormed_integrand) * 1e9
     _logmah_unnnormed = jax_np.log10(_mah_unnnormed)
 
-    # Normalize Mh(t) dMh/dt to integrate to logm0 at logt0
-    _logm0_unnnormed = _logmah_unnnormed[indx_t0]
-    _rescaling_factor = logm0 - _logm0_unnnormed
+    # Normalize Mh(t) dMh/dt to integrate to logmp at logtmp
+    _logmp_unnnormed = _logmah_unnnormed[indx_tmp]
+    _rescaling_factor = logmp - _logmp_unnnormed
     logmah = _logmah_unnnormed + _rescaling_factor
     log_dmhdt = jax_np.log10(_dmhdt_unnnormed) + _rescaling_factor
     return logmah, log_dmhdt
@@ -202,7 +202,7 @@ def _individual_halo_assembly_jax_kern(
 def _mean_halo_assembly_jax_kern(
     logt,
     dtarr,
-    logm0,
+    logmp,
     dmhdt_x0_c0,
     dmhdt_x0_c1,
     dmhdt_k_c0,
@@ -211,11 +211,11 @@ def _mean_halo_assembly_jax_kern(
     dmhdt_ylo_c1,
     dmhdt_yhi_c0,
     dmhdt_yhi_c1,
-    indx_t0,
+    indx_tmp,
 ):
-    """JAX kernel for the average MAH of halos with present-day mass logm0."""
+    """JAX kernel for the average MAH of halos with present-day mass logmp."""
     dmhdt_x0, dmhdt_k, dmhdt_early_index, dmhdt_late_index = _get_individual_mah_params(
-        logm0,
+        logmp,
         dmhdt_x0_c0,
         dmhdt_x0_c1,
         dmhdt_k_c0,
@@ -229,18 +229,18 @@ def _mean_halo_assembly_jax_kern(
     logmah, log_dmhdt = _individual_halo_assembly_jax_kern(
         logt,
         dtarr,
-        logm0,
+        logmp,
         dmhdt_x0,
         dmhdt_k,
         dmhdt_early_index,
         dmhdt_late_index,
-        indx_t0,
+        indx_tmp,
     )
     return logmah, log_dmhdt
 
 
 def _get_individual_mah_params(
-    logm0,
+    logmp,
     dmhdt_x0_c0,
     dmhdt_x0_c1,
     dmhdt_k_c0,
@@ -250,8 +250,8 @@ def _get_individual_mah_params(
     dmhdt_yhi_c0,
     dmhdt_yhi_c1,
 ):
-    """Calculate the rolling power-law params for the input logm0."""
-    x = logm0 - 13
+    """Calculate the rolling power-law params for the input logmp."""
+    x = logmp - 13
     dmhdt_x0 = dmhdt_x0_c0 + dmhdt_x0_c1 * x
     dmhdt_k = dmhdt_k_c0 + dmhdt_k_c1 * x
     dmhdt_ylo = dmhdt_ylo_c0 + dmhdt_ylo_c1 * x
@@ -259,7 +259,7 @@ def _get_individual_mah_params(
     return dmhdt_x0, dmhdt_k, dmhdt_ylo, dmhdt_yhi
 
 
-def _process_halo_mah_args(logm0, cosmic_time, t0):
+def _process_halo_mah_args(logmp, cosmic_time, tmp):
     """Do some bounds-checks and calculate the arrays needed by the MAH kernel."""
     cosmic_time = np.atleast_1d(cosmic_time).astype("f4")
     assert cosmic_time.size > 1, "Input cosmic_time must be an array"
@@ -268,13 +268,13 @@ def _process_halo_mah_args(logm0, cosmic_time, t0):
     assert np.all(np.diff(cosmic_time) > 0), msg.format(cosmic_time)
     assert np.all(cosmic_time > 0), msg.format(cosmic_time)
 
-    assert cosmic_time[-1] >= t0 - 0.1, "cosmic_time must span t0"
+    assert cosmic_time[-1] >= tmp - 0.1, "cosmic_time must span tmp"
 
     logt = np.log10(cosmic_time)
     dtarr = _get_dt_array(cosmic_time)
     present_time_indx = np.argmin(np.abs(cosmic_time - TODAY))
 
-    return logm0, logt, dtarr, present_time_indx
+    return logmp, logt, dtarr, present_time_indx
 
 
 def _get_dt_array(t):
