@@ -109,13 +109,13 @@ def mean_halo_mass_assembly_history(
 
 
 def individual_halo_assembly_history(
-    logm0,
     cosmic_time,
+    logm0,
+    t0=TODAY,
     dmhdt_x0=DEFAULT_MAH_PARAMS["dmhdt_x0"],
     dmhdt_k=DEFAULT_MAH_PARAMS["dmhdt_k"],
     dmhdt_early_index=DEFAULT_MAH_PARAMS["dmhdt_early_index"],
     dmhdt_late_index=DEFAULT_MAH_PARAMS["dmhdt_late_index"],
-    t0=TODAY,
 ):
     """Rolling power-law model for halo mass accretion rate of individual halos.
 
