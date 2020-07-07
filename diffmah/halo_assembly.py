@@ -33,8 +33,8 @@ TODAY = 10.0 ** LOGT0
 
 
 def mean_halo_mass_assembly_history(
-    logm0,
     cosmic_time,
+    logm0,
     t0=TODAY,
     dmhdt_x0_c0=MEAN_MAH_PARAMS["dmhdt_x0_c0"],
     dmhdt_x0_c1=MEAN_MAH_PARAMS["dmhdt_x0_c1"],

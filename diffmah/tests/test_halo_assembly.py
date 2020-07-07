@@ -35,7 +35,7 @@ def test_avg_halo_mah_evaluates_reasonably_with_default_args():
         for t0 in (13.5, 14):
             cosmic_time = np.linspace(0.1, t0, npts)
             logmah, log_dmhdt = mean_halo_mass_assembly_history(
-                logm0, cosmic_time, t0=t0
+                cosmic_time, logm0, t0=t0
             )
             assert logmah.size == npts == log_dmhdt.size
             assert np.allclose(logmah[-1], logm0, atol=0.01)
