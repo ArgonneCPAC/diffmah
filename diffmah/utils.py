@@ -1,6 +1,6 @@
 import numpy as np
 from jax import numpy as jax_np
-from jax import grad as jax_grad
+from jax import grad as value_and_grad
 from jax import jit as jax_jit
 from jax.experimental import optimizers as jax_opt
 from collections import OrderedDict
@@ -120,16 +120,16 @@ def _get_param_array(defaults, strict=False, dtype="f4", jax_arrays=True, **kwar
     return param_array
 
 
-def jax_adam_wrapper(mse_loss_func, params_init, mse_loss_data, n_step, step_size=1e-3):
+def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=1e-3):
     """Convenience function wrapping JAX's Adam optimizer used to
-    minimize the loss function mse_loss_func.
+    minimize the loss function loss_func.
 
     Starting from params_init, we take n_step steps down the gradient
     to calculate the returned value params_step_n.
 
     Parameters
     ----------
-    mse_loss_func : callable
+    loss_func : callable
         Differentiable function to minimize.
 
         Must accept inputs (params, data) and return a scalar,
@@ -138,9 +138,9 @@ def jax_adam_wrapper(mse_loss_func, params_init, mse_loss_data, n_step, step_siz
     params_init : ndarray of shape (n_params, )
         Initial guess at the parameters
 
-    mse_loss_data : sequence
+    loss_data : sequence
         Sequence of floats and arrays storing whatever data is needed
-        to compute mse_loss_func(params_init, mse_loss_data)
+        to compute loss_func(params_init, loss_data)
 
     n_step : int
         Number of steps to walk down the gradient
@@ -151,21 +151,27 @@ def jax_adam_wrapper(mse_loss_func, params_init, mse_loss_data, n_step, step_siz
     Returns
     -------
     params_step_n : ndarray of shape (n_params, )
-        Value of the parameters after walking n_step steps down the gradient
-        with a learning rate given by Adam
+        Stores the best-fit value of the parameters after n_step steps
 
-    loss : float
-        Value returned by mse_loss_func(params_step_n, mse_loss_data)
+    loss_arr : ndarray of shape (n_step, )
+        Stores the value of the loss at each step
+
+    params_arr : ndarray of shape (n_step, n_params)
+        Stores the value of the model params at each step
 
     """
+    loss_arr = np.zeros(n_step).astype("f4")
     opt_init, opt_update, get_params = jax_opt.adam(step_size)
     opt_state = opt_init(params_init)
+    n_params = len(params_init)
+    params_arr = np.zeros((n_step, n_params)).astype("f4")
 
     for istep in range(n_step):
         p = get_params(opt_state)
-        grads = jax_grad(mse_loss_func, argnums=0)(p, mse_loss_data)
+        params_arr[istep, :] = p
+        loss, grads = value_and_grad(loss_func, argnums=0)(p, loss_data)
+        loss_arr[istep] = loss
         opt_state = opt_update(istep, grads, opt_state)
 
     params_step_n = get_params(opt_state)
-    loss = mse_loss_func(params_step_n, mse_loss_data)
-    return params_step_n, loss
+    return params_step_n, loss_arr, params_arr
