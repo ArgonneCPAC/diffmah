@@ -7,12 +7,12 @@ from .halo_assembly import _individual_halo_assembly_jax_kern
 from .halo_assembly import _process_halo_mah_args
 from .halo_assembly import DEFAULT_MAH_PARAMS, TODAY
 from .main_sequence_sfr_eff import DEFAULT_SFR_MS_PARAMS
-from .quenching_times import _jax_log_quenching_function
+from .quenching_times import _jax_gradual_quenching
 
 
 FB = 0.158
 
-QUENCHING_DICT = OrderedDict(log_qtime=1.17, log_qfrac=-2)
+QUENCHING_DICT = OrderedDict(log_qtime=0.9, qspeed=5)
 DEFAULT_SFRH_PARAMS = OrderedDict()
 DEFAULT_SFRH_PARAMS.update(DEFAULT_MAH_PARAMS)
 DEFAULT_SFRH_PARAMS.update(DEFAULT_SFR_MS_PARAMS)
@@ -33,7 +33,7 @@ def individual_sfr_history(
     k_trans=DEFAULT_SFRH_PARAMS["k_trans"],
     a_late=DEFAULT_SFRH_PARAMS["a_late"],
     log_qtime=DEFAULT_SFRH_PARAMS["log_qtime"],
-    log_qfrac=DEFAULT_SFRH_PARAMS["log_qfrac"],
+    qspeed=DEFAULT_SFRH_PARAMS["qspeed"],
     t0=TODAY,
 ):
     """Model for star formation history vs time for a halo with present-day mass logm0.
@@ -102,7 +102,7 @@ def individual_sfr_history(
         k_trans,
         a_late,
         log_qtime,
-        log_qfrac,
+        qspeed,
         logt,
         dtarr,
         indx_t0,
@@ -124,7 +124,7 @@ def _individual_log_sfr_history_jax_kern(
     k_trans,
     a_late,
     log_qtime,
-    log_qfrac,
+    qspeed,
     logt,
     dtarr,
     indx_t0,
@@ -146,7 +146,8 @@ def _individual_log_sfr_history_jax_kern(
         logt, lge0, k_early, lgtc, lgec, k_trans, a_late
     )
     log_sfr_ms = log_dmbdt + log_sfr_eff
-    log_sfr = log_sfr_ms + _jax_log_quenching_function(logt, log_qtime, log_qfrac)
+    log_sfr = log_sfr_ms + _jax_gradual_quenching(logt, log_qtime, qspeed)
+
     return log_sfr
 
 
@@ -168,7 +169,7 @@ def _individual_log_mstar_history_jax_kern(
     k_trans,
     a_late,
     log_qtime,
-    log_qfrac,
+    qspeed,
     logt,
     dtarr,
     indx_t0,
@@ -186,7 +187,7 @@ def _individual_log_mstar_history_jax_kern(
         k_trans,
         a_late,
         log_qtime,
-        log_qfrac,
+        qspeed,
         logt,
         dtarr,
         indx_t0,
