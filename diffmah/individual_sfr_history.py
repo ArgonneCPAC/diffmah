@@ -14,7 +14,6 @@ FB = 0.158
 
 QUENCHING_DICT = OrderedDict(log_qtime=0.9, qspeed=5)
 DEFAULT_SFRH_PARAMS = OrderedDict()
-DEFAULT_SFRH_PARAMS.update(DEFAULT_MAH_PARAMS)
 DEFAULT_SFRH_PARAMS.update(DEFAULT_SFR_MS_PARAMS)
 DEFAULT_SFRH_PARAMS.update(QUENCHING_DICT)
 
@@ -22,10 +21,10 @@ DEFAULT_SFRH_PARAMS.update(QUENCHING_DICT)
 def individual_sfr_history(
     cosmic_time,
     logmp,
-    dmhdt_x0=DEFAULT_SFRH_PARAMS["dmhdt_x0"],
-    dmhdt_k=DEFAULT_SFRH_PARAMS["dmhdt_k"],
-    dmhdt_early_index=DEFAULT_SFRH_PARAMS["dmhdt_early_index"],
-    dmhdt_late_index=DEFAULT_SFRH_PARAMS["dmhdt_late_index"],
+    dmhdt_x0=DEFAULT_MAH_PARAMS["dmhdt_x0"],
+    dmhdt_k=DEFAULT_MAH_PARAMS["dmhdt_k"],
+    dmhdt_early_index=DEFAULT_MAH_PARAMS["dmhdt_early_index"],
+    dmhdt_late_index=DEFAULT_MAH_PARAMS["dmhdt_late_index"],
     lge0=DEFAULT_SFRH_PARAMS["lge0"],
     k_early=DEFAULT_SFRH_PARAMS["k_early"],
     lgtc=DEFAULT_SFRH_PARAMS["lgtc"],
