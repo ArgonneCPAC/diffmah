@@ -16,7 +16,7 @@ FB = 0.158
 def mean_sfr_history(
     cosmic_time,
     logmp,
-    t0=TODAY,
+    tmp=TODAY,
     dmhdt_x0_c0=MEAN_MAH_PARAMS["dmhdt_x0_c0"],
     dmhdt_x0_c1=MEAN_MAH_PARAMS["dmhdt_x0_c1"],
     dmhdt_k_c0=MEAN_MAH_PARAMS["dmhdt_k_c0"],
@@ -70,9 +70,9 @@ def mean_sfr_history(
     logmp : float
         Base-10 log of peak halo mass in units of Msun
 
-    t0 : float, optional
+    tmp : float, optional
         Age of the universe in Gyr at the time halo mass attains the input logmp.
-        There must exist some entry of the input cosmic_time array within 50Myr of t0.
+        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
         Default is ~13.85 Gyr.
 
     **mean_mah_params : floats, optional
@@ -98,7 +98,7 @@ def mean_sfr_history(
     you should use this function to build an interpolation table with n>~100
 
     """
-    logmp, logt, dtarr, indx_t0 = _process_halo_mah_args(logmp, cosmic_time, t0)
+    logmp, logt, dtarr, indx_tmp = _process_halo_mah_args(logmp, cosmic_time, tmp)
 
     mean_mah_params = jax_np.array(
         (
@@ -153,26 +153,32 @@ def mean_sfr_history(
     ).astype("f4")
 
     log_sfr, log_smh = _mean_log_mstar_history_jax_kern(
-        logt, dtarr, logmp, mean_mah_params, mean_sfr_ms_params, mean_q_params, indx_t0
+        logt, dtarr, logmp, mean_mah_params, mean_sfr_ms_params, mean_q_params, indx_tmp
     )
 
     return np.array(log_sfr), np.array(log_smh)
 
 
 def _mean_log_mstar_history_jax_kern(
-    logt, dtarr, logmp, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_t0
+    logt, dtarr, logmp, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_tmp
 ):
     log_sfr = _mean_log_sfr_history_jax_kern(
-        logt, dtarr, logmp, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_t0
+        logt,
+        dtarr,
+        logmp,
+        mean_mah_params,
+        mean_sfr_eff_params,
+        mean_q_params,
+        indx_tmp,
     )
     log_smh = _calculate_cumulative_in_situ_mass(log_sfr, dtarr)
     return log_sfr, log_smh
 
 
 def _mean_log_sfr_history_jax_kern(
-    logt, dtarr, logmp, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_t0
+    logt, dtarr, logmp, mean_mah_params, mean_sfr_eff_params, mean_q_params, indx_tmp
 ):
-    _x = _mean_halo_assembly_jax_kern(logt, dtarr, logmp, *mean_mah_params, indx_t0)
+    _x = _mean_halo_assembly_jax_kern(logt, dtarr, logmp, *mean_mah_params, indx_tmp)
     log_dmbdt = jax_np.log10(FB) + _x[1]
     log_sfr_eff_ms = mean_log_sfr_efficiency_ms_jax(logt, logmp, *mean_sfr_eff_params)
     log_frac_ms = _mean_log_main_sequence_fraction(logt, logmp, *mean_q_params)

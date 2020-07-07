@@ -127,6 +127,11 @@ def individual_halo_assembly_history(
     logmp : float
         Base-10 log of peak halo mass in units of Msun
 
+    tmp : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logmp.
+        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
+        Default is ~13.85 Gyr.
+
     dmhdt_x0 : float, optional
         Base-10 log of the time of peak star formation.
 
@@ -138,11 +143,6 @@ def individual_halo_assembly_history(
 
     dmhdt_late_index : float, optional
         Late-time power-law index dMh/dt ~ t**dmhdt_late_index for logt >> dmhdt_x0.
-
-    tmp : float, optional
-        Age of the universe in Gyr at the time halo mass attains the input logmp.
-        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
-        Default is ~13.85 Gyr.
 
     Returns
     -------
