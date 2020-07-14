@@ -30,8 +30,36 @@ def predict_in_situ_history_collection(
     nhalos, n_mah_params = mah_params.shape
     _nhalos, n_sfr_params = sfr_params.shape
     assert nhalos == _nhalos, "mismatched shapes for mah_params and sfr_params"
+
+    nt = len(cosmic_time)
+    log_smh = np.zeros((nhalos, nt)).astype("f4")
+    log_ssfrh = np.zeros((nhalos, nt)).astype("f4")
+    log_fsh_coll = [np.zeros((nhalos, nt)).astype("f4") for __ in fstar_timescales]
+
+    mah_names = list(DEFAULT_MAH_PARAMS.keys())
+    sfr_names = list(DEFAULT_SFRH_PARAMS.keys())
     for ihalo in range(nhalos):
-        raise NotImplementedError()
+        tmp = mah_params[ihalo, 0]
+        logmp = mah_params[ihalo, 1]
+        mah_pgen = zip(mah_names, mah_params[ihalo, 2:])
+        sfr_pgen = zip(sfr_names, sfr_params[ihalo, :])
+        mah_dict = OrderedDict([(key, val) for key, val in mah_pgen])
+        sfr_dict = OrderedDict([(key, val) for key, val in sfr_pgen])
+        _x = predict_in_situ_history(
+            cosmic_time,
+            logmp,
+            fstar_timescales=fstar_timescales,
+            **mah_dict,
+            **sfr_dict,
+            tmp=tmp,
+            log_ssfr_clip=log_ssfr_clip
+        )
+        log_smh[ihalo, :] = _x[0]
+        log_ssfrh[ihalo, :] = _x[1]
+        for it in range(len(fstar_timescales)):
+            log_fsh_coll[it][ihalo, :] = _x[2][it]
+
+    return [log_smh, log_ssfrh, *log_fsh_coll]
 
 
 def predict_in_situ_history(
