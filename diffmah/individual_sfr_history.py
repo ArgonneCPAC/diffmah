@@ -26,9 +26,12 @@ def predict_in_situ_history_collection(
 
     Parameters
     ----------
-    mah_params : ndarray of shape (nhalos, n_mah_params)
+    mah_params : ndarray of shape (nhalos, 6)
+        In order, stores tmp, logmp, dmhdt_x0, dmhdt_k,
+        dmhdt_early_index, dmhdt_late_index for every halo
 
     sfr_params : ndarray of shape (nhalos, n_sfr_params)
+        The sfr params and their ordering are consistent with DEFAULT_SFRH_PARAMS
 
     cosmic_time : ndarray of shape (n, )
         Age of the universe in Gyr at which to evaluate the assembly history.
@@ -70,7 +73,7 @@ def predict_in_situ_history_collection(
         fstar_timescales = (fstar_timescales,)
         n_fstar = len(fstar_timescales)
 
-    log_fsh_coll = [np.zeros((nhalos, nt)).astype("f4") for __ in range(n_fstar)]
+    fstar_coll = [np.zeros((nhalos, nt)).astype("f4") for __ in range(n_fstar)]
 
     mah_names = list(DEFAULT_MAH_PARAMS.keys())
     sfr_names = list(DEFAULT_SFRH_PARAMS.keys())
@@ -93,9 +96,9 @@ def predict_in_situ_history_collection(
         log_smh[ihalo, :] = _x[0]
         log_ssfrh[ihalo, :] = _x[1]
         for it in range(len(fstar_timescales)):
-            log_fsh_coll[it][ihalo, :] = _x[2][it]
+            fstar_coll[it][ihalo, :] = _x[2][it]
 
-    return [log_smh, log_ssfrh, *log_fsh_coll]
+    return [log_smh, log_ssfrh, *fstar_coll]
 
 
 def predict_in_situ_history(
