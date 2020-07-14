@@ -4,7 +4,8 @@ import numpy as np
 from ..individual_sfr_history import individual_sfr_history
 from ..individual_sfr_history import predict_in_situ_history_collection
 from ..individual_sfr_history import DEFAULT_SFRH_PARAMS
-from ..halo_assembly import DEFAULT_MAH_PARAMS, TODAY
+from ..halo_assembly import DEFAULT_MAH_PARAMS, TODAY, _process_halo_mah_args
+from ..individual_sfr_history import _individual_log_sfr_history_jax_kern
 
 
 TOBS = np.linspace(1, 13.8, 10)
@@ -87,3 +88,18 @@ def test_predict_in_situ_history_collection_returns_correct_fstar():
 
     assert np.allclose(correct_fstar_0p25_today, fs0p25[-1], rtol=0.001)
     assert np.allclose(correct_fstar_1p0_today, fs1p0[-1], rtol=0.001)
+
+
+def test_individual_log_sfr_history_jax_kern():
+    """
+    """
+    cosmic_time = np.linspace(0.1, 14, 500)
+    logmp, tmp = 12, 13.5
+    logmp, logt, dtarr, indx_tmp = _process_halo_mah_args(logmp, cosmic_time, tmp)
+    _mah_params = tuple(DEFAULT_MAH_PARAMS.values())
+    _sfr_params = tuple(DEFAULT_SFRH_PARAMS.values())
+
+    log_sfr = _individual_log_sfr_history_jax_kern(
+        logt, dtarr, logmp, *_mah_params, *_sfr_params, indx_tmp,
+    )
+    assert log_sfr.size == logt.size
