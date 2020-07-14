@@ -22,9 +22,37 @@ def predict_in_situ_history_collection(
     mah_params, sfr_params, cosmic_time, fstar_timescales=(), log_ssfr_clip=None
 ):
     """
+    Predict histories of SM, sSFR, and Fstar for a collection of halos.
+
+    Parameters
+    ----------
     mah_params : ndarray of shape (nhalos, n_mah_params)
 
     sfr_params : ndarray of shape (nhalos, n_sfr_params)
+
+    cosmic_time : ndarray of shape (n, )
+        Age of the universe in Gyr at which to evaluate the assembly history.
+
+        The size n should be large enough so that the log_sm integration
+        can be accurately calculated with the midpoint rule.
+        Typically n >~100 is sufficient for most purposes.
+
+    fstar_timescales : float or sequence, optional
+        Smoothing timescale(s) tau over which to compute Fstar,
+        the fraction of stellar mass formed between (t - tau, t).
+
+    log_ssfr_clip : float, optional
+        Minimum value of sSFR. Default is -11
+
+    Returns
+    -------
+    result : list
+        Each element of result is an ndarray of shape (nhalos, ntimes).
+        First element of result is log_sm, cumulative in-situ stellar mass.
+        Second element of result is log_ssfrh, specific SFR history,
+        clipped at the input log_ssfr_clip.
+        Optional remaining elements store fstarh, the fraction of stellar mass
+        formed between (t - tau, t), for each tau in the input fstar_timescales.
 
     """
     nhalos, n_mah_params = mah_params.shape
@@ -34,7 +62,15 @@ def predict_in_situ_history_collection(
     nt = len(cosmic_time)
     log_smh = np.zeros((nhalos, nt)).astype("f4")
     log_ssfrh = np.zeros((nhalos, nt)).astype("f4")
-    log_fsh_coll = [np.zeros((nhalos, nt)).astype("f4") for __ in fstar_timescales]
+
+    try:
+        n_fstar = len(fstar_timescales)
+    except TypeError:
+        assert fstar_timescales > 0, "Input fstar_timescales must be strictly positive"
+        fstar_timescales = (fstar_timescales,)
+        n_fstar = len(fstar_timescales)
+
+    log_fsh_coll = [np.zeros((nhalos, nt)).astype("f4") for __ in range(n_fstar)]
 
     mah_names = list(DEFAULT_MAH_PARAMS.keys())
     sfr_names = list(DEFAULT_SFRH_PARAMS.keys())
@@ -81,6 +117,49 @@ def predict_in_situ_history(
     tmp=TODAY,
     log_ssfr_clip=None,
 ):
+    """
+    Predict histories of SM, sSFR, and Fstar for an individual halo.
+
+    Parameters
+    ----------
+    cosmic_time : ndarray of shape (n, )
+        Age of the universe in Gyr at which to evaluate the assembly history.
+
+        The size n should be large enough so that the log_sm integration
+        can be accurately calculated with the midpoint rule.
+        Typically n >~100 is sufficient for most purposes.
+
+    logmp : float
+        Base-10 log of peak halo mass in units of Msun
+
+    fstar_timescales : float or sequence, optional
+        Smoothing timescale(s) tau over which to compute Fstar,
+        the fraction of stellar mass formed between (t - tau, t).
+
+    **kwargs : float, optional
+        Any individual MAH parameter or SFR parameter is accepted
+        Defaults are set by DEFAULT_MAH_PARAMS and DEFAULT_SFRH_PARAMS.
+
+    tmp : float, optional
+        Age of the universe in Gyr at the time halo mass attains the input logmp.
+        There must exist some entry of the input cosmic_time array within 50Myr of tmp.
+        Default is ~13.85 Gyr.
+
+    log_ssfr_clip : float, optional
+        Minimum value of sSFR. Default is -11
+
+    Returns
+    -------
+    log_sm : ndarray of shape (n, )
+        Stores cumulative in-situ stellar mass.
+
+    log_ssfr : ndarray of shape (n, )
+        Stores specific star-formation history
+
+    fstar_collector : list, optional
+        Only returned if fstar_timescales is not None
+
+    """
     log_sfr, log_sm = individual_sfr_history(
         cosmic_time,
         logmp,
@@ -101,6 +180,12 @@ def predict_in_situ_history(
     log_ssfr = log_sfr - log_sm
     if log_ssfr_clip is not None:
         log_ssfr = np.where(log_ssfr < log_ssfr_clip, log_ssfr_clip, log_ssfr)
+
+    try:
+        len(fstar_timescales)
+    except TypeError:
+        assert fstar_timescales > 0, "Input fstar_timescales must be strictly positive"
+        fstar_timescales = (fstar_timescales,)
 
     fstar_collector = []
     for tau_s in fstar_timescales:

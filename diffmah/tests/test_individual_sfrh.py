@@ -42,7 +42,7 @@ def test_individual_sfr_history_agrees_with_umachine_milky_way_halos():
     assert np.log10(mse) < -1.0
 
 
-def test_predict_in_situ_history_collection():
+def test_predict_in_situ_history_collection_returns_correct_fstar():
     nh, nt = 15, 1500
     t = np.linspace(0.5, 14, nt)
     mah_params = np.zeros((nh, 6)).astype("f4")
@@ -59,7 +59,7 @@ def test_predict_in_situ_history_collection():
 
     _x0 = predict_in_situ_history_collection(mah_params, sfr_params, t)
     _x1 = predict_in_situ_history_collection(
-        mah_params, sfr_params, t, fstar_timescales=(0.25,)
+        mah_params, sfr_params, t, fstar_timescales=0.25
     )
     _x2 = predict_in_situ_history_collection(
         mah_params, sfr_params, t, fstar_timescales=(0.25, 1.0)
