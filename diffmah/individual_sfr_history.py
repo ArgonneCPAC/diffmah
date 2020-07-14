@@ -18,6 +18,81 @@ DEFAULT_SFRH_PARAMS.update(DEFAULT_SFR_MS_PARAMS)
 DEFAULT_SFRH_PARAMS.update(QUENCHING_DICT)
 
 
+def predict_in_situ_history_collection(
+    mah_params, sfr_params, cosmic_time, fstar_timescales=(), log_ssfr_clip=None
+):
+    """
+    mah_params : ndarray of shape (nhalos, n_mah_params)
+
+    sfr_params : ndarray of shape (nhalos, n_sfr_params)
+
+    """
+    nhalos, n_mah_params = mah_params.shape
+    _nhalos, n_sfr_params = sfr_params.shape
+    assert nhalos == _nhalos, "mismatched shapes for mah_params and sfr_params"
+    for ihalo in range(nhalos):
+        raise NotImplementedError()
+
+
+def predict_in_situ_history(
+    cosmic_time,
+    logmp,
+    fstar_timescales=(),
+    dmhdt_x0=DEFAULT_MAH_PARAMS["dmhdt_x0"],
+    dmhdt_k=DEFAULT_MAH_PARAMS["dmhdt_k"],
+    dmhdt_early_index=DEFAULT_MAH_PARAMS["dmhdt_early_index"],
+    dmhdt_late_index=DEFAULT_MAH_PARAMS["dmhdt_late_index"],
+    lge0=DEFAULT_SFRH_PARAMS["lge0"],
+    k_early=DEFAULT_SFRH_PARAMS["k_early"],
+    lgtc=DEFAULT_SFRH_PARAMS["lgtc"],
+    lgec=DEFAULT_SFRH_PARAMS["lgec"],
+    k_trans=DEFAULT_SFRH_PARAMS["k_trans"],
+    a_late=DEFAULT_SFRH_PARAMS["a_late"],
+    log_qtime=DEFAULT_SFRH_PARAMS["log_qtime"],
+    qspeed=DEFAULT_SFRH_PARAMS["qspeed"],
+    tmp=TODAY,
+    log_ssfr_clip=None,
+):
+    log_sfr, log_sm = individual_sfr_history(
+        cosmic_time,
+        logmp,
+        dmhdt_x0,
+        dmhdt_k,
+        dmhdt_early_index,
+        dmhdt_late_index,
+        lge0,
+        k_early,
+        lgtc,
+        lgec,
+        k_trans,
+        a_late,
+        log_qtime,
+        qspeed,
+        tmp,
+    )
+    log_ssfr = log_sfr - log_sm
+    if log_ssfr_clip is not None:
+        log_ssfr = np.where(log_ssfr < log_ssfr_clip, log_ssfr_clip, log_ssfr)
+
+    fstar_collector = []
+    for tau_s in fstar_timescales:
+        fs = _compute_log_fstar(cosmic_time, log_sm, tau_s)
+        fstar_collector.append(fs)
+
+    if len(fstar_collector) > 0:
+        return log_sm, log_ssfr, fstar_collector
+    else:
+        return log_sm, log_ssfr
+
+
+def _compute_log_fstar(tarr, log_sm, tau_s):
+    """Assumes log_sm is monotonic."""
+    t_lag = tarr - tau_s
+    log_sm_at_t_lag = np.interp(t_lag, np.log10(tarr), log_sm)
+    log_fs = log_sm - log_sm_at_t_lag
+    return log_fs
+
+
 def individual_sfr_history(
     cosmic_time,
     logmp,
