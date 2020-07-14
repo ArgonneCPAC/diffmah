@@ -69,4 +69,7 @@ def test_predict_in_situ_history_collection():
     assert np.allclose(_x0[1], _x1[1])
     assert np.allclose(_x0[1], _x2[1])
     assert np.allclose(_x1[2], _x2[2])
-    assert np.any(_x2[2] != _x2[3])
+
+    fs0p25 = _x2[2][0, :]
+    fs1p0 = _x2[3][0, :]
+    assert not np.allclose(fs0p25[-1], fs1p0[-1], atol=0.01)
