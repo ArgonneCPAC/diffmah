@@ -18,9 +18,16 @@ DEFAULT_SFRH_PARAMS = OrderedDict()
 DEFAULT_SFRH_PARAMS.update(DEFAULT_SFR_MS_PARAMS)
 DEFAULT_SFRH_PARAMS.update(QUENCHING_DICT)
 
+COSMIC_TIME_TABLE = np.linspace(0.1, 14, 500)
+
 
 def predict_in_situ_history_collection(
-    mah_params, sfr_params, cosmic_time, fstar_timescales=(), log_ssfr_clip=None
+    mah_params,
+    sfr_params,
+    cosmic_time,
+    t_table=COSMIC_TIME_TABLE,
+    fstar_timescales=(),
+    log_ssfr_clip=None,
 ):
     """
     Predict histories of SM, sSFR, and Fstar for a collection of halos.
@@ -85,8 +92,8 @@ def predict_in_situ_history_collection(
         sfr_pgen = zip(sfr_names, sfr_params[ihalo, :])
         mah_dict = OrderedDict([(key, val) for key, val in mah_pgen])
         sfr_dict = OrderedDict([(key, val) for key, val in sfr_pgen])
-        _x = predict_in_situ_history(
-            cosmic_time,
+        _x_table = predict_in_situ_history(
+            t_table,
             logmp,
             fstar_timescales=fstar_timescales,
             **mah_dict,
@@ -94,10 +101,16 @@ def predict_in_situ_history_collection(
             tmp=tmp,
             log_ssfr_clip=log_ssfr_clip
         )
-        log_smh[ihalo, :] = _x[0]
-        log_ssfrh[ihalo, :] = _x[1]
+        log_smh[ihalo, :] = np.interp(
+            np.log10(cosmic_time), np.log10(t_table), _x_table[0]
+        )
+        log_ssfrh[ihalo, :] = np.interp(
+            np.log10(cosmic_time), np.log10(t_table), _x_table[1]
+        )
         for it in range(len(fstar_timescales)):
-            fstar_coll[it][ihalo, :] = _x[2][it]
+            fstar_coll[it][ihalo, :] = np.interp(
+                np.log10(cosmic_time), np.log10(t_table), _x_table[2][it]
+            )
 
     return [log_smh, log_ssfrh, *fstar_coll]
 
