@@ -2,6 +2,7 @@
 import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
+from jax import jit as jax_jit
 from .main_sequence_sfr_eff import _log_sfr_efficiency_ms_jax_kern
 from .halo_assembly import _individual_halo_assembly_jax_kern
 from .halo_assembly import _process_halo_mah_args
@@ -305,6 +306,7 @@ def individual_sfr_history(
     return log_sfr, log_sm
 
 
+@jax_jit
 def _individual_log_sfr_history_jax_kern(
     logt,
     dtarr,
@@ -345,11 +347,13 @@ def _individual_log_sfr_history_jax_kern(
     return log_sfr
 
 
+@jax_jit
 def _calculate_cumulative_in_situ_mass(log_sfr, dtarr):
     log_smh = jax_np.log10(jax_np.cumsum(jax_np.power(10, log_sfr)) * dtarr) + 9.0
     return log_smh
 
 
+@jax_jit
 def _individual_log_mstar_history_jax_kern(
     logt,
     dtarr,
