@@ -43,7 +43,7 @@ def test_individual_sfr_history_agrees_with_umachine_milky_way_halos():
 
 
 def test_predict_in_situ_history_collection():
-    nh, nt = 15, 150
+    nh, nt = 15, 1500
     t = np.linspace(0.5, 14, nt)
     mah_params = np.zeros((nh, 6)).astype("f4")
     sfr_params = np.zeros((nh, len(DEFAULT_SFRH_PARAMS))).astype("f4")
@@ -72,4 +72,18 @@ def test_predict_in_situ_history_collection():
 
     fs0p25 = _x2[2][0, :]
     fs1p0 = _x2[3][0, :]
-    assert not np.allclose(fs0p25[-1], fs1p0[-1], atol=0.01)
+    assert not np.allclose(fs0p25[-1], fs1p0[-1], rtol=0.01)
+
+    t0_lag_0p25 = t.max() - 0.25
+    t0_lag_1p0 = t.max() - 1
+    sm_at_t0_lag_0p25 = 10 ** np.interp(
+        np.log10(t0_lag_0p25), np.log10(t), _x0[0][0, :]
+    )
+    sm_at_t0_lag_1p0 = 10 ** np.interp(np.log10(t0_lag_1p0), np.log10(t), _x0[0][0, :])
+    sm_at_t0 = 10 ** _x0[0][0, -1]
+
+    correct_fstar_0p25_today = 1 - sm_at_t0_lag_0p25 / sm_at_t0
+    correct_fstar_1p0_today = 1 - sm_at_t0_lag_1p0 / sm_at_t0
+
+    assert np.allclose(correct_fstar_0p25_today, fs0p25[-1], rtol=0.001)
+    assert np.allclose(correct_fstar_1p0_today, fs1p0[-1], rtol=0.001)

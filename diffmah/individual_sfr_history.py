@@ -104,7 +104,7 @@ def predict_in_situ_history(
 
     fstar_collector = []
     for tau_s in fstar_timescales:
-        fs = _compute_log_fstar(cosmic_time, log_sm, tau_s)
+        fs = _compute_fstar(cosmic_time, log_sm, tau_s)
         fstar_collector.append(fs)
 
     if len(fstar_collector) > 0:
@@ -113,12 +113,16 @@ def predict_in_situ_history(
         return log_sm, log_ssfr
 
 
-def _compute_log_fstar(tarr, log_sm, tau_s):
+def _compute_fstar(tarr, in_situ_log_sm, tau_s):
     """Assumes log_sm is monotonic."""
     t_lag = tarr - tau_s
-    log_sm_at_t_lag = np.interp(t_lag, np.log10(tarr), log_sm)
-    log_fs = log_sm - log_sm_at_t_lag
-    return log_fs
+    min_t_lag = tarr[0]
+    t_lag = np.where(t_lag < min_t_lag, min_t_lag, t_lag)
+    log_sm_at_t_lag = np.interp(np.log10(t_lag), np.log10(tarr), in_situ_log_sm)
+    sm_at_t = 10 ** in_situ_log_sm
+    sm_at_t_lag = 10 ** log_sm_at_t_lag
+    fstar = 1 - sm_at_t_lag / sm_at_t
+    return np.where(fstar < 0, 0, fstar)
 
 
 def individual_sfr_history(
