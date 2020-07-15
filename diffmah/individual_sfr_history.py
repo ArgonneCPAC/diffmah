@@ -27,7 +27,7 @@ def predict_in_situ_history_collection(
     cosmic_time,
     t_table=COSMIC_TIME_TABLE,
     fstar_timescales=(),
-    log_ssfr_clip=None,
+    log_ssfr_clip=-11,
 ):
     """
     Predict histories of SM, sSFR, and Fstar for a collection of halos.
@@ -132,7 +132,7 @@ def predict_in_situ_history(
     log_qtime=DEFAULT_SFRH_PARAMS["log_qtime"],
     qspeed=DEFAULT_SFRH_PARAMS["qspeed"],
     tmp=TODAY,
-    log_ssfr_clip=None,
+    log_ssfr_clip=-11,
 ):
     """
     Predict histories of SM, sSFR, and Fstar for an individual halo.
