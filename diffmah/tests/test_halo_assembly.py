@@ -27,6 +27,15 @@ def test_halo_mah_evaluates_reasonably_with_default_args():
             assert np.allclose(logmah[-1], logmp, atol=0.01)
 
 
+def test_halo_mah_responds_correctly_to_tmp():
+    npts = 250
+    logmp = 12
+    t = np.linspace(0.1, 14, npts)
+    logmah0, log_dmhdt0 = individual_halo_assembly_history(t, logmp)
+    logmah1, log_dmhdt1 = individual_halo_assembly_history(t, logmp, tmp=10)
+    assert not np.allclose(logmah0, logmah1)
+
+
 def test_avg_halo_mah_evaluates_reasonably_with_default_args():
     """
     """
