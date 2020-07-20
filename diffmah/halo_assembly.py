@@ -272,9 +272,9 @@ def _process_halo_mah_args(logmp, cosmic_time, tmp):
 
     logt = np.log10(cosmic_time)
     dtarr = _get_dt_array(cosmic_time)
-    present_time_indx = np.argmin(np.abs(cosmic_time - TODAY))
+    indx_tmp = np.argmin(np.abs(cosmic_time - tmp))
 
-    return logmp, logt, dtarr, present_time_indx
+    return logmp, logt, dtarr, indx_tmp
 
 
 def _get_dt_array(t):
