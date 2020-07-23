@@ -5,7 +5,7 @@ from jax import numpy as jax_np
 from jax import jit as jax_jit
 from .main_sequence_sfr_eff import _log_sfr_efficiency_ms_jax_kern
 from .halo_assembly import _individual_halo_assembly_jax_kern
-from .halo_assembly import _process_halo_mah_args
+from .halo_assembly import _process_halo_mah_args, individual_halo_assembly_history
 from .halo_assembly import DEFAULT_MAH_PARAMS, TODAY
 from .main_sequence_sfr_eff import DEFAULT_SFR_MS_PARAMS
 from .quenching_times import _jax_gradual_quenching
@@ -59,8 +59,9 @@ def predict_in_situ_history_collection(
     -------
     result : list
         Each element of result is an ndarray of shape (nhalos, ntimes).
-        First element of result is log_sm, cumulative in-situ stellar mass.
-        Second element of result is log_ssfrh, specific SFR history,
+        First element of result is log_mah, cumulative halo mass.
+        Second element of result is log_sm, cumulative in-situ stellar mass.
+        Third element of result is log_ssfrh, specific SFR history,
         clipped at the input log_ssfr_clip.
         Optional remaining elements store fstarh, the fraction of stellar mass
         formed between (t - tau, t), for each tau in the input fstar_timescales.
@@ -71,6 +72,7 @@ def predict_in_situ_history_collection(
     assert nhalos == _nhalos, "mismatched shapes for mah_params and sfr_params"
 
     nt = len(cosmic_time)
+    log_mah = np.zeros((nhalos, nt)).astype("f4")
     log_smh = np.zeros((nhalos, nt)).astype("f4")
     log_ssfrh = np.zeros((nhalos, nt)).astype("f4")
 
@@ -101,18 +103,21 @@ def predict_in_situ_history_collection(
             tmp=tmp,
             log_ssfr_clip=log_ssfr_clip
         )
-        log_smh[ihalo, :] = np.interp(
+        log_mah[ihalo, :] = np.interp(
             np.log10(cosmic_time), np.log10(t_table), _x_table[0]
         )
-        log_ssfrh[ihalo, :] = np.interp(
+        log_smh[ihalo, :] = np.interp(
             np.log10(cosmic_time), np.log10(t_table), _x_table[1]
+        )
+        log_ssfrh[ihalo, :] = np.interp(
+            np.log10(cosmic_time), np.log10(t_table), _x_table[2]
         )
         for it in range(len(fstar_timescales)):
             fstar_coll[it][ihalo, :] = np.interp(
-                np.log10(cosmic_time), np.log10(t_table), _x_table[2][it]
+                np.log10(cosmic_time), np.log10(t_table), _x_table[3][it]
             )
 
-    return [log_smh, log_ssfrh, *fstar_coll]
+    return [log_mah, log_smh, log_ssfrh, *fstar_coll]
 
 
 def predict_in_situ_history(
@@ -177,6 +182,16 @@ def predict_in_situ_history(
         Only returned if fstar_timescales is not None
 
     """
+    log_mah, log_dmhdt = individual_halo_assembly_history(
+        cosmic_time,
+        logmp,
+        tmp=tmp,
+        dmhdt_x0=dmhdt_x0,
+        dmhdt_k=dmhdt_k,
+        dmhdt_early_index=dmhdt_early_index,
+        dmhdt_late_index=dmhdt_late_index,
+    )
+
     log_sfr, log_sm = individual_sfr_history(
         cosmic_time,
         logmp,
@@ -210,9 +225,9 @@ def predict_in_situ_history(
         fstar_collector.append(fs)
 
     if len(fstar_collector) > 0:
-        return log_sm, log_ssfr, fstar_collector
+        return log_mah, log_sm, log_ssfr, fstar_collector
     else:
-        return log_sm, log_ssfr
+        return log_mah, log_sm, log_ssfr
 
 
 def _compute_fstar(tarr, in_situ_log_sm, tau_s):
