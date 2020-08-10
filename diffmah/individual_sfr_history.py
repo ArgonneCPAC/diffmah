@@ -72,7 +72,9 @@ def predict_in_situ_history_collection(
     assert nhalos == _nhalos, "mismatched shapes for mah_params and sfr_params"
 
     nt = len(cosmic_time)
+
     log_mah = np.zeros((nhalos, nt)).astype("f4")
+    log_dmhdt = np.zeros((nhalos, nt)).astype("f4")
     log_smh = np.zeros((nhalos, nt)).astype("f4")
     log_ssfrh = np.zeros((nhalos, nt)).astype("f4")
 
@@ -103,21 +105,25 @@ def predict_in_situ_history_collection(
             tmp=tmp,
             log_ssfr_clip=log_ssfr_clip
         )
+
         log_mah[ihalo, :] = np.interp(
             np.log10(cosmic_time), np.log10(t_table), _x_table[0]
         )
-        log_smh[ihalo, :] = np.interp(
+        log_dmhdt[ihalo, :] = np.interp(
             np.log10(cosmic_time), np.log10(t_table), _x_table[1]
         )
-        log_ssfrh[ihalo, :] = np.interp(
+        log_smh[ihalo, :] = np.interp(
             np.log10(cosmic_time), np.log10(t_table), _x_table[2]
+        )
+        log_ssfrh[ihalo, :] = np.interp(
+            np.log10(cosmic_time), np.log10(t_table), _x_table[3]
         )
         for it in range(len(fstar_timescales)):
             fstar_coll[it][ihalo, :] = np.interp(
-                np.log10(cosmic_time), np.log10(t_table), _x_table[3][it]
+                np.log10(cosmic_time), np.log10(t_table), _x_table[4][it]
             )
 
-    return [log_mah, log_smh, log_ssfrh, *fstar_coll]
+    return [log_mah, log_dmhdt, log_smh, log_ssfrh, *fstar_coll]
 
 
 def predict_in_situ_history(
@@ -172,8 +178,14 @@ def predict_in_situ_history(
 
     Returns
     -------
+    log_mah : ndarray of shape (n, )
+        Stores cumulative total halo mass
+
+    log_dmhdt : ndarray of shape (n, )
+        Stores halo mass accretion rate
+
     log_sm : ndarray of shape (n, )
-        Stores cumulative in-situ stellar mass.
+        Stores cumulative in-situ stellar mass
 
     log_ssfr : ndarray of shape (n, )
         Stores specific star-formation history
@@ -225,9 +237,9 @@ def predict_in_situ_history(
         fstar_collector.append(fs)
 
     if len(fstar_collector) > 0:
-        return log_mah, log_sm, log_ssfr, fstar_collector
+        return log_mah, log_dmhdt, log_sm, log_ssfr, fstar_collector
     else:
-        return log_mah, log_sm, log_ssfr
+        return log_mah, log_dmhdt, log_sm, log_ssfr
 
 
 def _compute_fstar(tarr, in_situ_log_sm, tau_s):
