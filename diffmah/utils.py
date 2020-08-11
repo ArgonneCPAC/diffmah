@@ -91,11 +91,7 @@ def _enforce_no_extraneous_keywords(defaults, **kwargs):
 
     if len(unrecognized_params) > 0:
         param = list(unrecognized_params)[0]
-        msg = (
-            "Unrecognized parameter ``{0}``"
-            " passed to central_quenching_time function"
-        )
-        raise KeyError(msg.format(param))
+        raise KeyError("Unrecognized parameter ``{0}``".format(param))
 
 
 def _get_param_dict(defaults, strict=False, **kwargs):
