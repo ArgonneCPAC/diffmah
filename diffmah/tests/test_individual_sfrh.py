@@ -65,23 +65,30 @@ def test_predict_in_situ_history_collection_returns_correct_fstar():
     _x2 = predict_in_situ_history_collection(
         mah_params, sfr_params, t, fstar_timescales=(0.25, 1.0)
     )
-    assert np.allclose(_x0[0], _x1[0])
-    assert np.allclose(_x0[0], _x2[0])
-    assert np.allclose(_x0[1], _x1[1])
-    assert np.allclose(_x0[1], _x2[1])
-    assert np.allclose(_x1[2], _x2[2])
 
-    fs0p25 = _x2[3][0, :]
-    fs1p0 = _x2[4][0, :]
+    log_mah0, log_dmhdt0, log_smh0, log_ssfrh0 = _x0
+    log_mah1, log_dmhdt1, log_smh1, log_ssfrh1, fs1_0p25 = _x1
+    log_mah2, log_dmhdt2, log_smh2, log_ssfrh2, fs2_0p25, fs2_1p0 = _x2
+
+    for a, b in zip(_x0, _x1):
+        assert np.allclose(a, b)
+
+    for a, b in zip(_x0, _x2):
+        assert np.allclose(a, b)
+
+    fs0p25 = _x2[4][0, :]
+    fs1p0 = _x2[5][0, :]
     assert not np.allclose(fs0p25[-1], fs1p0[-1], rtol=0.01)
 
     t0_lag_0p25 = t.max() - 0.25
     t0_lag_1p0 = t.max() - 1
     sm_at_t0_lag_0p25 = 10 ** np.interp(
-        np.log10(t0_lag_0p25), np.log10(t), _x0[1][0, :]
+        np.log10(t0_lag_0p25), np.log10(t), log_smh0[0, :]
     )
-    sm_at_t0_lag_1p0 = 10 ** np.interp(np.log10(t0_lag_1p0), np.log10(t), _x0[1][0, :])
-    sm_at_t0 = 10 ** _x0[1][0, -1]
+    sm_at_t0_lag_1p0 = 10 ** np.interp(
+        np.log10(t0_lag_1p0), np.log10(t), log_smh0[0, :]
+    )
+    sm_at_t0 = 10 ** log_smh0[0, -1]
 
     correct_fstar_0p25_today = 1 - sm_at_t0_lag_0p25 / sm_at_t0
     correct_fstar_1p0_today = 1 - sm_at_t0_lag_1p0 / sm_at_t0
