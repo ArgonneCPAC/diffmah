@@ -169,5 +169,11 @@ def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=1e-3):
         loss_arr[istep] = loss
         opt_state = opt_update(istep, grads, opt_state)
 
-    params_step_n = get_params(opt_state)
-    return params_step_n, loss_arr, params_arr
+    best_fit_params = get_params(opt_state)
+
+    # Return the last NaN-free params
+    if np.count_nonzero(np.isnan(best_fit_params)) > 0:
+        msk = np.sum(np.isnan(params_arr), axis=1) == 0
+        best_fit_params = params_arr[msk][-1]
+
+    return best_fit_params, loss_arr, params_arr
