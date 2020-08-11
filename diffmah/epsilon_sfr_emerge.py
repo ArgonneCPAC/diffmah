@@ -1,0 +1,89 @@
+"""
+"""
+import numpy as np
+from collections import OrderedDict
+from jax import numpy as jax_np
+from .utils import get_1d_arrays, _get_param_dict
+
+
+DEFAULT_PARAMS = OrderedDict(
+    sfr_eff_m_0=11.339,
+    sfr_eff_m_z=0.692,
+    sfr_eff_beta_0=3.344,
+    sfr_eff_beta_z=-2.079,
+    sfr_eff_gamma_0=0.966,
+    sfr_eff_eps_n0=0.005,
+    sfr_eff_eps_nz=0.689,
+)
+
+
+def sfr_efficiency_function(mhalo_at_z, z, **kwargs):
+    """SFR efficiency function from Moster+17, arXiv:1705.05373.
+    See Eqns 5-10.
+
+    Parameters
+    ----------
+    mhalo_at_z : float or ndarray of shape (n, )
+        Stores halo mass at the input redshift
+
+    z : float or ndarray of shape (n, )
+
+    params : model parameters, optional
+        All keywords of DEFAULT_PARAMS defined at top of module are accepted
+
+    Returns
+    -------
+    sfr_eff : ndarray of shape (n, )
+
+    """
+    mhalo_at_z, z = get_1d_arrays(mhalo_at_z, z)
+
+    param_dict = _get_param_dict(DEFAULT_PARAMS, strict=True, **kwargs)
+    params = np.array(list(param_dict.values()))
+
+    data = mhalo_at_z, z
+    return np.array(_sfr_efficiency_kernel(params, data))
+
+
+def _sfr_efficiency_kernel(params, data):
+    mhalo_at_z, z = data
+    m_0, m_z, beta_0, beta_z, gamma_0, eps_n0, eps_nz = params
+    params_at_z = _get_params_at_z(z, m_0, m_z, beta_0, beta_z, gamma_0, eps_n0, eps_nz)
+    sfr_eff = _sfr_efficiency_dbl_plaw(mhalo_at_z, *params_at_z)
+    return sfr_eff
+
+
+def _get_params_at_z(z, m_0, m_z, beta_0, beta_z, gamma_0, eps_n0, eps_nz):
+    m_1_at_z = jax_np.power(10, _get_log_m1_param(z, m_0, m_z))
+    beta_at_z = _get_beta_param(z, beta_0, beta_z)
+    gamma_at_z = _get_gamma_param(z, gamma_0)
+    eps_at_z = _get_eps_n_param(z, eps_n0, eps_nz)
+    params_at_z = m_1_at_z, beta_at_z, gamma_at_z, eps_at_z
+    return params_at_z
+
+
+def _sfr_efficiency_dbl_plaw(mhalo_at_z, m_1_at_z, beta_at_z, gamma_at_z, eps_at_z):
+    x = mhalo_at_z / m_1_at_z
+    numerator = 2 * eps_at_z
+    denominator = jax_np.power(x, -beta_at_z) + jax_np.power(x, gamma_at_z)
+    return numerator / denominator
+
+
+def _get_log_m1_param(z, m_0, m_z):
+    return m_0 + m_z * z / (1 + z)
+
+
+def _get_beta_param(z, beta_0, beta_z):
+    return beta_0 + beta_z * z / (1 + z)
+
+
+def _get_gamma_param(z, gamma_0):
+    return gamma_0
+
+
+def _get_eps_n_param(z, eps_n0, eps_nz):
+    return eps_n0 + eps_nz * z / (1 + z)
+
+
+def _get_m_max(m_1_at_z, beta_at_z, gamma_at_z):
+    return m_1_at_z * (beta_at_z / gamma_at_z) ** (1 / (beta_at_z + gamma_at_z))
