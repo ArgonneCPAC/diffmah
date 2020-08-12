@@ -36,7 +36,7 @@ def test_jax_adam_wrapper_actually_minimizes_the_loss():
         mse_loss, params_init, data, n_step, step_size=0.01
     )
     assert loss_arr[-1] < loss_init
-    assert loss_bestfit == loss_arr[-1]
+    assert loss_bestfit <= loss_arr[-1]
 
     params_correct = [3, 1]
     assert np.allclose(params_bestfit, params_correct, atol=0.01)
