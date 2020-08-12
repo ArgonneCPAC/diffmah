@@ -12,8 +12,8 @@ DEFAULT_PARAMS = OrderedDict(
     sfr_eff_beta_0=3.344,
     sfr_eff_beta_z=-2.079,
     sfr_eff_gamma_0=0.966,
-    sfr_eff_eps_n0=0.005,
-    sfr_eff_eps_nz=0.689,
+    sfr_eff_lgeps_n0=-2.3,
+    sfr_eff_lgeps_nz=-0.16,
 )
 
 
@@ -45,19 +45,28 @@ def sfr_efficiency_function(mhalo_at_z, z, **kwargs):
     return np.array(_sfr_efficiency_kernel(params, data))
 
 
+def _sfr_history_kernel(params, data):
+    mhalo_at_z, z, lg_fb, lg_dmhdt = data
+    sfr_eff_data = mhalo_at_z, z
+    lg_sfr_eff = jax_np.log10(_sfr_efficiency_kernel(params, sfr_eff_data))
+    return lg_sfr_eff + lg_fb + lg_dmhdt
+
+
 def _sfr_efficiency_kernel(params, data):
     mhalo_at_z, z = data
-    m_0, m_z, beta_0, beta_z, gamma_0, eps_n0, eps_nz = params
-    params_at_z = _get_params_at_z(z, m_0, m_z, beta_0, beta_z, gamma_0, eps_n0, eps_nz)
+    m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz = params
+    params_at_z = _get_params_at_z(
+        z, m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz
+    )
     sfr_eff = _sfr_efficiency_dbl_plaw(mhalo_at_z, *params_at_z)
     return sfr_eff
 
 
-def _get_params_at_z(z, m_0, m_z, beta_0, beta_z, gamma_0, eps_n0, eps_nz):
-    m_1_at_z = jax_np.power(10, _get_log_m1_param(z, m_0, m_z))
-    beta_at_z = _get_beta_param(z, beta_0, beta_z)
-    gamma_at_z = _get_gamma_param(z, gamma_0)
-    eps_at_z = _get_eps_n_param(z, eps_n0, eps_nz)
+def _get_params_at_z(z, m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz):
+    m_1_at_z = jax_np.power(10, _get_log_m1_param_at_z(z, m_0, m_z))
+    beta_at_z = _get_beta_param_at_z(z, beta_0, beta_z)
+    gamma_at_z = _get_gamma_param_at_z(z, gamma_0)
+    eps_at_z = _get_eps_n_param_at_z(z, lgeps_n0, lgeps_nz)
     params_at_z = m_1_at_z, beta_at_z, gamma_at_z, eps_at_z
     return params_at_z
 
@@ -69,19 +78,21 @@ def _sfr_efficiency_dbl_plaw(mhalo_at_z, m_1_at_z, beta_at_z, gamma_at_z, eps_at
     return numerator / denominator
 
 
-def _get_log_m1_param(z, m_0, m_z):
+def _get_log_m1_param_at_z(z, m_0, m_z):
     return m_0 + m_z * z / (1 + z)
 
 
-def _get_beta_param(z, beta_0, beta_z):
+def _get_beta_param_at_z(z, beta_0, beta_z):
     return beta_0 + beta_z * z / (1 + z)
 
 
-def _get_gamma_param(z, gamma_0):
+def _get_gamma_param_at_z(z, gamma_0):
     return gamma_0
 
 
-def _get_eps_n_param(z, eps_n0, eps_nz):
+def _get_eps_n_param_at_z(z, lgeps_n0, lgeps_nz):
+    eps_n0 = jax_np.power(10, lgeps_n0)
+    eps_nz = jax_np.power(10, lgeps_nz)
     return eps_n0 + eps_nz * z / (1 + z)
 
 
