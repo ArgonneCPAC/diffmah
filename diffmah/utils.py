@@ -149,6 +149,9 @@ def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=1e-3):
     params_step_n : ndarray of shape (n_params, )
         Stores the best-fit value of the parameters after n_step steps
 
+    loss : float
+        Final value of the loss
+
     loss_arr : ndarray of shape (n_step, )
         Stores the value of the loss at each step
 
