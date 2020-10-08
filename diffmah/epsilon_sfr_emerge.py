@@ -3,6 +3,7 @@
 import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
+from jax import jit as jjit
 from .utils import get_1d_arrays, _get_param_dict
 
 
@@ -45,6 +46,7 @@ def sfr_efficiency_function(mhalo_at_z, z, **kwargs):
     return np.array(_sfr_efficiency_kernel(params, data))
 
 
+@jjit
 def _sfr_history_kernel(params, data):
     mhalo_at_z, z, lg_fb, lg_dmhdt = data
     sfr_eff_data = mhalo_at_z, z
@@ -52,6 +54,7 @@ def _sfr_history_kernel(params, data):
     return lg_sfr_eff + lg_fb + lg_dmhdt
 
 
+@jjit
 def _sfr_efficiency_kernel(params, data):
     mhalo_at_z, z = data
     m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz = params
@@ -71,6 +74,7 @@ def _get_params_at_z(z, m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz):
     return params_at_z
 
 
+@jjit
 def _sfr_efficiency_dbl_plaw(mhalo_at_z, m_1_at_z, beta_at_z, gamma_at_z, eps_at_z):
     x = mhalo_at_z / m_1_at_z
     numerator = 2 * eps_at_z
@@ -78,23 +82,28 @@ def _sfr_efficiency_dbl_plaw(mhalo_at_z, m_1_at_z, beta_at_z, gamma_at_z, eps_at
     return numerator / denominator
 
 
+@jjit
 def _get_log_m1_param_at_z(z, m_0, m_z):
     return m_0 + m_z * z / (1 + z)
 
 
+@jjit
 def _get_beta_param_at_z(z, beta_0, beta_z):
     return beta_0 + beta_z * z / (1 + z)
 
 
+@jjit
 def _get_gamma_param_at_z(z, gamma_0):
     return gamma_0
 
 
+@jjit
 def _get_eps_n_param_at_z(z, lgeps_n0, lgeps_nz):
     eps_n0 = jax_np.power(10, lgeps_n0)
     eps_nz = jax_np.power(10, lgeps_nz)
     return eps_n0 + eps_nz * z / (1 + z)
 
 
+@jjit
 def _get_m_max(m_1_at_z, beta_at_z, gamma_at_z):
     return m_1_at_z * (beta_at_z / gamma_at_z) ** (1 / (beta_at_z + gamma_at_z))
