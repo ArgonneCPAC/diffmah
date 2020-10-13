@@ -4,6 +4,7 @@ import numpy as np
 from collections import OrderedDict
 from jax import numpy as jax_np
 from jax import jit as jjit
+from jax import vmap as jvmap
 from .utils import get_1d_arrays, _get_param_dict
 
 
@@ -107,3 +108,9 @@ def _get_eps_n_param_at_z(z, lgeps_n0, lgeps_nz):
 @jjit
 def _get_m_max(m_1_at_z, beta_at_z, gamma_at_z):
     return m_1_at_z * (beta_at_z / gamma_at_z) ** (1 / (beta_at_z + gamma_at_z))
+
+
+_get_params_at_z_halopop = jvmap(
+    jvmap(_get_params_at_z, in_axes=(0, None, None, None, None, None, None, None)),
+    in_axes=(None, 0, 0, 0, 0, 0, 0, 0),
+)
