@@ -14,5 +14,6 @@ setup(
     long_description="Just some package",
     install_requires=["numpy"],
     packages=find_packages(),
-    url="https://github.com/aphearin/diffmah"
+    url="https://github.com/aphearin/diffmah",
+    package_data={"diffmah": ("data/*.dat",)},
 )
