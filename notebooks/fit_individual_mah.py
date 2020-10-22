@@ -55,5 +55,5 @@ def _get_time_data(tarr, tobs):
 
 
 def _retrieve_target_data(logm0, indx_pred, t_table, **kwargs):
-    _x = individual_halo_assembly_history(logm0, t_table, **kwargs)
+    _x = individual_halo_assembly_history(t_table, logm0, **kwargs)
     return _x[0][indx_pred]
