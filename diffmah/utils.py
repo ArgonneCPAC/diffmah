@@ -116,7 +116,7 @@ def _get_param_array(defaults, strict=False, dtype="f4", jax_arrays=True, **kwar
     return param_array
 
 
-def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=1e-3):
+def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01):
     """Convenience function wrapping JAX's Adam optimizer used to
     minimize the loss function loss_func.
 
@@ -142,7 +142,7 @@ def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=1e-3):
         Number of steps to walk down the gradient
 
     step_size : float, optional
-        Step size parameter in the Adam algorithm. Default is 1e-3
+        Step size parameter in the Adam algorithm. Default is 0.01
 
     Returns
     -------
