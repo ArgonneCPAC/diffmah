@@ -12,6 +12,14 @@ from jax.scipy.stats import multivariate_normal as jnorm
 from collections import OrderedDict
 
 
+MEAN_DMHDT_EARLY_INDX_DICT = OrderedDict(
+    mean_dmhdt_early_x0=13,
+    mean_dmhdt_early_k=1,
+    mean_dmhdt_early_ylo=0.2,
+    mean_dmhdt_early_yhi=0.5,
+    mean_dmhdt_early_scatter=0.55,
+)
+
 MEAN_DMHDT_LATE_INDX_DICT = OrderedDict(
     mean_dmhdt_late_x0=13,
     mean_dmhdt_late_k=1,
@@ -41,18 +49,19 @@ def _halo_assembly(
 
 _a = (None, None, 0, None, None, None, None, None)
 _f0 = vmap(_halo_assembly, in_axes=_a)
-
 _a = (None, None, None, None, None, None, 0, None)
-_generate_halo_history_bundle_jax = jjit(vmap(_f0, in_axes=_a))
+_f1 = jjit(vmap(_f0, in_axes=_a))
+_a = (None, None, None, None, None, 0, None, None)
+_generate_halo_history_bundle_jax = jjit(vmap(_f1, in_axes=_a))
 
 
 def generate_halo_history_bundle(
     t,
     logmp_grid,
+    dmhdt_early_index_grid,
     dmhdt_late_index_grid,
     dmhdt_x0=DEFAULT_MAH_PARAMS["dmhdt_x0"],
     dmhdt_k=DEFAULT_MAH_PARAMS["dmhdt_k"],
-    dmhdt_early_index=DEFAULT_MAH_PARAMS["dmhdt_early_index"],
     tmp=None,
 ):
     """Generate a grid of halo histories, one for each combination of the input grids
@@ -66,17 +75,17 @@ def generate_halo_history_bundle(
     logmp_grid : ndarray, shape (n_mass, )
         Base-10 log of peak halo mass in Msun
 
-    dmhdt_late_index_grid : ndarray, shape (n_late, )
+    dmhdt_early_index_grid : ndarray, shape (n_early, )
         Values of the dmhdt_early_index halo MAH parameter
+
+    dmhdt_late_index_grid : ndarray, shape (n_late, )
+        Values of the dmhdt_late_index halo MAH parameter
 
     dmhdt_x0 : float, optional
         Value of the dmhdt_x0 halo MAH parameter
 
     dmhdt_k : float, optional
         Value of the dmhdt_k halo MAH parameter
-
-    dmhdt_early_index : float, optional
-        Value of the dmhdt_early_index halo MAH parameter
 
     tmp : float, optional
         Time of peak halo mass. Default value is the final time in the input t array.
@@ -102,7 +111,7 @@ def generate_halo_history_bundle(
         logmp_grid,
         dmhdt_x0,
         dmhdt_k,
-        dmhdt_early_index,
+        dmhdt_early_index_grid,
         dmhdt_late_index_grid,
         indx_tmp,
     )
@@ -134,15 +143,87 @@ def _mean_dmhdt_late_index(
 
 
 @jjit
+def _dmhdt_early_index_pdf(
+    logmp,
+    early_indx,
+    dmhdt_early_x0,
+    dmhdt_early_k,
+    dmhdt_early_ylo,
+    dmhdt_early_yhi,
+    dmhdt_early_scatter,
+):
+    mean_early_indx = _mean_dmhdt_early_index(
+        logmp, dmhdt_early_x0, dmhdt_early_k, dmhdt_early_ylo, dmhdt_early_yhi
+    )
+    return jnorm.pdf(early_indx, mean_early_indx, dmhdt_early_scatter)
+
+
+@jjit
+def _mean_dmhdt_early_index(
+    lgm, dmhdt_early_x0, dmhdt_early_k, dmhdt_early_ylo, dmhdt_early_yhi
+):
+    return _sigmoid(
+        lgm, dmhdt_early_x0, dmhdt_early_k, dmhdt_early_ylo, dmhdt_early_yhi
+    )
+
+
+@jjit
+def _dmhdt_index_pdf(
+    logmp,
+    early_indx,
+    late_indx,
+    dmhdt_early_x0,
+    dmhdt_early_k,
+    dmhdt_early_ylo,
+    dmhdt_early_yhi,
+    dmhdt_early_scatter,
+    dmhdt_late_x0,
+    dmhdt_late_k,
+    dmhdt_late_ylo,
+    dmhdt_late_yhi,
+    dmhdt_late_scatter,
+):
+    early_index_pdf = _dmhdt_early_index_pdf(
+        logmp,
+        early_indx,
+        dmhdt_early_x0,
+        dmhdt_early_k,
+        dmhdt_early_ylo,
+        dmhdt_early_yhi,
+        dmhdt_early_scatter,
+    )
+    late_index_pdf = _dmhdt_late_index_pdf(
+        logmp,
+        late_indx,
+        dmhdt_late_x0,
+        dmhdt_late_k,
+        dmhdt_late_ylo,
+        dmhdt_late_yhi,
+        dmhdt_late_scatter,
+    )
+
+    return early_index_pdf * late_index_pdf
+
+
+@jjit
 def _sigmoid(x, x0, k, ymin, ymax):
     height_diff = ymax - ymin
     return ymin + height_diff / (1 + jnp.exp(-k * (x - x0)))
 
 
-_f = vmap(_dmhdt_late_index_pdf, in_axes=(None, 0, None, None, None, None, None))
+_f = vmap(_dmhdt_late_index_pdf, in_axes=(0, None, None, None, None, None, None))
 _get_late_indx_weights_jax = jjit(
-    vmap(_f, in_axes=(0, None, None, None, None, None, None))
+    vmap(_f, in_axes=(None, 0, None, None, None, None, None))
 )
+
+_f = vmap(_dmhdt_early_index_pdf, in_axes=(0, None, None, None, None, None, None))
+_get_early_indx_weights_jax = jjit(
+    vmap(_f, in_axes=(None, 0, None, None, None, None, None))
+)
+
+_f = vmap(_dmhdt_index_pdf, in_axes=(0, *[None] * 12))
+_g = vmap(_f, in_axes=(None, None, 0, *[None] * 10))
+_get_indx_weights_jax = vmap(_g, in_axes=(None, 0, *[None] * 11))
 
 
 @jjit
@@ -163,10 +244,108 @@ def _get_dmhdt_late_index_weight_bundle_jax(
         mean_dmhdt_late_scatter,
     )
     late_indx_weights = _get_late_indx_weights_jax(logmp_grid, late_indx_grid, *p)
-    _norm = late_indx_weights.sum(axis=1)
-    n_mass = logmp_grid.size
-    late_indx_weights = late_indx_weights / _norm.reshape((n_mass, 1))
     return late_indx_weights
+    _norm = late_indx_weights.sum(axis=0)
+    n_mass = logmp_grid.size
+    late_indx_weights = late_indx_weights / _norm.reshape((1, n_mass))
+    return late_indx_weights
+
+
+@jjit
+def _get_dmhdt_late_index_norm(
+    logmp_grid,
+    late_indx_grid,
+    mean_dmhdt_late_x0,
+    mean_dmhdt_late_k,
+    mean_dmhdt_late_ylo,
+    mean_dmhdt_late_yhi,
+    mean_dmhdt_late_scatter,
+):
+    p = (
+        mean_dmhdt_late_x0,
+        mean_dmhdt_late_k,
+        mean_dmhdt_late_ylo,
+        mean_dmhdt_late_yhi,
+        mean_dmhdt_late_scatter,
+    )
+    late_indx_weights = _get_late_indx_weights_jax(logmp_grid, late_indx_grid, *p)
+    _norm = late_indx_weights.sum(axis=0)
+    return _norm
+
+
+@jjit
+def _get_dmhdt_early_index_norm(
+    logmp_grid,
+    early_indx_grid,
+    mean_dmhdt_early_x0,
+    mean_dmhdt_early_k,
+    mean_dmhdt_early_ylo,
+    mean_dmhdt_early_yhi,
+    mean_dmhdt_early_scatter,
+):
+    p = (
+        mean_dmhdt_early_x0,
+        mean_dmhdt_early_k,
+        mean_dmhdt_early_ylo,
+        mean_dmhdt_early_yhi,
+        mean_dmhdt_early_scatter,
+    )
+    early_indx_weights = _get_early_indx_weights_jax(logmp_grid, early_indx_grid, *p)
+    _norm = early_indx_weights.sum(axis=0)
+    return _norm
+
+
+@jjit
+def _get_indx_weight_bundle(
+    logmp_grid,
+    early_indx_grid,
+    late_indx_grid,
+    dmhdt_early_x0,
+    dmhdt_early_k,
+    dmhdt_early_ylo,
+    dmhdt_early_yhi,
+    dmhdt_early_scatter,
+    dmhdt_late_x0,
+    dmhdt_late_k,
+    dmhdt_late_ylo,
+    dmhdt_late_yhi,
+    dmhdt_late_scatter,
+):
+    weights = _get_indx_weights_jax(
+        logmp_grid,
+        early_indx_grid,
+        late_indx_grid,
+        dmhdt_early_x0,
+        dmhdt_early_k,
+        dmhdt_early_ylo,
+        dmhdt_early_yhi,
+        dmhdt_early_scatter,
+        dmhdt_late_x0,
+        dmhdt_late_k,
+        dmhdt_late_ylo,
+        dmhdt_late_yhi,
+        dmhdt_late_scatter,
+    )
+
+    early_indx_norm = _get_dmhdt_early_index_norm(
+        logmp_grid,
+        early_indx_grid,
+        dmhdt_early_x0,
+        dmhdt_early_k,
+        dmhdt_early_ylo,
+        dmhdt_early_yhi,
+        dmhdt_early_scatter,
+    )
+    late_indx_norm = _get_dmhdt_late_index_norm(
+        logmp_grid,
+        late_indx_grid,
+        dmhdt_late_x0,
+        dmhdt_late_k,
+        dmhdt_late_ylo,
+        dmhdt_late_yhi,
+        dmhdt_late_scatter,
+    )
+    return weights / early_indx_norm / late_indx_norm
 
 
 def get_dmhdt_late_index_weight_bundle(
@@ -238,9 +417,14 @@ def _avg_assembly_history(
     logmp_grid,
     dmhdt_x0,
     dmhdt_k,
-    dmhdt_early_index,
+    dmhdt_early_index_grid,
     dmhdt_late_index_grid,
     indx_tmp,
+    mean_dmhdt_early_x0,
+    mean_dmhdt_early_k,
+    mean_dmhdt_early_ylo,
+    mean_dmhdt_early_yhi,
+    mean_dmhdt_early_scatter,
     mean_dmhdt_late_x0,
     mean_dmhdt_late_k,
     mean_dmhdt_late_ylo,
@@ -253,37 +437,49 @@ def _avg_assembly_history(
         logmp_grid,
         dmhdt_x0,
         dmhdt_k,
-        dmhdt_early_index,
+        dmhdt_early_index_grid,
         dmhdt_late_index_grid,
         indx_tmp,
     )
     mah_bundle, dmhdt_bundle = _generate_halo_history_bundle_jax(*bundle_generator_args)
 
-    late_indx_weights = _get_dmhdt_late_index_weight_bundle_jax(
+    indx_weights = _get_indx_weight_bundle(
         logmp_grid,
+        dmhdt_early_index_grid,
         dmhdt_late_index_grid,
+        mean_dmhdt_early_x0,
+        mean_dmhdt_early_k,
+        mean_dmhdt_early_ylo,
+        mean_dmhdt_early_yhi,
+        mean_dmhdt_early_scatter,
         mean_dmhdt_late_x0,
         mean_dmhdt_late_k,
         mean_dmhdt_late_ylo,
         mean_dmhdt_late_yhi,
         mean_dmhdt_late_scatter,
     )
+    n_early = dmhdt_early_index_grid.size
     n_late = dmhdt_late_index_grid.size
     n_mass = logmp_grid.size
-    _W = late_indx_weights.T.reshape(n_late, n_mass, 1)
-    avg_log_mah = jnp.log10(jnp.sum(mah_bundle * _W, axis=0))
-    avg_log_dmhdt = jnp.log10(jnp.sum(dmhdt_bundle * _W, axis=0))
+    _W = indx_weights.reshape(n_early, n_late, n_mass, 1)
+    avg_log_mah = jnp.log10(jnp.sum(jnp.sum(mah_bundle * _W, axis=0), axis=0))
+    avg_log_dmhdt = jnp.log10(jnp.sum(jnp.sum(dmhdt_bundle * _W, axis=0), axis=0))
     return avg_log_mah, avg_log_dmhdt
 
 
 def average_halo_assembly_history(
     cosmic_time,
     logmp_grid,
+    dmhdt_early_index_grid,
     dmhdt_late_index_grid,
     dmhdt_x0=DEFAULT_MAH_PARAMS["dmhdt_x0"],
     dmhdt_k=DEFAULT_MAH_PARAMS["dmhdt_k"],
-    dmhdt_early_index=DEFAULT_MAH_PARAMS["dmhdt_early_index"],
     tmp=None,
+    mean_dmhdt_early_x0=MEAN_DMHDT_EARLY_INDX_DICT["mean_dmhdt_early_x0"],
+    mean_dmhdt_early_k=MEAN_DMHDT_EARLY_INDX_DICT["mean_dmhdt_early_k"],
+    mean_dmhdt_early_ylo=MEAN_DMHDT_EARLY_INDX_DICT["mean_dmhdt_early_ylo"],
+    mean_dmhdt_early_yhi=MEAN_DMHDT_EARLY_INDX_DICT["mean_dmhdt_early_yhi"],
+    mean_dmhdt_early_scatter=MEAN_DMHDT_EARLY_INDX_DICT["mean_dmhdt_early_scatter"],
     mean_dmhdt_late_x0=MEAN_DMHDT_LATE_INDX_DICT["mean_dmhdt_late_x0"],
     mean_dmhdt_late_k=MEAN_DMHDT_LATE_INDX_DICT["mean_dmhdt_late_k"],
     mean_dmhdt_late_ylo=MEAN_DMHDT_LATE_INDX_DICT["mean_dmhdt_late_ylo"],
@@ -301,6 +497,9 @@ def average_halo_assembly_history(
     logmp_grid : ndarray, shape (n_mass, )
         Base-10 log of peak halo mass in Msun
 
+    dmhdt_early_index_grid : ndarray, shape (n_early, )
+        Values of the dmhdt_early_index halo MAH parameter
+
     dmhdt_late_index_grid : ndarray, shape (n_late, )
         Values of the dmhdt_early_index halo MAH parameter
 
@@ -310,11 +509,28 @@ def average_halo_assembly_history(
     dmhdt_k : float, optional
         Value of the dmhdt_k halo MAH parameter
 
-    dmhdt_early_index : float, optional
-        Value of the dmhdt_early_index halo MAH parameter
-
     tmp : float, optional
         Time of peak halo mass. Default value is the final time in the input t array.
+
+    mean_dmhdt_early_x0 : float, optional
+        Value of the mean_dmhdt_early_x0 parameter controlling mass-dependence of
+        the average value of dmhdt_early_index
+
+    mean_dmhdt_early_k : float, optional
+        Value of the mean_dmhdt_early_k parameter controlling mass-dependence of
+        the average value of dmhdt_early_index
+
+    mean_dmhdt_early_ylo : float, optional
+        Value of the mean_dmhdt_early_ylo parameter controlling mass-dependence of
+        the average value of dmhdt_early_index
+
+    mean_dmhdt_early_yhi : float, optional
+        Value of the mean_dmhdt_early_yhi parameter controlling mass-dependence of
+        the average value of dmhdt_early_index
+
+    mean_dmhdt_early_scatter : float, optional
+        Value of the mean_dmhdt_early_scatter parameter controlling mass-dependence of
+        the average value of dmhdt_early_index
 
     mean_dmhdt_late_x0 : float, optional
         Value of the mean_dmhdt_late_x0 parameter controlling mass-dependence of
@@ -358,9 +574,14 @@ def average_halo_assembly_history(
         logmp_grid,
         dmhdt_x0,
         dmhdt_k,
-        dmhdt_early_index,
+        dmhdt_early_index_grid,
         dmhdt_late_index_grid,
         indx_tmp,
+        mean_dmhdt_early_x0,
+        mean_dmhdt_early_k,
+        mean_dmhdt_early_ylo,
+        mean_dmhdt_early_yhi,
+        mean_dmhdt_early_scatter,
         mean_dmhdt_late_x0,
         mean_dmhdt_late_k,
         mean_dmhdt_late_ylo,
