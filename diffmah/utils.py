@@ -116,7 +116,81 @@ def _get_param_array(defaults, strict=False, dtype="f4", jax_arrays=True, **kwar
     return param_array
 
 
-def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01):
+def jax_adam_wrapper(
+    loss_func,
+    params_init,
+    loss_data,
+    n_step,
+    n_warmup=0,
+    step_size=0.01,
+    warmup_n_step=50,
+    warmup_step_size=None,
+):
+    """Convenience function wrapping JAX's Adam optimizer used to
+    minimize the loss function loss_func.
+
+    Starting from params_init, we take n_step steps down the gradient
+    to calculate the returned value params_step_n.
+
+    Parameters
+    ----------
+    loss_func : callable
+        Differentiable function to minimize.
+
+        Must accept inputs (params, data) and return a scalar,
+        and be differentiable using jax.grad.
+
+    params_init : ndarray of shape (n_params, )
+        Initial guess at the parameters
+
+    loss_data : sequence
+        Sequence of floats and arrays storing whatever data is needed
+        to compute loss_func(params_init, loss_data)
+
+    n_step : int
+        Number of steps to walk down the gradient
+
+    n_warmup : int, optional
+        Number of warmup iterations. At the end of the warmup, the best-fit parameters
+        are used as input parameters to the final burn. Default is zero.
+
+    warmup_n_step : int, optional
+        Number of Adam steps to take during warmup. Default is 50.
+
+    warmup_step_size : float, optional
+        Step size to use during warmup phase. Default is 5*step_size.
+
+    step_size : float, optional
+        Step size parameter in the Adam algorithm. Default is 0.01.
+
+    Returns
+    -------
+    params_step_n : ndarray of shape (n_params, )
+        Stores the best-fit value of the parameters after n_step steps
+
+    loss : float
+        Final value of the loss
+
+    loss_arr : ndarray of shape (n_step, )
+        Stores the value of the loss at each step
+
+    params_arr : ndarray of shape (n_step, n_params)
+        Stores the value of the model params at each step
+
+    """
+    if warmup_step_size is None:
+        warmup_step_size = 5 * step_size
+
+    for i in range(n_warmup):
+        params_init = _jax_adam_wrapper(
+            loss_func, params_init, loss_data, warmup_n_step, step_size=warmup_step_size
+        )[0]
+    return _jax_adam_wrapper(
+        loss_func, params_init, loss_data, n_step, step_size=step_size
+    )
+
+
+def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01):
     """Convenience function wrapping JAX's Adam optimizer used to
     minimize the loss function loss_func.
 
@@ -168,19 +242,18 @@ def jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01):
     for istep in range(n_step):
         p = get_params(opt_state)
         params_arr[istep, :] = p
+        assert np.all(np.isfinite(p)), "Some parameters are NaN: {}".format(p)
         loss, grads = value_and_grad(loss_func, argnums=0)(p, loss_data)
+        assert np.isfinite(loss), "Loss is NaN for params:\n{}".format(p)
         loss_arr[istep] = loss
         opt_state = opt_update(istep, grads, opt_state)
 
-    best_fit_params = get_params(opt_state)
+    good_msk = np.all(np.isfinite(params_arr), axis=1)
+    cut_loss_arr = loss_arr[good_msk]
+    cut_params_arr = params_arr[good_msk]
 
-    # Return the last NaN-free params
-    any_nans = np.any(np.isnan(best_fit_params)) | np.any(np.isnan(loss_arr))
-    if any_nans:
-        bad_msk_loss = ~np.isfinite(loss_arr)
-        bad_msk_params = np.any(np.isnan(params_arr), axis=1)
-        bad_msk = bad_msk_loss | bad_msk_params
-        best_fit_params = params_arr[~bad_msk][-1]
-        loss = loss_arr[~bad_msk][-1]
+    indx_best = np.nanargmin(cut_loss_arr)
+    best_fit_params = cut_params_arr[indx_best]
+    loss = cut_loss_arr[indx_best]
 
     return best_fit_params, loss, loss_arr, params_arr
