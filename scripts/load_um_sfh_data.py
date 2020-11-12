@@ -4,12 +4,15 @@ import os
 from astropy.table import Table
 import warnings
 from numba import jit as numba_jit
+from diffmah.halo_assembly import _get_dt_array
 
 MDPL2_DRN = "/Users/aphearin/work/DATA/MOCKS/UniverseMachine/um_dr1_history_samples"
 BPL_DRN = "/Users/aphearin/work/DATA/MOCKS/UniverseMachine/SFH_samples/"
 
+LOG_SSFR_CLIP = -11.0
 
-def load_bpl_data(drn=BPL_DRN):
+
+def load_bpl_data(drn=BPL_DRN, log_ssfr_clip=LOG_SSFR_CLIP):
     """
     """
     bpl = Table(np.load(os.path.join(drn, "um_histories_dr1_bpl_cens_a_1.002310.npy")))
@@ -41,10 +44,16 @@ def load_bpl_data(drn=BPL_DRN):
         warnings.simplefilter("ignore")
         bpl["log_dmhdt"] = np.where(dmhdt_matrix <= 0, 0, np.log10(dmhdt_matrix))
 
+    sfrh = bpl["sfr_history_main_prog"]
+    dtarr = _get_dt_array(bpl_t)
+    smh, log_ssfrh = _get_clipped_sfh_samples(bpl_t, dtarr, sfrh, log_ssfr_clip)
+    bpl["smh"] = smh
+    bpl["log_ssfrh"] = log_ssfrh
+
     return bpl, bpl_t, bpl_z
 
 
-def load_mdpl2_data(drn=MDPL2_DRN):
+def load_mdpl2_data(drn=MDPL2_DRN, log_ssfr_clip=LOG_SSFR_CLIP):
     """
     """
     mdpl2 = Table(np.load(os.path.join(drn, "um_histories_dr1_mdpl2_cens.npy")))
@@ -76,6 +85,12 @@ def load_mdpl2_data(drn=MDPL2_DRN):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         mdpl2["log_dmhdt"] = np.where(dmhdt_matrix <= 0, 0, np.log10(dmhdt_matrix))
+
+    sfrh = mdpl2["sfr_history_main_prog"]
+    dtarr = _get_dt_array(mdpl_t)
+    smh, log_ssfrh = _get_clipped_sfh_samples(mdpl_t, dtarr, sfrh, log_ssfr_clip)
+    mdpl2["smh"] = smh
+    mdpl2["log_ssfrh"] = log_ssfrh
 
     return mdpl2, mdpl_t, mdpl_z
 
@@ -139,3 +154,15 @@ def calculate_dmhdt(tarr, marr, dmdht_out, n):
     dm_final = marr[n - 1] - marr[n - 2]
     dmdt_final = dm_final / dt_final
     dmdht_out[n - 1] = dmdt_final / 1e9
+
+
+def _get_clipped_sfh_samples(tarr, dtarr, sfrh, log_ssfr_clip):
+    """
+    """
+    ssfr_clip = 10 ** log_ssfr_clip
+    smh_samples = np.cumsum(sfrh * dtarr * 1e9, axis=1)
+    msk_nonzero = (smh_samples > 0) & np.isfinite(smh_samples)
+    _ssfrh = sfrh / np.where(msk_nonzero, smh_samples, 1.0)
+    msk_clip = ~msk_nonzero | (_ssfrh < ssfr_clip)
+    log_ssfrh_samples = np.log10(np.where(msk_clip, ssfr_clip, _ssfrh))
+    return smh_samples, log_ssfrh_samples
