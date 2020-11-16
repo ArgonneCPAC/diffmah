@@ -110,13 +110,14 @@ if __name__ == "__main__":
         print(msg.format(nhalos_tot, nranks, runtime))
 
         #  collate data from ranks and rewrite to disk
-        fit_data_fnames = [TMP_OUTPAT.format(i) for i in range(nranks)]
+        pat = os.path.join(args.outdir, TMP_OUTPAT)
+        fit_data_fnames = [pat.format(i) for i in range(nranks)]
         data_collection = [np.loadtxt(fn) for fn in fit_data_fnames]
         all_fit_data = np.concatenate(data_collection)
         outname = os.path.join(args.outdir, args.outbase)
         _write_collated_data(outname, all_fit_data)
 
         #  clean up temporary files
-        _remove_basename = TMP_OUTPAT.replace("{0}", "*")
+        _remove_basename = pat.replace("{0}", "*")
         command = "rm -rf " + _remove_basename
         raw_result = subprocess.check_output(command, shell=True)

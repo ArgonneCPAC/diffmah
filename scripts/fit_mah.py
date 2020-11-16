@@ -161,7 +161,7 @@ def get_loss_data_fixed_logmp(
     log_mah_simulated_halo,
     log_dmhdt_simulated_halo,
     tmp,
-    t_table=np.linspace(0.1, 14, 500),
+    t_table=np.logspace(-2, 1.15, 500),
     dlogm_cut=2.5,
     t_fit_min=1,
 ):
@@ -260,7 +260,7 @@ def get_loss_data_fixed_k_x0(
     log_mah_simulated_halo,
     log_dmhdt_simulated_halo,
     tmp,
-    t_table=np.linspace(0.1, 14, 500),
+    t_table=np.logspace(-2, 1.15, 500),
     dlogm_cut=2.5,
     t_fit_min=1,
 ):
