@@ -6,6 +6,7 @@ from jax import numpy as jnp
 from jax import jit as jjit
 from jax import grad
 from jax import vmap as jvmap
+from jax.scipy.stats import multivariate_normal as jnorm
 from .utils import get_1d_arrays
 
 
@@ -102,6 +103,13 @@ def _get_sigmah_halopop_kern(logt, logtmp, k, logmp, x0, early_index, late_index
 
 
 @jjit
+def _get_avg_mah_integrand(logt, logtmp, k, logmp, x0, log10_early_index, u_dy):
+    early_index = 10 ** log10_early_index
+    u_early_index = _inverse_sigmoid(early_index, 0, 1, *BOUNDS["mah_early_index"])
+    return _get_sigmah_kern(logt, logtmp, k, logmp, x0, u_early_index, u_dy)
+
+
+@jjit
 def _mean_early_index(lgmp, early_x0, early_k, early_ylo, early_yhi):
     return _sigmoid(lgmp, early_x0, early_k, early_ylo, early_yhi)
 
@@ -193,3 +201,20 @@ def _process_args(t, logmp, tmp, x0, k, early, late):
 
     logmp, logtmp, x0, k, early, late = get_1d_arrays(logmp, logtmp, x0, k, early, late)
     return logt, logmp, logtmp, x0, k, early, late
+
+
+def _g0(a, b, mu, cov):
+    x = jnp.array((a, b)).astype("f4")
+    return jnorm.pdf(x, mu, cov)
+
+
+_g1 = jvmap(_g0, in_axes=(None, None, 0, None))
+_g2 = jvmap(_g1, in_axes=(0, None, None, None))
+_g3 = jvmap(_g2, in_axes=(None, 0, None, None))
+
+
+@jjit
+def _get_index_weights_kern(log10_early_index, u_dy, mu, cov):
+    _pdf = _g3(log10_early_index, u_dy, mu, cov)
+    pdf = _pdf / _pdf.sum()
+    return pdf
