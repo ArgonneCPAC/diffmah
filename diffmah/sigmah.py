@@ -15,16 +15,17 @@ MAH_PARAMS = OrderedDict(
     mah_x0=-0.15, mah_k=4.0, mah_early_index=3.0, mah_late_index=1.0
 )
 MEAN_MAH_PARAMS = OrderedDict(
-    early_index_x0=14.2,
-    early_index_k=1.5,
-    early_index_ylo=3.0,
-    early_index_yhi=5.0,
-    late_index_x0=14.5,
-    late_index_k=0.5,
-    late_index_ylo=0.15,
-    late_index_yhi=3.65,
-    log_mah_det_cov=-1.0,
+    early_index_x0=14.38,
+    early_index_k=0.6,
+    early_index_ylo=2.0,
+    early_index_yhi=6.1,
+    late_index_x0=15.1,
+    late_index_k=0.75,
+    late_index_ylo=0.59,
+    late_index_yhi=3.47,
+    log_mah_det_cov=-2.38,
 )
+
 TMP_PDF_PARAMS = OrderedDict(tmp_k=20.0, tmp_indx_t0=4.0)
 TODAY = 13.8
 
