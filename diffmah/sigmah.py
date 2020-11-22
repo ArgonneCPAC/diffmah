@@ -10,31 +10,39 @@ from jax.scipy.stats import multivariate_normal as jnorm
 from .utils import get_1d_arrays
 
 
-BOUNDS = OrderedDict(mah_early_index=(0.0, 10.0))
 MAH_PARAMS = OrderedDict(
     mah_x0=-0.15, mah_k=4.0, mah_early_index=3.0, mah_late_index=1.0
 )
-MEAN_MAH_PARAMS = OrderedDict(
-    early_index_x0=14.38,
-    early_index_k=0.6,
-    early_index_ylo=2.0,
-    early_index_yhi=6.1,
-    late_index_x0=15.1,
-    late_index_k=0.75,
-    late_index_ylo=0.59,
-    late_index_yhi=3.47,
-    log_mah_det_cov=-2.38,
+
+MEAN_MAH_U_PARAMS = OrderedDict(
+    log_early_index_x0=13.94,
+    log_early_index_log_k=-0.30,
+    log_early_index_ylo=0.01,
+    log_early_index_yhi=1.40,
+    u_dy_x0=12.83,
+    u_dy_log_k=0.21,
+    u_dy_ylo=0.48,
+    u_dy_yhi=1.12,
+    index_cov_x0=15.89,
+    index_cov_log_k=-0.76,
+    index_cov_u_lo=-10.67,
+    index_cov_u_hi=5.31,
+    index_cov_v_lo=-1.58,
+    index_cov_v_hi=-0.25,
+    index_cov_c_lo=1.81,
+    index_cov_c_hi=-3.95,
 )
+
 
 TMP_PDF_PARAMS = OrderedDict(tmp_k=20.0, tmp_indx_t0=4.0)
 TODAY = 13.8
 
 
 @jjit
-def _rolling_plaw_bounded(logt, logtmp, logmp, x0, k, u_ymin, u_dy):
+def _rolling_plaw_bounded(logt, logtmp, logmp, x0, k, log_early_index, u_dy):
     """
     """
-    early_index, late_index = _get_bounded_params(u_ymin, u_dy)
+    early_index, late_index = _get_bounded_params(log_early_index, u_dy)
     return _rolling_plaw(logt, logtmp, logmp, x0, k, early_index, late_index)
 
 
@@ -46,10 +54,9 @@ def _rolling_plaw(logt, logtmp, logmp, x0, k, ymin, ymax):
 
 
 @jjit
-def _get_bounded_params(u_early_index, u_dy):
-    min_early_index, max_early_index = BOUNDS["mah_early_index"]
-    early_index = _sigmoid(u_early_index, 0, 1, min_early_index, max_early_index)
-    delta_index_max = early_index - min_early_index
+def _get_bounded_params(log_early_index, u_dy):
+    early_index = 10 ** log_early_index
+    delta_index_max = early_index
     delta_index = _sigmoid(u_dy, 0, 1, 0, delta_index_max)
     late_index = early_index - delta_index
     return early_index, late_index
@@ -57,12 +64,11 @@ def _get_bounded_params(u_early_index, u_dy):
 
 @jjit
 def _get_unbounded_params(early_index, late_index):
-    u_early_index = _inverse_sigmoid(early_index, 0, 1, *BOUNDS["mah_early_index"])
-    min_early_index = BOUNDS["mah_early_index"][0]
-    delta_index_max = early_index - min_early_index
+    log_early_index = jnp.log10(early_index)
+    delta_index_max = early_index
     delta_index = early_index - late_index
     u_dy = _inverse_sigmoid(delta_index, 0, 1, 0, delta_index_max)
-    return u_early_index, u_dy
+    return log_early_index, u_dy
 
 
 @jjit
@@ -77,21 +83,23 @@ def _inverse_sigmoid(y, x0, k, ymin, ymax):
     return x0 - jnp.log(lnarg) / k
 
 
-def _calc_mah(time, logtmp, logmp, x0, k, u_ymin, u_dy):
+def _calc_mah(time, logtmp, logmp, x0, k, log_early_index, u_dy):
     logt = jnp.log10(time)
-    return 10 ** _rolling_plaw_bounded(logt, logtmp, logmp, x0, k, u_ymin, u_dy)
+    return 10 ** _rolling_plaw_bounded(
+        logt, logtmp, logmp, x0, k, log_early_index, u_dy
+    )
 
 
 @jjit
-def _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, u_ymin, u_dy):
-    log_mah = _rolling_plaw_bounded(logt, logtmp, logmp, x0, k, u_ymin, u_dy)
+def _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy):
+    log_mah = _rolling_plaw_bounded(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
     return jnp.where(log_mah > logmp, logmp, log_mah)
 
 
 @jjit
-def _calc_clipped_mah(t, logtmp, logmp, x0, k, u_ymin, u_dy):
+def _calc_clipped_mah(t, lgtmp, logmp, x0, k, log_early_index, u_dy):
     logt = jnp.log10(t)
-    return 10 ** _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, u_ymin, u_dy)
+    return 10 ** _calc_clipped_log_mah(logt, lgtmp, logmp, x0, k, log_early_index, u_dy)
 
 
 _calc_dmhdt = jjit(jvmap(grad(_calc_mah, argnums=0), in_axes=(0, *[None] * 6)))
@@ -101,50 +109,119 @@ _calc_clipped_dmhdt = jjit(
 
 
 @jjit
-def _get_clipped_sigmah_kern(logt, logtmp, k, logmp, x0, u_ymin, u_dy):
-    log_mah = _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, u_ymin, u_dy)
-    dmhdt = _calc_clipped_dmhdt(10 ** logt, logtmp, logmp, x0, k, u_ymin, u_dy)
+def _get_clipped_sigmah_kern(logt, logtmp, k, logmp, x0, log_early_index, u_dy):
+    log_mah = _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
+    dmhdt = _calc_clipped_dmhdt(10 ** logt, logtmp, logmp, x0, k, log_early_index, u_dy)
     return 10 ** log_mah, dmhdt / 1e9
 
 
 @jjit
 def _get_sigmah_halopop_kern(logt, logtmp, k, logmp, x0, early_index, late_index):
-    u_early_index, u_dy = _get_unbounded_params(early_index, late_index)
-    return _get_clipped_sigmah_kern(logt, logtmp, k, logmp, x0, u_early_index, u_dy)
+    log_early_index, u_dy = _get_unbounded_params(early_index, late_index)
+    return _get_clipped_sigmah_kern(logt, logtmp, k, logmp, x0, log_early_index, u_dy)
 
 
-@jjit
-def _get_avg_mah_integrand_kern(logt, logtmp, k, logmp, x0, log10_early_index, u_dy):
-    early_index = 10 ** log10_early_index
-    u_early_index = _inverse_sigmoid(early_index, 0, 1, *BOUNDS["mah_early_index"])
-    return _get_clipped_sigmah_kern(logt, logtmp, k, logmp, x0, u_early_index, u_dy)
-
-
-_f0 = jvmap(_get_avg_mah_integrand_kern, in_axes=(*[None] * 3, 0, *[None] * 3))
+_f0 = jvmap(_get_clipped_sigmah_kern, in_axes=(*[None] * 3, 0, *[None] * 3))
 _f1 = jvmap(_f0, in_axes=(None, 0, *[None] * 5))
 _f2 = jvmap(_f1, in_axes=(*[None] * 5, 0, None))
 _get_avg_mah_early_tmp_integrand = jjit(jvmap(_f2, in_axes=(*[None] * 5, None, 0)))
 
 
-_g0 = jvmap(_get_avg_mah_integrand_kern, in_axes=(*[None] * 3, 0, *[None] * 3))
+_g0 = jvmap(_get_clipped_sigmah_kern, in_axes=(*[None] * 3, 0, *[None] * 3))
 _g1 = jvmap(_g0, in_axes=(*[None] * 5, 0, None))
 _get_avg_mah_tmp_today_integrand = jjit(jvmap(_g1, in_axes=(*[None] * 5, None, 0)))
 
 
 @jjit
-def _mean_early_index(lgmp, early_x0, early_k, early_ylo, early_yhi):
-    return _sigmoid(lgmp, early_x0, early_k, early_ylo, early_yhi)
+def _mean_log_early_index(
+    lgmp,
+    log_early_index_x0,
+    log_early_index_log_k,
+    log_early_index_ylo,
+    log_early_index_yhi,
+):
+    return _sigmoid(
+        lgmp,
+        log_early_index_x0,
+        10 ** log_early_index_log_k,
+        log_early_index_ylo,
+        log_early_index_yhi,
+    )
 
 
 @jjit
-def _mean_late_index(lgmp, late_x0, late_k, late_ylo, late_yhi):
-    return _sigmoid(lgmp, late_x0, late_k, late_ylo, late_yhi)
+def _mean_u_dy(lgmp, u_dy_x0, u_dy_log_k, u_dy_ylo, u_dy_yhi):
+    return _sigmoid(lgmp, u_dy_x0, 10 ** u_dy_log_k, u_dy_ylo, u_dy_yhi)
 
 
 @jjit
-def _early_index_u_dy_covariance(log_mah_cov_det=-1.0):
-    mah_cov_det = 10 ** log_mah_cov_det
-    cov = mah_cov_det * jnp.array(((1 / 4, 1), (1, 8))).astype("f4")
+def _mean_early_index(lgmp, early_x0, early_log_k, early_ylo, early_yhi):
+    return _sigmoid(lgmp, early_x0, 10 ** early_log_k, early_ylo, early_yhi)
+
+
+@jjit
+def _mean_late_index(lgmp, late_x0, late_log_k, late_ylo, late_yhi):
+    return _sigmoid(lgmp, late_x0, 10 ** late_log_k, late_ylo, late_yhi)
+
+
+def early_index_u_dy_covariance(
+    logmpeak,
+    index_cov_x0=MEAN_MAH_U_PARAMS["index_cov_x0"],
+    index_cov_log_k=MEAN_MAH_U_PARAMS["index_cov_log_k"],
+    index_cov_u_lo=MEAN_MAH_U_PARAMS["index_cov_u_lo"],
+    index_cov_v_lo=MEAN_MAH_U_PARAMS["index_cov_v_lo"],
+    index_cov_c_lo=MEAN_MAH_U_PARAMS["index_cov_c_lo"],
+    index_cov_u_hi=MEAN_MAH_U_PARAMS["index_cov_u_hi"],
+    index_cov_v_hi=MEAN_MAH_U_PARAMS["index_cov_v_hi"],
+    index_cov_c_hi=MEAN_MAH_U_PARAMS["index_cov_c_hi"],
+):
+    index_cov_u = _sigmoid(
+        logmpeak, index_cov_x0, 1, 10 ** index_cov_log_k, index_cov_u_lo, index_cov_u_hi
+    )
+    index_cov_v = _sigmoid(
+        logmpeak, index_cov_x0, 1, 10 ** index_cov_log_k, index_cov_v_lo, index_cov_v_hi
+    )
+    index_cov_c = _sigmoid(
+        logmpeak, index_cov_x0, 1, 10 ** index_cov_log_k, index_cov_c_lo, index_cov_c_hi
+    )
+    return np.array(_2d_covariance(index_cov_u, index_cov_v, index_cov_c))
+
+
+@jjit
+def _early_index_u_dy_covariance_kern(
+    logmpeak,
+    index_cov_x0,
+    index_cov_log_k,
+    index_cov_u_lo,
+    index_cov_v_lo,
+    index_cov_c_lo,
+    index_cov_u_hi,
+    index_cov_v_hi,
+    index_cov_c_hi,
+):
+    index_cov_u = _sigmoid(
+        logmpeak, index_cov_x0, 10 ** index_cov_log_k, index_cov_u_lo, index_cov_u_hi
+    )
+    index_cov_v = _sigmoid(
+        logmpeak, index_cov_x0, 10 ** index_cov_log_k, index_cov_v_lo, index_cov_v_hi
+    )
+    index_cov_c = _sigmoid(
+        logmpeak, index_cov_x0, 10 ** index_cov_log_k, index_cov_c_lo, index_cov_c_hi
+    )
+    return _2d_covariance(index_cov_u, index_cov_v, index_cov_c)
+
+
+_early_index_u_dy_covariance = jjit(
+    jvmap(_early_index_u_dy_covariance_kern, in_axes=(0, *[None] * 8))
+)
+
+
+@jjit
+def _2d_covariance(u, v, c):
+    """Bijection between R^3 and the space of
+    2d positive-definite covariance matrices."""
+    _x = jnp.sqrt(1.0 + u * u + v * v)
+    cov = jnp.exp(c) * jnp.array(((_x + u, v), (v, _x - u)))
     return cov
 
 
@@ -216,11 +293,18 @@ def _process_args(t, logmp, tmp, x0, k, early, late):
     logtmp = np.log10(tmp)
 
     if early is None:
-        p = [MEAN_MAH_PARAMS[key] for key in MEAN_MAH_PARAMS.keys() if "early" in key]
-        early = _mean_early_index(logmp, *p)
+        u_p = [
+            MEAN_MAH_U_PARAMS[key] for key in MEAN_MAH_U_PARAMS.keys() if "early" in key
+        ]
+        mean_log_early = _mean_log_early_index(logmp, *u_p)
+        early = 10.0 ** mean_log_early
+
     if late is None:
-        p = [MEAN_MAH_PARAMS[key] for key in MEAN_MAH_PARAMS.keys() if "late" in key]
-        late = _mean_late_index(logmp, *p)
+        u_dy_p = [
+            MEAN_MAH_U_PARAMS[key] for key in MEAN_MAH_U_PARAMS.keys() if "u_dy" in key
+        ]
+        mean_u_dy = _mean_u_dy(logmp, *u_dy_p)
+        late = _get_bounded_params(np.log10(early), mean_u_dy)[1]
 
     logmp, logtmp, x0, k, early, late = get_1d_arrays(logmp, logtmp, x0, k, early, late)
     return logt, logmp, logtmp, x0, k, early, late
@@ -231,14 +315,14 @@ def _g0(a, b, mu, cov):
     return jnorm.pdf(x, mu, cov)
 
 
-_g1 = jvmap(_g0, in_axes=(None, None, 0, None))
+_g1 = jvmap(_g0, in_axes=(None, None, 0, 0))
 _g2 = jvmap(_g1, in_axes=(0, None, None, None))
 _g3 = jvmap(_g2, in_axes=(None, 0, None, None))
 
 
 @jjit
-def _get_index_weights_kern(log10_early_index, u_dy, mu, cov):
-    _pdf = _g3(log10_early_index, u_dy, mu, cov)
+def _get_index_weights_kern(log10_early_index, u_dy, mu_arr, cov_arr):
+    _pdf = _g3(log10_early_index, u_dy, mu_arr, cov_arr)
     n_mass = _pdf.shape[2]
     _norm = jnp.sum(_pdf, axis=(0, 1))
     _norm = jnp.where(_norm == 0, 1.0, _norm)
@@ -251,27 +335,45 @@ def _get_mean_index_weights(
     logmparr,
     log10_early_arr,
     u_dy_arr,
-    early_index_x0,
-    early_index_k,
-    early_index_ylo,
-    early_index_yhi,
-    late_index_x0,
-    late_index_k,
-    late_index_ylo,
-    late_index_yhi,
-    log_mah_cov_det,
+    log_early_index_x0,
+    log_early_index_log_k,
+    log_early_index_ylo,
+    log_early_index_yhi,
+    u_dy_x0,
+    u_dy_log_k,
+    u_dy_ylo,
+    u_dy_yhi,
+    index_cov_x0,
+    index_cov_log_k,
+    index_cov_u_lo,
+    index_cov_v_lo,
+    index_cov_c_lo,
+    index_cov_u_hi,
+    index_cov_v_hi,
+    index_cov_c_hi,
 ):
-    mean_early = _mean_early_index(
-        logmparr, early_index_x0, early_index_k, early_index_ylo, early_index_yhi
+    mean_u_dy = _mean_u_dy(logmparr, u_dy_x0, u_dy_log_k, u_dy_ylo, u_dy_yhi)
+    p = (
+        log_early_index_x0,
+        log_early_index_log_k,
+        log_early_index_ylo,
+        log_early_index_yhi,
     )
-    mean_late = _mean_late_index(
-        logmparr, late_index_x0, late_index_k, late_index_ylo, late_index_yhi
+    log_mean_early = _mean_log_early_index(logmparr, *p,)
+
+    X = jnp.array((log_mean_early, mean_u_dy)).T
+    cov_arr = _early_index_u_dy_covariance(
+        logmparr,
+        index_cov_x0,
+        index_cov_log_k,
+        index_cov_u_lo,
+        index_cov_v_lo,
+        index_cov_c_lo,
+        index_cov_u_hi,
+        index_cov_v_hi,
+        index_cov_c_hi,
     )
-    log10_mean_early = jnp.log10(mean_early)
-    mean_u_dy = _get_unbounded_params(mean_early, mean_late)[1]
-    X = jnp.array((log10_mean_early, mean_u_dy)).T
-    cov = _early_index_u_dy_covariance(log_mah_cov_det)
-    mean_index_weights = _get_index_weights_kern(log10_early_arr, u_dy_arr, X, cov)
+    mean_index_weights = _get_index_weights_kern(log10_early_arr, u_dy_arr, X, cov_arr)
     return mean_index_weights
 
 
@@ -331,11 +433,6 @@ def _frac_early_mpeak(logmp):
 
 
 @jjit
-def _log_det_cov_vs_logmp(logmp, log_det_cov_dwarfs, log_det_cov_clusters):
-    return _sigmoid(logmp, 13, 1, log_det_cov_dwarfs, log_det_cov_clusters)
-
-
-@jjit
 def _calc_avg_history_early_tmp_halos(
     logt,
     logtmparr,
@@ -344,15 +441,22 @@ def _calc_avg_history_early_tmp_halos(
     x0,
     log10_early_arr,
     u_dy_arr,
-    early_index_x0,
-    early_index_k,
-    early_index_ylo,
-    early_index_yhi,
-    late_index_x0,
-    late_index_k,
-    late_index_ylo,
-    late_index_yhi,
-    log_mah_cov_det,
+    log_early_index_x0,
+    log_early_index_log_k,
+    log_early_index_ylo,
+    log_early_index_yhi,
+    u_dy_x0,
+    u_dy_log_k,
+    u_dy_ylo,
+    u_dy_yhi,
+    index_cov_x0,
+    index_cov_log_k,
+    index_cov_u_lo,
+    index_cov_v_lo,
+    index_cov_c_lo,
+    index_cov_u_hi,
+    index_cov_v_hi,
+    index_cov_c_hi,
     tmp_k,
     tmp_indx_t0,
     today,
@@ -366,15 +470,22 @@ def _calc_avg_history_early_tmp_halos(
         logmparr,
         log10_early_arr,
         u_dy_arr,
-        early_index_x0,
-        early_index_k,
-        early_index_ylo,
-        early_index_yhi,
-        late_index_x0,
-        late_index_k,
-        late_index_ylo,
-        late_index_yhi,
-        log_mah_cov_det,
+        log_early_index_x0,
+        log_early_index_log_k,
+        log_early_index_ylo,
+        log_early_index_yhi,
+        u_dy_x0,
+        u_dy_log_k,
+        u_dy_ylo,
+        u_dy_yhi,
+        index_cov_x0,
+        index_cov_log_k,
+        index_cov_u_lo,
+        index_cov_v_lo,
+        index_cov_c_lo,
+        index_cov_u_hi,
+        index_cov_v_hi,
+        index_cov_c_hi,
     )
 
     tmp_weights = get_tmp_weights_kern(
@@ -396,15 +507,22 @@ def _calc_avg_history_tmp_today_halos(
     x0,
     log10_early_arr,
     u_dy_arr,
-    early_index_x0,
-    early_index_k,
-    early_index_ylo,
-    early_index_yhi,
-    late_index_x0,
-    late_index_k,
-    late_index_ylo,
-    late_index_yhi,
-    log_mah_cov_det,
+    log_early_index_x0,
+    log_early_index_log_k,
+    log_early_index_ylo,
+    log_early_index_yhi,
+    u_dy_x0,
+    u_dy_log_k,
+    u_dy_ylo,
+    u_dy_yhi,
+    index_cov_x0,
+    index_cov_log_k,
+    index_cov_u_lo,
+    index_cov_v_lo,
+    index_cov_c_lo,
+    index_cov_u_hi,
+    index_cov_v_hi,
+    index_cov_c_hi,
     tmp_k,
     tmp_indx_t0,
     today,
@@ -418,15 +536,22 @@ def _calc_avg_history_tmp_today_halos(
         logmparr,
         log10_early_arr,
         u_dy_arr,
-        early_index_x0,
-        early_index_k,
-        early_index_ylo,
-        early_index_yhi,
-        late_index_x0,
-        late_index_k,
-        late_index_ylo,
-        late_index_yhi,
-        log_mah_cov_det,
+        log_early_index_x0,
+        log_early_index_log_k,
+        log_early_index_ylo,
+        log_early_index_yhi,
+        u_dy_x0,
+        u_dy_log_k,
+        u_dy_ylo,
+        u_dy_yhi,
+        index_cov_x0,
+        index_cov_log_k,
+        index_cov_u_lo,
+        index_cov_v_lo,
+        index_cov_c_lo,
+        index_cov_u_hi,
+        index_cov_v_hi,
+        index_cov_c_hi,
     )
 
     W = index_weights.reshape((n_late, n_early, n_mass, 1))
@@ -444,15 +569,22 @@ def _calc_avg_halo_history(
     x0,
     log10_early_arr,
     u_dy_arr,
-    early_index_x0,
-    early_index_k,
-    early_index_ylo,
-    early_index_yhi,
-    late_index_x0,
-    late_index_k,
-    late_index_ylo,
-    late_index_yhi,
-    log_mah_cov_det,
+    log_early_index_x0,
+    log_early_index_log_k,
+    log_early_index_ylo,
+    log_early_index_yhi,
+    u_dy_x0,
+    u_dy_log_k,
+    u_dy_ylo,
+    u_dy_yhi,
+    index_cov_x0,
+    index_cov_log_k,
+    index_cov_u_lo,
+    index_cov_v_lo,
+    index_cov_c_lo,
+    index_cov_u_hi,
+    index_cov_v_hi,
+    index_cov_c_hi,
     tmp_k,
     tmp_indx_t0,
     today,
@@ -465,15 +597,22 @@ def _calc_avg_halo_history(
         x0,
         log10_early_arr,
         u_dy_arr,
-        early_index_x0,
-        early_index_k,
-        early_index_ylo,
-        early_index_yhi,
-        late_index_x0,
-        late_index_k,
-        late_index_ylo,
-        late_index_yhi,
-        log_mah_cov_det,
+        log_early_index_x0,
+        log_early_index_log_k,
+        log_early_index_ylo,
+        log_early_index_yhi,
+        u_dy_x0,
+        u_dy_log_k,
+        u_dy_ylo,
+        u_dy_yhi,
+        index_cov_x0,
+        index_cov_log_k,
+        index_cov_u_lo,
+        index_cov_v_lo,
+        index_cov_c_lo,
+        index_cov_u_hi,
+        index_cov_v_hi,
+        index_cov_c_hi,
         tmp_k,
         tmp_indx_t0,
         today,
@@ -486,15 +625,22 @@ def _calc_avg_halo_history(
         x0,
         log10_early_arr,
         u_dy_arr,
-        early_index_x0,
-        early_index_k,
-        early_index_ylo,
-        early_index_yhi,
-        late_index_x0,
-        late_index_k,
-        late_index_ylo,
-        late_index_yhi,
-        log_mah_cov_det,
+        log_early_index_x0,
+        log_early_index_log_k,
+        log_early_index_ylo,
+        log_early_index_yhi,
+        u_dy_x0,
+        u_dy_log_k,
+        u_dy_ylo,
+        u_dy_yhi,
+        index_cov_x0,
+        index_cov_log_k,
+        index_cov_u_lo,
+        index_cov_v_lo,
+        index_cov_c_lo,
+        index_cov_u_hi,
+        index_cov_v_hi,
+        index_cov_c_hi,
         tmp_k,
         tmp_indx_t0,
         today,
