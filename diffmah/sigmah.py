@@ -159,9 +159,31 @@ def _mean_early_index(lgmp, early_x0, early_log_k, early_ylo, early_yhi):
     return _sigmoid(lgmp, early_x0, 10 ** early_log_k, early_ylo, early_yhi)
 
 
-@jjit
-def _mean_late_index(lgmp, late_x0, late_log_k, late_ylo, late_yhi):
-    return _sigmoid(lgmp, late_x0, 10 ** late_log_k, late_ylo, late_yhi)
+def mean_u_dy(
+    lgmp,
+    u_dy_x0=MEAN_MAH_U_PARAMS["u_dy_x0"],
+    u_dy_log_k=MEAN_MAH_U_PARAMS["u_dy_log_k"],
+    u_dy_ylo=MEAN_MAH_U_PARAMS["u_dy_ylo"],
+    u_dy_yhi=MEAN_MAH_U_PARAMS["u_dy_yhi"],
+):
+    return np.array(_mean_u_dy(lgmp, u_dy_x0, u_dy_log_k, u_dy_ylo, u_dy_yhi))
+
+
+def mean_log_early_index(
+    lgmp,
+    early_x0=MEAN_MAH_U_PARAMS["log_early_index_x0"],
+    early_log_k=MEAN_MAH_U_PARAMS["log_early_index_log_k"],
+    early_ylo=MEAN_MAH_U_PARAMS["log_early_index_ylo"],
+    early_yhi=MEAN_MAH_U_PARAMS["log_early_index_yhi"],
+):
+    return np.array(
+        _mean_early_index(lgmp, early_x0, early_log_k, early_ylo, early_yhi)
+    )
+
+
+# @jjit
+# def _mean_late_index(lgmp, late_x0, late_log_k, late_ylo, late_yhi):
+#     return _sigmoid(lgmp, late_x0, 10 ** late_log_k, late_ylo, late_yhi)
 
 
 def early_index_u_dy_covariance(
@@ -176,13 +198,13 @@ def early_index_u_dy_covariance(
     index_cov_c_hi=MEAN_MAH_U_PARAMS["index_cov_c_hi"],
 ):
     index_cov_u = _sigmoid(
-        logmpeak, index_cov_x0, 1, 10 ** index_cov_log_k, index_cov_u_lo, index_cov_u_hi
+        logmpeak, index_cov_x0, 10 ** index_cov_log_k, index_cov_u_lo, index_cov_u_hi
     )
     index_cov_v = _sigmoid(
-        logmpeak, index_cov_x0, 1, 10 ** index_cov_log_k, index_cov_v_lo, index_cov_v_hi
+        logmpeak, index_cov_x0, 10 ** index_cov_log_k, index_cov_v_lo, index_cov_v_hi
     )
     index_cov_c = _sigmoid(
-        logmpeak, index_cov_x0, 1, 10 ** index_cov_log_k, index_cov_c_lo, index_cov_c_hi
+        logmpeak, index_cov_x0, 10 ** index_cov_log_k, index_cov_c_lo, index_cov_c_hi
     )
     return np.array(_2d_covariance(index_cov_u, index_cov_v, index_cov_c))
 
