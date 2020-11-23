@@ -679,7 +679,7 @@ def calc_avg_halo_history(params, data):
 @jjit
 def _mse(pred, target):
     err = (pred - target) / target
-    return jnp.sum(err * err)
+    return jnp.mean(err * err)
 
 
 _mse_bundle = jvmap(_mse, in_axes=(0, 0))
@@ -694,5 +694,15 @@ def mse_bundle(preds, targets):
 def _avg_halo_history_loss(params, loss_data):
     target_halo_mahs = loss_data[-1]
     pred_data = loss_data[0:-1]
-    avg_mah, avg_dmhdt = calc_avg_halo_history(params, pred_data)
+    avg_mah, avg_dmhdt, std_dmhdt = calc_avg_halo_history(params, pred_data)
     return mse_bundle(avg_mah, target_halo_mahs)
+
+
+@jjit
+def _avg_mah_std_dmhdt_loss(params, loss_data):
+    target_halo_mahs, target_std_dmhdt = loss_data[-2:]
+    pred_data = loss_data[0:-2]
+    avg_mah, avg_dmhdt, std_dmhdt = calc_avg_halo_history(params, pred_data)
+    avg_mah_loss = mse_bundle(avg_mah, target_halo_mahs)
+    std_dmhdt_loss = mse_bundle(std_dmhdt, target_std_dmhdt)
+    return avg_mah_loss + std_dmhdt_loss
