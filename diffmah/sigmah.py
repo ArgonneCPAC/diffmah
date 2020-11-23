@@ -494,9 +494,13 @@ def _calc_avg_history_early_tmp_halos(
     _w0 = index_weights.reshape((n_late, n_early, 1, n_mass, 1))
     _w1 = tmp_weights.reshape((1, 1, n_tmp, n_mass, 1))
     W = _w0 * _w1
-    avg_mah = jnp.sum(W * mah_integrand, axis=(0, 1, 2))
-    avg_dmhdt = jnp.sum(W * dmhdt_integrand, axis=(0, 1, 2))
-    return avg_mah, avg_dmhdt
+    avg_mah = _integrate_halos(mah_integrand, W, (0, 1, 2))
+    avg_dmhdt = _integrate_halos(dmhdt_integrand, W, (0, 1, 2))
+
+    dmhdt_diff = dmhdt_integrand - avg_dmhdt.reshape((-1, *avg_dmhdt.shape))
+    dmhdt_std = jnp.sqrt(_integrate_halos(dmhdt_diff * dmhdt_diff, W, (0, 1, 2)))
+
+    return avg_mah, avg_dmhdt, dmhdt_std
 
 
 @jjit
@@ -555,9 +559,17 @@ def _calc_avg_history_tmp_today_halos(
     )
 
     W = index_weights.reshape((n_late, n_early, n_mass, 1))
-    avg_mah = jnp.sum(W * mah_integrand, axis=(0, 1))
-    avg_dmhdt = jnp.sum(W * dmhdt_integrand, axis=(0, 1))
-    return avg_mah, avg_dmhdt
+    avg_mah = _integrate_halos(mah_integrand, W, (0, 1))
+    avg_dmhdt = _integrate_halos(dmhdt_integrand, W, (0, 1))
+
+    dmhdt_diff = dmhdt_integrand - avg_dmhdt.reshape((-1, *avg_dmhdt.shape))
+    dmhdt_std = jnp.sqrt(_integrate_halos(dmhdt_diff * dmhdt_diff, W, (0, 1)))
+
+    return avg_mah, avg_dmhdt, dmhdt_std
+
+
+def _integrate_halos(histories, weights, axis):
+    return jnp.sum(weights * histories, axis=axis)
 
 
 @jjit
@@ -589,7 +601,7 @@ def _calc_avg_halo_history(
     tmp_indx_t0,
     today,
 ):
-    mah_early, dmhdt_early = _calc_avg_history_early_tmp_halos(
+    _res_early = _calc_avg_history_early_tmp_halos(
         logt,
         logtmparr,
         k,
@@ -617,8 +629,9 @@ def _calc_avg_halo_history(
         tmp_indx_t0,
         today,
     )
+    mah_early, dmhdt_early, std_dmhdt_early = _res_early
 
-    mah_t0, dmhdt_t0 = _calc_avg_history_tmp_today_halos(
+    _res_t0 = _calc_avg_history_tmp_today_halos(
         logt,
         k,
         logmparr,
@@ -645,12 +658,16 @@ def _calc_avg_halo_history(
         tmp_indx_t0,
         today,
     )
+    mah_t0, dmhdt_t0, std_dmhdt_t0 = _res_t0
+
     n_mass = mah_t0.shape[0]
 
     f_early = _frac_early_mpeak(logmparr).reshape((n_mass, 1))
     avg_mah = f_early * mah_early + (1 - f_early) * mah_t0
     avg_dmhdt = f_early * dmhdt_early + (1 - f_early) * dmhdt_t0
-    return avg_mah, avg_dmhdt
+    std_dmhdt = f_early * std_dmhdt_early + (1 - f_early) * std_dmhdt_t0
+
+    return avg_mah, avg_dmhdt, std_dmhdt
 
 
 @jjit
