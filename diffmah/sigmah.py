@@ -15,22 +15,22 @@ MAH_PARAMS = OrderedDict(
 )
 
 MEAN_MAH_U_PARAMS = OrderedDict(
-    log_early_index_x0=13.94,
-    log_early_index_log_k=-0.30,
-    log_early_index_ylo=0.01,
-    log_early_index_yhi=1.40,
-    u_dy_x0=12.83,
-    u_dy_log_k=0.21,
-    u_dy_ylo=0.48,
-    u_dy_yhi=1.12,
-    index_cov_x0=15.89,
-    index_cov_log_k=-0.76,
-    index_cov_u_lo=-10.67,
-    index_cov_u_hi=5.31,
-    index_cov_v_lo=-1.58,
-    index_cov_v_hi=-0.25,
-    index_cov_c_lo=1.81,
-    index_cov_c_hi=-3.95,
+    log_early_index_x0=14.315,
+    log_early_index_log_k=-0.381,
+    log_early_index_ylo=-0.038,
+    log_early_index_yhi=1.119,
+    u_dy_x0=12.932,
+    u_dy_log_k=-0.085,
+    u_dy_ylo=-0.518,
+    u_dy_yhi=0.147,
+    index_cov_x0=14.393,
+    index_cov_log_k=0.260,
+    index_cov_u_lo=-10.648,
+    index_cov_u_hi=4.900,
+    index_cov_v_lo=-3.053,
+    index_cov_v_hi=-2.403,
+    index_cov_c_lo=-0.592,
+    index_cov_c_hi=-7.443,
 )
 
 
@@ -433,7 +433,7 @@ def _frac_early_mpeak(logmp):
 
 
 @jjit
-def _calc_avg_history_early_tmp_halos(
+def _weighted_history_early_tmp_halos(
     logt,
     logtmparr,
     k,
@@ -493,18 +493,27 @@ def _calc_avg_history_early_tmp_halos(
     )
     _w0 = index_weights.reshape((n_late, n_early, 1, n_mass, 1))
     _w1 = tmp_weights.reshape((1, 1, n_tmp, n_mass, 1))
-    W = _w0 * _w1
-    avg_mah = _integrate_halos(mah_integrand, W, (0, 1, 2))
-    avg_dmhdt = _integrate_halos(dmhdt_integrand, W, (0, 1, 2))
+    weights = _w0 * _w1
 
-    dmhdt_diff = dmhdt_integrand - avg_dmhdt.reshape((-1, *avg_dmhdt.shape))
-    dmhdt_std_sq = _integrate_halos(dmhdt_diff * dmhdt_diff, W, (0, 1, 2))
+    return mah_integrand, dmhdt_integrand, weights
 
-    return avg_mah, avg_dmhdt, dmhdt_std_sq
+    #
+    # avg_mah = _integrate_halos(mah_integrand, W, (0, 1, 2))
+    # avg_dmhdt = _integrate_halos(dmhdt_integrand, W, (0, 1, 2))
+    # smar_integrand = 1e9 * dmhdt_integrand / mah_integrand
+    #
+    # avg_smar = _integrate_halos(smar_integrand, W, (0, 1, 2))
+    # # dmhdt_diff = dmhdt_integrand - avg_dmhdt.reshape((-1, *avg_dmhdt.shape))
+    # # dmhdt_std_sq = _integrate_halos(dmhdt_diff * dmhdt_diff, W, (0, 1, 2))
+    #
+    # smar_diff = smar_integrand - avg_smar.reshape((-1, *avg_smar.shape))
+    # smar_std_sq = _integrate_halos(smar_diff * smar_diff, W, (0, 1, 2))
+    #
+    # return avg_mah, avg_dmhdt, mah_integrand, dmhdt_integrand, W
 
 
 @jjit
-def _calc_avg_history_tmp_today_halos(
+def _weighted_history_tmp_today_halos(
     logt,
     k,
     logmparr,
@@ -558,14 +567,8 @@ def _calc_avg_history_tmp_today_halos(
         index_cov_c_hi,
     )
 
-    W = index_weights.reshape((n_late, n_early, n_mass, 1))
-    avg_mah = _integrate_halos(mah_integrand, W, (0, 1))
-    avg_dmhdt = _integrate_halos(dmhdt_integrand, W, (0, 1))
-
-    dmhdt_diff = dmhdt_integrand - avg_dmhdt.reshape((-1, *avg_dmhdt.shape))
-    dmhdt_std_sq = _integrate_halos(dmhdt_diff * dmhdt_diff, W, (0, 1))
-
-    return avg_mah, avg_dmhdt, dmhdt_std_sq
+    weights = index_weights.reshape((n_late, n_early, n_mass, 1))
+    return mah_integrand, dmhdt_integrand, weights
 
 
 def _integrate_halos(histories, weights, axis):
@@ -601,7 +604,7 @@ def _calc_avg_halo_history(
     tmp_indx_t0,
     today,
 ):
-    _res_early = _calc_avg_history_early_tmp_halos(
+    _res_early = _weighted_history_early_tmp_halos(
         logt,
         logtmparr,
         k,
@@ -629,9 +632,10 @@ def _calc_avg_halo_history(
         tmp_indx_t0,
         today,
     )
-    mah_early, dmhdt_early, sq_std_dmhdt_early = _res_early
+    mah_int_early, dmhdt_int_early, w_early = _res_early
+    smar_int_early = 1e9 * dmhdt_int_early / mah_int_early
 
-    _res_t0 = _calc_avg_history_tmp_today_halos(
+    _res_t0 = _weighted_history_tmp_today_halos(
         logt,
         k,
         logmparr,
@@ -658,16 +662,38 @@ def _calc_avg_halo_history(
         tmp_indx_t0,
         today,
     )
-    mah_t0, dmhdt_t0, sq_std_dmhdt_t0 = _res_t0
+    mah_int_t0, dmhdt_int_t0, w_t0 = _res_t0
+    smar_int_t0 = 1e9 * dmhdt_int_t0 / mah_int_t0
 
-    n_mass = mah_t0.shape[0]
+    n_mass = mah_int_t0.shape[0]
 
-    f_early = _frac_early_mpeak(logmparr).reshape((n_mass, 1))
-    avg_mah = f_early * mah_early + (1 - f_early) * mah_t0
-    avg_dmhdt = f_early * dmhdt_early + (1 - f_early) * dmhdt_t0
-    sq_std_dmhdt = f_early * sq_std_dmhdt_early + (1 - f_early) * sq_std_dmhdt_t0
+    n_late, n_early, n_tmp, n_mass, n_times = mah_int_early.shape
 
-    return avg_mah, avg_dmhdt, sq_std_dmhdt
+    avg_mah_early = _integrate_halos(mah_int_early, w_early, (0, 1, 2))
+    avg_dmhdt_early = _integrate_halos(dmhdt_int_early, w_early, (0, 1, 2))
+    avg_smar_early = _integrate_halos(smar_int_early, w_early, (0, 1, 2))
+
+    avg_mah_t0 = _integrate_halos(mah_int_t0, w_t0, (0, 1))
+    avg_dmhdt_t0 = _integrate_halos(dmhdt_int_t0, w_t0, (0, 1))
+    avg_smar_t0 = _integrate_halos(smar_int_t0, w_t0, (0, 1))
+
+    F_e = _frac_early_mpeak(logmparr).reshape((n_mass, 1))
+
+    avg_mah = F_e * avg_mah_early + (1 - F_e) * avg_mah_t0
+    avg_dmhdt = F_e * avg_dmhdt_early + (1 - F_e) * avg_dmhdt_t0
+    avg_smar = F_e * avg_smar_early + (1 - F_e) * avg_smar_t0
+
+    log_mah_int_early = jnp.log10(mah_int_early)
+    log_mah_int_t0 = jnp.log10(mah_int_t0)
+    log_avg_mah = jnp.log10(avg_mah)
+    d_log_mah_int_early = log_mah_int_early - log_avg_mah
+    d_log_mah_int_t0 = log_mah_int_t0 - log_avg_mah
+
+    var_mah_early = jnp.sum(w_early * (d_log_mah_int_early ** 2), axis=(0, 1, 2))
+    var_mah_t0 = jnp.sum(w_t0 * (d_log_mah_int_t0 ** 2), axis=(0, 1))
+    var_mah = F_e * var_mah_early + (1 - F_e) * var_mah_t0
+
+    return avg_mah, avg_dmhdt, avg_smar, var_mah
 
 
 @jjit
@@ -694,15 +720,16 @@ def mse_bundle(preds, targets):
 def _avg_halo_history_loss(params, loss_data):
     target_halo_mahs = loss_data[-1]
     pred_data = loss_data[0:-1]
-    avg_mah, avg_dmhdt, std_dmhdt = calc_avg_halo_history(params, pred_data)
+    avg_mah, avg_dmhdt, avg_smar, var_smar = calc_avg_halo_history(params, pred_data)
     return mse_bundle(avg_mah, target_halo_mahs)
 
 
 @jjit
 def _avg_mah_std_dmhdt_loss(params, loss_data):
-    target_halo_mahs, target_sq_std_dmhdt = loss_data[-2:]
+    target_halo_mahs, target_halo_smars = loss_data[-2:]
     pred_data = loss_data[0:-2]
-    avg_mah, avg_dmhdt, sq_std_dmhdt = calc_avg_halo_history(params, pred_data)
+    avg_mah, avg_dmhdt, avg_smar, var_mah = calc_avg_halo_history(params, pred_data)
     avg_mah_loss = mse_bundle(avg_mah, target_halo_mahs)
-    std_dmhdt_loss = mse_bundle(sq_std_dmhdt / avg_dmhdt, target_sq_std_dmhdt)
-    return avg_mah_loss + 0.1 * std_dmhdt_loss
+    avg_smar_loss = mse_bundle(avg_smar, target_halo_smars)
+    # var_mah_loss = mse_bundle(var_mah, target_halo_var_mah)
+    return avg_mah_loss + avg_smar_loss  # + var_mah_loss
