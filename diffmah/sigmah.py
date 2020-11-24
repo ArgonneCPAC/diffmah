@@ -519,20 +519,6 @@ def _weighted_history_early_tmp_halos(
 
     return mah_integrand, dmhdt_integrand, weights
 
-    #
-    # avg_mah = _integrate_halos(mah_integrand, W, (0, 1, 2))
-    # avg_dmhdt = _integrate_halos(dmhdt_integrand, W, (0, 1, 2))
-    # smar_integrand = 1e9 * dmhdt_integrand / mah_integrand
-    #
-    # avg_smar = _integrate_halos(smar_integrand, W, (0, 1, 2))
-    # # dmhdt_diff = dmhdt_integrand - avg_dmhdt.reshape((-1, *avg_dmhdt.shape))
-    # # dmhdt_std_sq = _integrate_halos(dmhdt_diff * dmhdt_diff, W, (0, 1, 2))
-    #
-    # smar_diff = smar_integrand - avg_smar.reshape((-1, *avg_smar.shape))
-    # smar_std_sq = _integrate_halos(smar_diff * smar_diff, W, (0, 1, 2))
-    #
-    # return avg_mah, avg_dmhdt, mah_integrand, dmhdt_integrand, W
-
 
 @jjit
 def _weighted_history_tmp_today_halos(
