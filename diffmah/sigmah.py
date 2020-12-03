@@ -92,6 +92,14 @@ _calc_clipped_dmhdt2 = jjit(
 
 
 @jjit
+def _get_log_mah_kern(logt, logtmp, k, logmp, x0, log_early_index, u_dy):
+    """Calculate log_mah and dm/dt"""
+    log_mah = _calc_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
+    dmhdt = _calc_dmhdt(10 ** logt, logtmp, logmp, x0, k, log_early_index, u_dy)
+    return log_mah, dmhdt / 1e9
+
+
+@jjit
 def _get_clipped_log_mah_kern(logt, logtmp, k, logmp, x0, log_early_index, u_dy):
     """Calculate log_mah and dm/dt"""
     log_mah = _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
