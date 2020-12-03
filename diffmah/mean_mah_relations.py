@@ -721,8 +721,7 @@ def _avg_halo_history_loss3b(params, loss_data):
     )
     loss_mah = mse_bundle(avg_mah, target_halo_mahs)
     loss_dmhdt = mse_bundle(avg_dmhdt, target_halo_dmhdts)
-    loss_std = mse_bundle(std_dmhdt, target_std_dmhdt)
-    return loss_mah + loss_dmhdt  # + loss_std
+    return loss_mah + loss_dmhdt
 
 
 def measure_cov_params(cov):
@@ -750,3 +749,12 @@ def generate_halo_histories(logmp, t, n_halos, **kw):
     log_mah, dmhdt = individual_halo_assembly(t, logmp, early, late, **kw)
     halopop_data = (X, cov, assembly_pdf, early, late, lge, u_dy, mean_params)
     return log_mah, dmhdt, halopop_data
+
+
+def mean_mah_index_parameters(logmp, **kwargs):
+    mean_index_params = [
+        kwargs.get(key, MEAN_INDEX_PARAMS.get(key)) for key in MEAN_INDEX_PARAMS.keys()
+    ]
+    log_early = _mean_lge_vs_logmp(logmp, *mean_index_params[:4])
+    u_dy = _mean_u_dy_vs_logmp(logmp, *mean_index_params[4:8])
+    return log_early, u_dy
