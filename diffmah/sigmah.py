@@ -109,6 +109,13 @@ _calc_clipped_dmhdt = jjit(
 
 
 @jjit
+def _get_clipped_log_mah_kern(logt, logtmp, k, logmp, x0, log_early_index, u_dy):
+    log_mah = _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
+    dmhdt = _calc_clipped_dmhdt(10 ** logt, logtmp, logmp, x0, k, log_early_index, u_dy)
+    return log_mah, dmhdt / 1e9
+
+
+@jjit
 def _get_clipped_sigmah_kern(logt, logtmp, k, logmp, x0, log_early_index, u_dy):
     log_mah = _calc_clipped_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
     dmhdt = _calc_clipped_dmhdt(10 ** logt, logtmp, logmp, x0, k, log_early_index, u_dy)
@@ -179,11 +186,6 @@ def mean_log_early_index(
     return np.array(
         _mean_early_index(lgmp, early_x0, early_log_k, early_ylo, early_yhi)
     )
-
-
-# @jjit
-# def _mean_late_index(lgmp, late_x0, late_log_k, late_ylo, late_yhi):
-#     return _sigmoid(lgmp, late_x0, 10 ** late_log_k, late_ylo, late_yhi)
 
 
 def early_index_u_dy_covariance(
