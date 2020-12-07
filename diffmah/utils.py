@@ -240,12 +240,18 @@ def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01)
     params_arr = np.zeros((n_step, n_params)).astype("f4")
 
     for istep in range(n_step):
-        p = get_params(opt_state)
+        p = np.array(get_params(opt_state))
         params_arr[istep, :] = p
-        assert np.all(np.isfinite(p)), "Some parameters are NaN: {}".format(p)
+
+        msg = "On step {0} some parameters are NaN: {1}".format(istep, p)
+        assert np.all(np.isfinite(p)), msg
         loss, grads = value_and_grad(loss_func, argnums=0)(p, loss_data)
-        assert np.isfinite(loss), "Loss is NaN for params:\n{}".format(p)
-        assert np.all(np.isfinite(grads)), "Grads are NaN for params:\n{}".format(p)
+
+        msg = "On step {0} loss is NaN for params:\n{1}".format(istep, p)
+        assert np.isfinite(loss), msg
+
+        msg = "On step {0} for params = {1}\n\ngrads = {2}".format(istep, p, grads)
+        assert np.all(np.isfinite(grads)), msg
         loss_arr[istep] = loss
         opt_state = opt_update(istep, grads, opt_state)
 
