@@ -50,7 +50,8 @@ def _calc_log_mah(logt, logtmp, logmp, x0, k, log10_early_index, u_dy):
 @jjit
 def _calc_mah(time, logtmp, logmp, x0, k, log_early_index, u_dy):
     """Calculate M(t) from unbounded parameters."""
-    return 10 ** _calc_log_mah(time, logtmp, logmp, x0, k, log_early_index, u_dy)
+    logt = jnp.log10(time)
+    return 10 ** _calc_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
 
 
 @jjit
@@ -92,7 +93,7 @@ _calc_clipped_dmhdt2 = jjit(
 
 
 @jjit
-def _get_log_mah_kern(logt, logtmp, k, logmp, x0, log_early_index, u_dy):
+def _get_log_mah_kern(logt, logtmp, logmp, x0, k, log_early_index, u_dy):
     """Calculate log_mah and dm/dt"""
     log_mah = _calc_log_mah(logt, logtmp, logmp, x0, k, log_early_index, u_dy)
     dmhdt = _calc_dmhdt(10 ** logt, logtmp, logmp, x0, k, log_early_index, u_dy)
