@@ -177,17 +177,31 @@ def jax_adam_wrapper(
     params_arr : ndarray of shape (n_step, n_params)
         Stores the value of the model params at each step
 
+    fit_terminates : int
+        0 if NaN or inf is encountered by the fitter, causing termination before n_step
+        1 for a fit that terminates with no such problems
+
     """
     if warmup_step_size is None:
         warmup_step_size = 5 * step_size
 
+    p_init = np.copy(params_init)
     for i in range(n_warmup):
-        params_init = _jax_adam_wrapper(
-            loss_func, params_init, loss_data, warmup_n_step, step_size=warmup_step_size
+        p_init = _jax_adam_wrapper(
+            loss_func, p_init, loss_data, warmup_n_step, step_size=warmup_step_size
         )[0]
-    return _jax_adam_wrapper(
-        loss_func, params_init, loss_data, n_step, step_size=step_size
-    )
+
+    if np.all(np.isfinite(p_init)):
+        p0 = p_init
+    else:
+        p0 = params_init
+
+    _res = _jax_adam_wrapper(loss_func, p0, loss_data, n_step, step_size=step_size)
+    if len(_res[2]) < n_step:
+        fit_terminates = 0
+    else:
+        fit_terminates = 1
+    return (*_res, fit_terminates)
 
 
 def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01):
@@ -233,28 +247,37 @@ def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01)
         Stores the value of the model params at each step
 
     """
-    loss_arr = np.zeros(n_step).astype("f4")
+    loss_arr = np.zeros(n_step).astype("f4") - 1.0
     opt_init, opt_update, get_params = jax_opt.adam(step_size)
     opt_state = opt_init(params_init)
     n_params = len(params_init)
     params_arr = np.zeros((n_step, n_params)).astype("f4")
 
     for istep in range(n_step):
-        p = get_params(opt_state)
-        params_arr[istep, :] = p
-        assert np.all(np.isfinite(p)), "Some parameters are NaN: {}".format(p)
+        p = np.array(get_params(opt_state))
+
         loss, grads = value_and_grad(loss_func, argnums=0)(p, loss_data)
-        assert np.isfinite(loss), "Loss is NaN for params:\n{}".format(p)
-        assert np.all(np.isfinite(grads)), "Grads are NaN for params:\n{}".format(p)
-        loss_arr[istep] = loss
-        opt_state = opt_update(istep, grads, opt_state)
 
-    good_msk = np.all(np.isfinite(params_arr), axis=1)
-    cut_loss_arr = loss_arr[good_msk]
-    cut_params_arr = params_arr[good_msk]
+        no_nan_params = np.all(np.isfinite(p))
+        no_nan_loss = np.isfinite(loss)
+        no_nan_grads = np.all(np.isfinite(grads))
+        if ~no_nan_params | ~no_nan_loss | ~no_nan_grads:
+            indx_best = np.nanargmin(loss_arr[:istep])
+            best_fit_params = params_arr[indx_best]
+            best_fit_loss = loss_arr[indx_best]
+            return (
+                best_fit_params,
+                best_fit_loss,
+                loss_arr[:istep],
+                params_arr[:istep, :],
+            )
+        else:
+            params_arr[istep, :] = p
+            loss_arr[istep] = loss
+            opt_state = opt_update(istep, grads, opt_state)
 
-    indx_best = np.nanargmin(cut_loss_arr)
-    best_fit_params = cut_params_arr[indx_best]
-    loss = cut_loss_arr[indx_best]
+    indx_best = np.nanargmin(loss_arr)
+    best_fit_params = params_arr[indx_best]
+    loss = loss_arr[indx_best]
 
     return best_fit_params, loss, loss_arr, params_arr
