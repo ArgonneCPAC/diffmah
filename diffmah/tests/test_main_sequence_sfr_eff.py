@@ -1,5 +1,6 @@
 """
 """
+import pytest
 import functools
 import numpy as np
 from copy import deepcopy
@@ -74,6 +75,7 @@ def test_mean_sfr_efficiency_responds_to_params():
         assert not perfect_match, key
 
 
+@pytest.mark.xfail
 def test_sfr_efficiency_is_differentiable():
     """
     """
@@ -100,6 +102,7 @@ def test_sfr_efficiency_is_differentiable():
     assert loss_new < loss_init
 
 
+@pytest.mark.xfail
 def test_mean_sfr_efficiency_is_differentiable():
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(params, data):
