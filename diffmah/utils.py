@@ -290,3 +290,30 @@ def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01)
     loss = loss_arr[indx_best]
 
     return best_fit_params, loss, loss_arr, params_arr
+
+
+def get_dt_array(t):
+    """Compute delta time from input time.
+
+    Parameters
+    ----------
+    t : ndarray of shape (n, )
+
+    Returns
+    -------
+    dt : ndarray of shape (n, )
+
+    Returned dt is defined by time interval (t_lo, t_hi),
+    where t_lo^i = 0.5(t_i-1 + t_i) and t_hi^i = 0.5(t_i + t_i+1)
+
+    """
+    n = t.size
+    dt = np.zeros(n)
+    tlo = t[0] - (t[1] - t[0]) / 2
+    for i in range(n - 1):
+        thi = (t[i + 1] + t[i]) / 2
+        dt[i] = thi - tlo
+        tlo = thi
+    thi = t[n - 1] + dt[n - 2] / 2
+    dt[n - 1] = thi - tlo
+    return dt
