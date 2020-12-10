@@ -271,9 +271,13 @@ def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01)
         no_nan_loss = np.isfinite(loss)
         no_nan_grads = np.all(np.isfinite(grads))
         if ~no_nan_params | ~no_nan_loss | ~no_nan_grads:
-            indx_best = np.nanargmin(loss_arr[:istep])
-            best_fit_params = params_arr[indx_best]
-            best_fit_loss = loss_arr[indx_best]
+            if istep > 0:
+                indx_best = np.nanargmin(loss_arr[:istep])
+                best_fit_params = params_arr[indx_best]
+                best_fit_loss = loss_arr[indx_best]
+            else:
+                best_fit_params = np.copy(p)
+                best_fit_loss = 999.99
             return (
                 best_fit_params,
                 best_fit_loss,
