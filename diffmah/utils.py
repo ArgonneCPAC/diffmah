@@ -1,7 +1,7 @@
 import numpy as np
-from jax import numpy as jax_np
+from jax import numpy as jnp
 from jax import value_and_grad
-from jax import jit as jax_jit
+from jax import jit as jjit
 from jax.experimental import optimizers as jax_opt
 from collections import OrderedDict
 
@@ -12,14 +12,14 @@ def get_1d_arrays(*args, jax_arrays=False):
     Each arg must be either an ndarray of shape (npts, ), or a scalar.
 
     """
-    results = [jax_np.atleast_1d(arg) for arg in args]
+    results = [jnp.atleast_1d(arg) for arg in args]
     sizes = [arr.size for arr in results]
     npts = max(sizes)
     msg = "All input arguments should be either a float or ndarray of shape ({0}, )"
     assert set(sizes) <= set((1, npts)), msg.format(npts)
 
     if jax_arrays:
-        result = [jax_np.zeros(npts).astype(arr.dtype) + arr for arr in results]
+        result = [jnp.zeros(npts).astype(arr.dtype) + arr for arr in results]
     else:
         result = [np.zeros(npts).astype(arr.dtype) + arr for arr in results]
     return result
@@ -45,7 +45,7 @@ def jax_sigmoid(x, x0, k, ylo, yhi):
     -------
     sigmoid : scalar or array-like, same shape as input
     """
-    return ylo + (yhi - ylo) / (1 + jax_np.exp(-k * (x - x0)))
+    return ylo + (yhi - ylo) / (1 + jnp.exp(-k * (x - x0)))
 
 
 def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
@@ -69,12 +69,12 @@ def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
     sigmoid : scalar or array-like, same shape as input
     """
     lnarg = (yhi - ylo) / (y - ylo) - 1
-    return x0 - jax_np.log(lnarg) / k
+    return x0 - jnp.log(lnarg) / k
 
 
-@jax_jit
+@jjit
 def _jax_triweight_sigmoid_kernel(y):
-    val = jax_np.where(
+    val = jnp.where(
         y < 3,
         -5 * y ** 7 / 69984
         + 7 * y ** 5 / 2592
@@ -83,7 +83,16 @@ def _jax_triweight_sigmoid_kernel(y):
         + 1 / 2,
         1,
     )
-    return jax_np.where(y > -3, val, 0)
+    return jnp.where(y > -3, val, 0)
+
+
+@jjit
+def _jax_tw_cuml_kern(x, m, h):
+    y = (x - m) / h
+    v = -5 * y ** 7 / 69984 + 7 * y ** 5 / 2592 - 35 * y ** 3 / 864 + 35 * y / 96 + 0.5
+    res = jnp.where(y < -3, 0, v)
+    res = jnp.where(y > 3, 1, res)
+    return res
 
 
 def _enforce_no_extraneous_keywords(defaults, **kwargs):
@@ -110,7 +119,7 @@ def _get_param_array(defaults, strict=False, dtype="f4", jax_arrays=True, **kwar
     """
     param_dict = _get_param_dict(defaults, strict=strict, **kwargs)
     if jax_arrays:
-        param_array = jax_np.array(list(param_dict.values())).astype(dtype)
+        param_array = jnp.array(list(param_dict.values())).astype(dtype)
     else:
         param_array = np.array(list(param_dict.values())).astype(dtype)
     return param_array
@@ -281,3 +290,30 @@ def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01)
     loss = loss_arr[indx_best]
 
     return best_fit_params, loss, loss_arr, params_arr
+
+
+def get_dt_array(t):
+    """Compute delta time from input time.
+
+    Parameters
+    ----------
+    t : ndarray of shape (n, )
+
+    Returns
+    -------
+    dt : ndarray of shape (n, )
+
+    Returned dt is defined by time interval (t_lo, t_hi),
+    where t_lo^i = 0.5(t_i-1 + t_i) and t_hi^i = 0.5(t_i + t_i+1)
+
+    """
+    n = t.size
+    dt = np.zeros(n)
+    tlo = t[0] - (t[1] - t[0]) / 2
+    for i in range(n - 1):
+        thi = (t[i + 1] + t[i]) / 2
+        dt[i] = thi - tlo
+        tlo = thi
+    thi = t[n - 1] + dt[n - 2] / 2
+    dt[n - 1] = thi - tlo
+    return dt
