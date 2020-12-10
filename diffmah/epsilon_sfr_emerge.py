@@ -66,6 +66,32 @@ def _sfr_efficiency_kernel(params, data):
     return sfr_eff
 
 
+@jjit
+def _sfr_eff_halopop_kernel(
+    z_table, mhalo_at_z, m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz
+):
+    params_at_z = _get_params_at_z(
+        z_table, m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz
+    )
+    return _sfr_efficiency_dbl_plaw(mhalo_at_z, *params_at_z)
+
+
+_b = (None, *[0] * 8)
+_sfr_eff_halopop = jvmap(_sfr_eff_halopop_kernel, in_axes=_b)
+
+
+def sfr_efficiency_halopop(z_table, mhalo_at_z, *sfr_params):
+    z_table = np.atleast_1d(z_table).astype("f4")
+    mhalo_at_z = np.atleast_2d(mhalo_at_z).astype("f4")
+    n_halos, n_z = mhalo_at_z.shape
+    msg = "z_table shape {0} must agree with mhalo_at_z shape {1}"
+    assert n_z == z_table.size, msg.format(z_table.shape, mhalo_at_z.shape)
+    assert len(sfr_params) == 7
+    param_sizes = [p.size for p in sfr_params]
+    assert np.allclose(param_sizes, n_halos), (param_sizes, n_halos)
+    return np.array(_sfr_eff_halopop(z_table, mhalo_at_z, *sfr_params))
+
+
 def _get_params_at_z(z, m_0, m_z, beta_0, beta_z, gamma_0, lgeps_n0, lgeps_nz):
     m_1_at_z = jax_np.power(10, _get_log_m1_param_at_z(z, m_0, m_z))
     beta_at_z = _get_beta_param_at_z(z, beta_0, beta_z)
