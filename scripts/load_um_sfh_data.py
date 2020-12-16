@@ -42,7 +42,8 @@ def load_bpl_data(drn=BPL_DRN, log_ssfr_clip=LOG_SSFR_CLIP):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        bpl["log_dmhdt"] = np.where(dmhdt_matrix <= 0, 0, np.log10(dmhdt_matrix))
+        bpl["dmhdt"] = dmhdt_matrix
+        bpl["log_dmhdt"] = np.where(dmhdt_matrix <= 0, -1.0, np.log10(dmhdt_matrix))
 
     sfrh = bpl["sfr_history_main_prog"]
     dtarr = _get_dt_array(bpl_t)
@@ -84,6 +85,7 @@ def load_mdpl2_data(drn=MDPL2_DRN, log_ssfr_clip=LOG_SSFR_CLIP):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
+        mdpl2["dmhdt"] = dmhdt_matrix
         mdpl2["log_dmhdt"] = np.where(dmhdt_matrix <= 0, 0, np.log10(dmhdt_matrix))
 
     sfrh = mdpl2["sfr_history_main_prog"]
