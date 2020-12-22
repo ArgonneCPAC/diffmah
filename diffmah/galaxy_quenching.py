@@ -7,7 +7,7 @@ from .utils import _jax_tw_cuml_kern, jax_sigmoid, jax_inverse_sigmoid
 
 
 DEFAULT_Q_PARAMS = OrderedDict(u_lg_qt=0.0, u_lg_qs=0.0, u_lg_dq=1.0)
-Q_PARAM_BOUNDS = OrderedDict(u_lg_qt=(0.0, 1.25), u_lg_qs=(-2, 0.0), u_lg_dq=(-2, 0.0))
+Q_PARAM_BOUNDS = OrderedDict(u_lg_qt=(0.0, 1.25), u_lg_qs=(-3, 0.0), u_lg_dq=(-3, 0.0))
 
 
 @jjit
