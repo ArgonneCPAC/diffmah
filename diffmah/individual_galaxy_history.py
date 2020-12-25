@@ -6,8 +6,8 @@ from copy import deepcopy
 from jax import numpy as jnp
 from jax import jit as jjit
 from jax import vmap as jvmap
-from .individual_halo_history import _calc_halo_history
-from .galaxy_quenching import _quenching_kern
+from diffmah.individual_halo_history import _calc_halo_history_uparams
+from diffmah.galaxy_quenching import _quenching_kern
 
 
 LGMC_PARAMS = OrderedDict(lgmc_x0=0.735, lgmc_k=5.0, lgmc_ylo=12.3, lgmc_yhi=11.55)
@@ -50,16 +50,18 @@ FB = 0.156
 
 
 @jjit
-def _sm_history(lgt, z, logtmp, logmp, x0, k, lge, u_dy, sfr_ms_params, q_params, dt):
-    _a = lgt, z, logtmp, logmp, x0, k, lge, u_dy, sfr_ms_params, q_params
+def _sm_history(
+    lgt, dt, logtmp, logmp, u_x0, u_k, u_lge, u_dy, sfr_ms_params, q_params
+):
+    _a = lgt, logtmp, logmp, u_x0, u_k, u_lge, u_dy, sfr_ms_params, q_params
     dmhdt, log_mah, main_sequence_sfr, sfr = _sfr_history(*_a)
     mstar = _integrate_sfr(sfr, dt)
     return dmhdt, log_mah, main_sequence_sfr, sfr, mstar
 
 
 @jjit
-def _sfr_history(lgt, z, logtmp, logmp, x0, k, lge, u_dy, sfr_ms_params, q_params):
-    _a = lgt, z, logtmp, logmp, x0, k, lge, u_dy, sfr_ms_params
+def _sfr_history(lgt, logtmp, logmp, u_x0, u_k, u_lge, u_dy, sfr_ms_params, q_params):
+    _a = lgt, logtmp, logmp, u_x0, u_k, u_lge, u_dy, sfr_ms_params
     dmhdt, log_mah, main_sequence_sfr = _main_sequence_history(*_a)
     qfrac = _quenching_kern(lgt, *q_params)
     sfr = qfrac * main_sequence_sfr
@@ -67,8 +69,10 @@ def _sfr_history(lgt, z, logtmp, logmp, x0, k, lge, u_dy, sfr_ms_params, q_param
 
 
 @jjit
-def _main_sequence_history(lgt, z, logtmp, logmp, x0, k, lge, u_dy, sfr_ms_params):
-    dmhdt, log_mah = _calc_halo_history(lgt, logtmp, logmp, x0, k, lge, u_dy)
+def _main_sequence_history(lgt, logtmp, logmp, u_x0, u_k, u_lge, u_dy, sfr_ms_params):
+    dmhdt, log_mah = _calc_halo_history_uparams(
+        lgt, logtmp, logmp, u_x0, u_k, u_lge, u_dy
+    )
     efficiency = 10 ** _log_ms_eff_u_kern(logmp, lgt, *sfr_ms_params)
     main_sequence_sfr = FB * efficiency * dmhdt
     return dmhdt, log_mah, main_sequence_sfr
@@ -259,17 +263,17 @@ def _lgbd_vs_lgt(lgt, lgbd_x0, lgbd_k, lgbd_ylo, lgbd_yhi):
     return lg_eff_dwarfs
 
 
-_b = (None, 0, 0)
+_b = (0, None, 0)
 _sfr_eff_halopop = jvmap(_log_ms_eff_kern, in_axes=_b)
 
 
-def sfr_efficiency_halopop(t_table, log_mah, *sfr_params):
+def sfr_efficiency_halopop(t_table, log_mah, *u_sfr_params):
     t_table = np.atleast_1d(t_table).astype("f4")
     log_mah = np.atleast_2d(log_mah).astype("f4")
     n_halos, n_t = log_mah.shape
     msg = "z_table shape {0} must agree with mhalo_at_z shape {1}"
     assert n_t == t_table.size, msg.format(t_table.shape, log_mah.shape)
-    assert len(sfr_params) == len(DEFAULT_PARAMS)
-    param_sizes = [p.size for p in sfr_params]
+    assert len(u_sfr_params) == len(DEFAULT_PARAMS)
+    param_sizes = [p.size for p in u_sfr_params]
     assert np.allclose(param_sizes, n_halos), (param_sizes, n_halos)
-    return np.array(_sfr_eff_halopop(t_table, log_mah, sfr_params))
+    return np.array(_sfr_eff_halopop(log_mah, t_table, u_sfr_params))
