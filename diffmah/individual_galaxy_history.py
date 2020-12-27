@@ -23,8 +23,8 @@ DEFAULT_PARAMS.update(LGBC_PARAMS)
 LGMC_PARAM_BOUNDS = OrderedDict(
     lgmc_x0=(0.05, 1.25),
     lgmc_k=(1.0, 15.0),
-    lgmc_ylo=(10.5, 13.0),
-    lgmc_yhi=(10.5, 13.0),
+    lgmc_ylo=(10.25, 14.5),
+    lgmc_yhi=(10.25, 14.5),
 )
 
 LGNC_PARAM_BOUNDS = OrderedDict(
@@ -36,11 +36,11 @@ LGNC_PARAM_BOUNDS = OrderedDict(
 LGBD_PARAM_BOUNDS = OrderedDict(
     lgbd_x0=(0.05, 1.25),
     lgbd_k=(1.0, 50.0),
-    lgbd_ylo=(0.0, 0.2),
-    lgbd_yhi=(-0.25, 0.25),
+    lgbd_ylo=(-0.2, 0.3),
+    lgbd_yhi=(-0.2, 0.3),
 )
 
-LGBC_PARAM_BOUNDS = OrderedDict(lgbc=(-0.3, 0.0))
+LGBC_PARAM_BOUNDS = OrderedDict(lgbc=(-0.4, 0.0))
 DEFAULT_BOUNDS = deepcopy(LGMC_PARAM_BOUNDS)
 DEFAULT_BOUNDS.update(LGNC_PARAM_BOUNDS)
 DEFAULT_BOUNDS.update(LGBD_PARAM_BOUNDS)
