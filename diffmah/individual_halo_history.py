@@ -6,7 +6,7 @@ from jax import vmap as jvmap
 from jax import grad
 
 
-_MAH_PARS = OrderedDict(mah_x0=-0.15, mah_k=4.0, mah_lge=0.5, mah_dy=0.75)
+_MAH_PARS = OrderedDict(mah_x0=-0.15, mah_k=3.5, mah_lge=0.5, mah_dy=0.75)
 _MAH_BOUNDS = OrderedDict(mah_x0=(-0.5, 1.0), mah_k=(1.0, 10.0), mah_lge=(0.0, 1.3))
 
 
