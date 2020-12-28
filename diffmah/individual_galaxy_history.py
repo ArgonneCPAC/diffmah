@@ -276,4 +276,5 @@ def sfr_efficiency_halopop(t_table, log_mah, *u_sfr_params):
     assert len(u_sfr_params) == len(DEFAULT_PARAMS)
     param_sizes = [p.size for p in u_sfr_params]
     assert np.allclose(param_sizes, n_halos), (param_sizes, n_halos)
-    return np.array(_sfr_eff_halopop(log_mah, t_table, u_sfr_params))
+    sfr_params = _get_bounded_params(*u_sfr_params)
+    return np.array(_sfr_eff_halopop(log_mah, t_table, sfr_params))
