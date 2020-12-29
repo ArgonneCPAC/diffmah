@@ -30,8 +30,8 @@ LGMC_PARAM_BOUNDS = OrderedDict(
 LGNC_PARAM_BOUNDS = OrderedDict(
     lgnc_x0=(0.05, 1.25),
     lgnc_k=(1.0, 15.0),
-    lgnc_ylo=(-1.0, 0.0),
-    lgnc_yhi=(-1.0, 0.0),
+    lgnc_ylo=(-1.0, 0.5),
+    lgnc_yhi=(-1.0, 0.5),
 )
 LGBD_PARAM_BOUNDS = OrderedDict(
     lgbd_x0=(0.05, 1.25),
