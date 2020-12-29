@@ -116,3 +116,9 @@ def _calc_halo_history_uparams(logt, logtmp, logmp, u_x0, u_k, u_lge, u_dy):
     x0, k, lge, dy = _get_bounded_params(u_x0, u_k, u_lge, u_dy)
     early, late = _get_early_late_from_lge_dy(lge, dy)
     return _calc_halo_history(logt, logtmp, logmp, x0, k, early, late)
+
+
+@jjit
+def _mean_x0_vs_early_index(early_index):
+    x0 = _sigmoid(early_index, 0.5, 1.35, -0.3, 0.035)
+    return x0
