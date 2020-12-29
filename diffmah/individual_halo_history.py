@@ -119,6 +119,6 @@ def _calc_halo_history_uparams(logt, logtmp, logmp, u_x0, u_k, u_lge, u_dy):
 
 
 @jjit
-def _mean_x0_vs_early_index(early_index):
-    x0 = _sigmoid(early_index, 0.5, 1.35, -0.3, 0.035)
+def _mean_x0_vs_lge(lge):
+    x0 = _sigmoid(lge, 0.5, 1.35, -0.3, 0.035)
     return x0
