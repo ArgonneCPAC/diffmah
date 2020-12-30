@@ -23,15 +23,15 @@ DEFAULT_PARAMS.update(LGBC_PARAMS)
 LGMC_PARAM_BOUNDS = OrderedDict(
     lgmc_x0=(0.05, 1.25),
     lgmc_k=(1.0, 15.0),
-    lgmc_ylo=(10.25, 14.5),
-    lgmc_yhi=(10.25, 14.5),
+    lgmc_ylo=(10, 14.5),
+    lgmc_yhi=(10, 14.5),
 )
 
 LGNC_PARAM_BOUNDS = OrderedDict(
     lgnc_x0=(0.05, 1.25),
     lgnc_k=(1.0, 15.0),
-    lgnc_ylo=(-1.0, 0.5),
-    lgnc_yhi=(-1.0, 0.5),
+    lgnc_ylo=(-1.0, 1.25),
+    lgnc_yhi=(-1.0, 1.25),
 )
 LGBD_PARAM_BOUNDS = OrderedDict(
     lgbd_x0=(0.05, 1.25),
