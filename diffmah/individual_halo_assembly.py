@@ -6,8 +6,13 @@ from jax import vmap as jvmap
 from jax import grad
 
 
-_MAH_PARS = OrderedDict(mah_x0=-0.15, mah_k=3.5, mah_lge=0.5, mah_dy=0.75)
-_MAH_BOUNDS = OrderedDict(mah_x0=(-0.5, 1.0), mah_k=(1.0, 10.0), mah_lge=(0.0, 1.3))
+_MAH_PARS = OrderedDict(mah_x0=-0.15, mah_k=3.5, mah_early=3.0, mah_dy=0.75)
+_MAH_BOUNDS = OrderedDict(
+    mah_x0=(-0.5, 1.0),
+    mah_k=(1.0, 10.0),
+    mah_early=(1.0, 20.0),
+)
+_PBOUND_X0, _PBOUND_K = 0.0, 0.1
 
 
 @jjit
@@ -39,6 +44,38 @@ def _calc_halo_history(logt, logtmp, logmp, x0, k, early, late):
 
 
 @jjit
+def _u_rolling_plaw_vs_logt(logt, logtmp, logmp, u_x0, u_k, u_early, u_dy):
+    """Calculate rolling power-law from unbounded parameters."""
+    x0, k, early, late = _get_params_from_u_params(u_x0, u_k, u_early, u_dy)
+    log_mah = _rolling_plaw_vs_logt(logt, logtmp, logmp, x0, k, early, late)
+    return log_mah
+
+
+@jjit
+def _get_params_from_u_params(u_x0, u_k, u_early, u_dy):
+    x0 = _sigmoid(u_x0, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_x0"])
+    k = _sigmoid(u_k, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_k"])
+    early = _sigmoid(u_early, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_early"])
+    late = _sigmoid(u_dy, _PBOUND_X0, _PBOUND_K, 0, early)
+    return x0, k, early, late
+
+
+@jjit
+def _get_u_params_from_params(x0, k, early, late):
+    u_x0 = _inverse_sigmoid(x0, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_x0"])
+    u_k = _inverse_sigmoid(k, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_k"])
+    u_early = _inverse_sigmoid(early, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_early"])
+    u_dy = _inverse_sigmoid(late, _PBOUND_X0, _PBOUND_K, 0, early)
+    return u_x0, u_k, u_early, u_dy
+
+
+@jjit
 def _sigmoid(x, x0, k, ymin, ymax):
     height_diff = ymax - ymin
     return ymin + height_diff / (1 + jnp.exp(-k * (x - x0)))
+
+
+@jjit
+def _inverse_sigmoid(y, x0, k, ymin, ymax):
+    lnarg = (ymax - ymin) / (y - ymin) - 1
+    return x0 - jnp.log(lnarg) / k
