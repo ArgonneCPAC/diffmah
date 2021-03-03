@@ -56,7 +56,7 @@ def _get_params_from_u_params(u_x0, u_k, u_early, u_dy):
     x0 = _sigmoid(u_x0, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_x0"])
     k = _sigmoid(u_k, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_k"])
     early = _sigmoid(u_early, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_early"])
-    late = _sigmoid(u_dy, _PBOUND_X0, _PBOUND_K, 0, early)
+    late = _get_late_index(u_dy, early)
     return x0, k, early, late
 
 
@@ -65,8 +65,18 @@ def _get_u_params_from_params(x0, k, early, late):
     u_x0 = _inverse_sigmoid(x0, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_x0"])
     u_k = _inverse_sigmoid(k, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_k"])
     u_early = _inverse_sigmoid(early, _PBOUND_X0, _PBOUND_K, *_MAH_BOUNDS["mah_early"])
-    u_dy = _inverse_sigmoid(late, _PBOUND_X0, _PBOUND_K, 0, early)
+    u_dy = _get_u_late_index(late, early)
     return u_x0, u_k, u_early, u_dy
+
+
+@jjit
+def _get_late_index(u_dy, early):
+    return _sigmoid(u_dy, _PBOUND_X0, _PBOUND_K, 0.0, early)
+
+
+@jjit
+def _get_u_late_index(late, early):
+    return _inverse_sigmoid(late, _PBOUND_X0, _PBOUND_K, 0.0, early)
 
 
 @jjit
