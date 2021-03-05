@@ -43,6 +43,11 @@ def _calc_halo_history(logt, logtmp, logmp, x0, k, early, late):
     return dmhdt, log_mah
 
 
+_calc_halo_history_vmap = jjit(
+    jvmap(_calc_halo_history, in_axes=(None, 0, 0, 0, 0, 0, 0))
+)
+
+
 @jjit
 def _u_rolling_plaw_vs_logt(logt, logtmp, logmp, u_x0, u_k, u_early, u_dy):
     """Calculate rolling power-law from unbounded parameters."""
