@@ -69,6 +69,11 @@ def _get_u_params_from_params(x0, k, early, late):
     return u_x0, u_k, u_early, u_dy
 
 
+_get_u_params_from_params_vmap = jjit(
+    jvmap(_get_u_params_from_params(in_axes=(0, 0, 0, 0)))
+)
+
+
 @jjit
 def _get_late_index(u_dy, early):
     return _sigmoid(u_dy, _PBOUND_X0, _PBOUND_K, 0.0, early)
