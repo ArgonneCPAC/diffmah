@@ -70,7 +70,7 @@ def _get_u_params_from_params(x0, k, early, late):
 
 
 _get_u_params_from_params_vmap = jjit(
-    jvmap(_get_u_params_from_params(in_axes=(0, 0, 0, 0)))
+    jvmap(_get_u_params_from_params, in_axes=(0, 0, 0, 0))
 )
 
 
