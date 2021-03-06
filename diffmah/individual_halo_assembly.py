@@ -129,3 +129,8 @@ def _sigmoid(x, x0, k, ymin, ymax):
 def _inverse_sigmoid(y, x0, k, ymin, ymax):
     lnarg = (ymax - ymin) / (y - ymin) - 1
     return x0 - jnp.log(lnarg) / k
+
+
+@jjit
+def _get_x0_from_early_index(early_index):
+    return _sigmoid(early_index, 2.85, 5, -0.175, 0.085)
