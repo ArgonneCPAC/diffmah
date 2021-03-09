@@ -3,7 +3,6 @@ from jax import numpy as jnp
 from jax import value_and_grad
 from jax import jit as jjit
 from jax.experimental import optimizers as jax_opt
-from collections import OrderedDict
 
 
 def get_1d_arrays(*args, jax_arrays=False):
