@@ -95,36 +95,6 @@ def _jax_tw_cuml_kern(x, m, h):
     return res
 
 
-def _enforce_no_extraneous_keywords(defaults, **kwargs):
-    unrecognized_params = set(kwargs) - set(defaults)
-
-    if len(unrecognized_params) > 0:
-        param = list(unrecognized_params)[0]
-        raise KeyError("Unrecognized parameter ``{0}``".format(param))
-
-
-def _get_param_dict(defaults, strict=False, **kwargs):
-    """
-    """
-    param_dict = OrderedDict(
-        [(key, kwargs.get(key, val)) for key, val in defaults.items()]
-    )
-    if strict:
-        _enforce_no_extraneous_keywords(defaults, **kwargs)
-    return param_dict
-
-
-def _get_param_array(defaults, strict=False, dtype="f4", jax_arrays=True, **kwargs):
-    """
-    """
-    param_dict = _get_param_dict(defaults, strict=strict, **kwargs)
-    if jax_arrays:
-        param_array = jnp.array(list(param_dict.values())).astype(dtype)
-    else:
-        param_array = np.array(list(param_dict.values())).astype(dtype)
-    return param_array
-
-
 def jax_adam_wrapper(
     loss_func,
     params_init,
