@@ -56,6 +56,43 @@ def mse_loss_variable_mp_x0(u_params, loss_data):
 def get_loss_data_variable_mp_x0(
     t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut=DLOGM_CUT, t_fit_min=T_FIT_MIN
 ):
+    """
+    Convenience function returning the data passed to jax_adam_wrapper when fitting
+    the halo MAH for the case when varying logmp, x0, early, late.
+
+    Parameters
+    ----------
+    t_sim : ndarray of shape (nt, )
+
+    log_mah_sim : ndarray of shape (nt, )
+
+    tmp : float
+
+    lgm_min : float
+
+    dlogm_cut : float, optional
+
+    t_fit_min : float, optional
+
+    Returns
+    -------
+    p_init : ndarray of shape (4, )
+        logmp_fit, u_x0_fit, u_early_fit, u_late_fit
+
+    loss_data : sequence consisting of the following data
+        logt_target : ndarray of shape (nt_fit, )
+            Base-10 log of times at which the halo reaches the target masses
+
+        log_mah_target : ndarray of shape (nt_fit, )
+            Base-10 log of target halo mass
+
+        logtmp : float
+            Base-10 log of tmp
+
+        u_k_fixed : float
+            Fixed value of the bounded diffmah parameter k
+
+    """
     logt_target, log_mah_target = _get_target_data(
         t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min
     )
