@@ -383,7 +383,7 @@ def _get_target_data(t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min):
     msk &= t_sim <= tmp
 
     logt_target = np.log10(t_sim)[msk]
-    log_mah_target = log_mah_sim[msk]
+    log_mah_target = np.maximum.accumulate(log_mah_sim[msk])
     return logt_target, log_mah_target
 
 

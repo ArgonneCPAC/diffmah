@@ -104,6 +104,9 @@ if __name__ == "__main__":
     else:
         raise NotImplementedError("Your data loader here")
 
+    # Ensure the target MAHs are cumulative peak masses
+    log_mahs = np.maximum.accumulate(log_mahs, axis=1)
+
     # Get data for rank
     if args.test:
         nhalos_tot = nranks * 5
