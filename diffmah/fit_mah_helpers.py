@@ -16,6 +16,18 @@ DLOGM_CUT = 2.0
 
 @jjit
 def mse_loss_fixed_mp(u_params, loss_data):
+    """Loss function to minimize for the case in which
+    both x0 and M0 are held to fixed values. This function should be used
+    in concert with get_loss_data_fixed_mp.
+
+    Parameters
+    ----------
+    u_params : ndarray of shape (2, )
+
+    loss_data : sequence
+        See return value of get_loss_data_fixed_mp
+
+    """
     logt, log_mah_target, logtmp, u_k, logmp = loss_data
     u_early, u_dy = u_params
     early = _get_early_index(u_early)
@@ -30,6 +42,18 @@ def mse_loss_fixed_mp(u_params, loss_data):
 
 @jjit
 def mse_loss_variable_mp(u_params, loss_data):
+    """Loss function to minimize for the case in which
+    x0 is fixed and M0 is varied simultaneously with early_index and late_index.
+    This function should be used in concert with get_loss_data_fixed_mp.
+
+    Parameters
+    ----------
+    u_params : ndarray of shape (3, )
+
+    loss_data : sequence
+        See return value of get_loss_data_variable_mp
+
+    """
     logt, log_mah_target, logtmp, u_k = loss_data
     logmp, u_early, u_dy = u_params
     early = _get_early_index(u_early)
@@ -44,6 +68,18 @@ def mse_loss_variable_mp(u_params, loss_data):
 
 @jjit
 def mse_loss_variable_mp_x0(u_params, loss_data):
+    """Loss function to minimize for the case in which
+    both x0 and M0 are varied simultaneously with early_index and late_index.
+    This function should be used in concert with get_loss_data_variable_mp_x0.
+
+    Parameters
+    ----------
+    u_params : ndarray of shape (4, )
+
+    loss_data : sequence
+        See return value of get_loss_data_variable_mp_x0
+
+    """
     logmp, u_x0, mah_u_early, mah_dy = u_params
     logt, log_mah_target, logtmp, u_k = loss_data
     log_mah_pred = _u_rolling_plaw_vs_logt(
@@ -56,28 +92,44 @@ def mse_loss_variable_mp_x0(u_params, loss_data):
 def get_loss_data_variable_mp_x0(
     t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut=DLOGM_CUT, t_fit_min=T_FIT_MIN
 ):
-    """
-    Convenience function returning the data passed to jax_adam_wrapper when fitting
-    the halo MAH for the case when varying logmp, x0, early, late.
+    """Retrieve the target data passed to the optimizer when fitting the halo MAH
+    model for the case in which M0 and x0 are both varied in addition to
+    the early- and late-time power-law indices.
 
     Parameters
     ----------
     t_sim : ndarray of shape (nt, )
+        Cosmic time of each simulated snapshot in Gyr
 
     log_mah_sim : ndarray of shape (nt, )
+        Base-10 log of halo mass in Msun
 
     tmp : float
+        First time the halo attains its peak mass in Gyr
 
     lgm_min : float
+        Quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        The value lgm_min is the base-10 log of the minimum halo mass in the MAH
+        used as target data. Should typically correspond to a few hundred particles.
 
     dlogm_cut : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        Snapshots will not be used when log_mah_sim falls below
+        log_mah_sim[-1] - dlogm_cut. Default is set as global at top of module.
 
     t_fit_min : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH. The value of t_fit_min defines the minimum cosmic
+        time in Gyr used to define the target MAH.
+        Default is set as global at top of module.
 
     Returns
     -------
     p_init : ndarray of shape (4, )
-        logmp_fit, u_x0_fit, u_early_fit, u_late_fit
+        Initial guess at the unbounded value of the best-fit parameter.
+        Here we have p_init = (logmp_fit, u_x0_fit, u_early_fit, u_late_fit)
 
     loss_data : sequence consisting of the following data
         logt_target : ndarray of shape (nt_fit, )
@@ -112,6 +164,70 @@ def get_loss_data_variable_mp_x0(
 def get_loss_data_variable_mp(
     t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut=DLOGM_CUT, t_fit_min=T_FIT_MIN
 ):
+    """Retrieve the target data passed to the optimizer when fitting the halo MAH
+    model for the case in which M0 is varied in addition to the early- and late-time
+    power-law indices, but x0 and is held fixed to a value determined by early_index.
+
+    Parameters
+    ----------
+    t_sim : ndarray of shape (nt, )
+        Cosmic time of each simulated snapshot in Gyr
+
+    log_mah_sim : ndarray of shape (nt, )
+        Base-10 log of halo mass in Msun
+
+    tmp : float
+        First time the halo attains its peak mass in Gyr
+
+    lgm_min : float
+        Quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        The value lgm_min is the base-10 log of the minimum halo mass in the MAH
+        used as target data. Should typically correspond to a few hundred particles.
+
+    dlogm_cut : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        Snapshots will not be used when log_mah_sim falls below
+        log_mah_sim[-1] - dlogm_cut. Default is set as global at top of module.
+
+    t_fit_min : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH. The value of t_fit_min defines the minimum cosmic
+        time in Gyr used to define the target MAH.
+        Default is set as global at top of module.
+
+    Returns
+    -------
+    p_init : ndarray of shape (3, )
+        Initial guess for the unbounded parameters used to fit the MAH.
+        In this version of the fitter, the early-time and late-time power-law
+        indices are varied, and the value of halo mass at the input peak time
+        is also varied, so that logmp_fit represents an overall normalization of the
+        MAH, and may differ from the simulated value at tmpeak.
+        The x0 parameter is held fixed to a value that is analytically determined by
+        the value of the early-time index. So in this version we have
+        p_init = (logmp_init, mah_u_early_init, u_dy_init)
+
+    loss_data : sequence
+        logt_target : ndarray of shape (n_target, )
+            Base-10 log of cosmic time of the simulation snapshots used to define
+            the target MAH
+
+        log_mah_target : ndarray of shape (n_target, )
+            Base-10 log of halo mass in Msun of the target MAH
+
+        logtmp : float
+            Base-10 log of the cosmic time in Gyr that the simulated halo first
+            attains its peak mass
+
+        u_k_fixed : float
+            The diffmah parameter `k` controls how quickly the halo transitions
+            from fast- to slow-accretion regimes. The value of u_k_fixed is
+            the unbounded version of the transition speed parameter
+            and will be held fixed to this value while running the fitter.
+
+    """
     logt_target, log_mah_target = _get_target_data(
         t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min
     )
@@ -130,6 +246,71 @@ def get_loss_data_variable_mp(
 def get_loss_data_fixed_mp(
     t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut=DLOGM_CUT, t_fit_min=T_FIT_MIN
 ):
+    """Retrieve the target data passed to the optimizer when fitting the halo MAH
+    model for the case in which both x0 and M0 are held to fixed values.
+
+    Parameters
+    ----------
+    t_sim : ndarray of shape (nt, )
+        Cosmic time of each simulated snapshot in Gyr
+
+    log_mah_sim : ndarray of shape (nt, )
+        Base-10 log of halo mass in Msun
+
+    tmp : float
+        First time the halo attains its peak mass in Gyr
+
+    lgm_min : float
+        Quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        The value lgm_min is the base-10 log of the minimum halo mass in the MAH
+        used as target data. Should typically correspond to a few hundred particles.
+
+    dlogm_cut : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        Snapshots will not be used when log_mah_sim falls below
+        log_mah_sim[-1] - dlogm_cut. Default is set as global at top of module.
+
+    t_fit_min : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH. The value of t_fit_min defines the minimum cosmic
+        time in Gyr used to define the target MAH.
+        Default is set as global at top of module.
+
+    Returns
+    -------
+    p_init : ndarray of shape (2, )
+        Initial guess for the unbounded parameters used to fit the MAH.
+        In this version of the fitter, only the early-time and late-time power-law
+        indices are varied. The M0 parameter is held fixed to the halo of
+        the simulated MAH at tmpeak, the first time the halo attains this value.
+        The x0 parameter is held fixed to a value that is analytically determined by
+        the value of the early-time index.
+
+    loss_data : sequence
+        logt_target : ndarray of shape (n_target, )
+            Base-10 log of cosmic time of the simulation snapshots used to define
+            the target MAH
+
+        log_mah_target : ndarray of shape (n_target, )
+            Base-10 log of halo mass in Msun of the target MAH
+
+        logtmp : float
+            Base-10 log of the cosmic time in Gyr that the simulated halo first
+            attains its peak mass
+
+        u_k_fixed : float
+            The diffmah parameter `k` controls how quickly the halo transitions
+            from fast- to slow-accretion regimes. The value of u_k_fixed is
+            the unbounded version of the transition speed parameter
+            and will be held fixed to this value while running the fitter.
+
+        logmp_fixed : float
+            Peak mass of the simulated MAH. In this version of the fitter,
+            the value of the model MAH will be held fixed to logmp_fixed
+
+    """
     logt_target, log_mah_target = _get_target_data(
         t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min
     )
@@ -153,6 +334,47 @@ def _mse(pred, target):
 
 
 def _get_target_data(t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min):
+    """Retrieve the target values of the halo MAH used to fit the model.
+
+    Parameters
+    ----------
+    t_sim : ndarray of shape (nt, )
+        Cosmic time of each simulated snapshot in Gyr
+
+    log_mah_sim : ndarray of shape (nt, )
+        Base-10 log of halo mass in Msun
+
+    tmp : float
+        First time the halo attains its peak mass in Gyr
+
+    lgm_min : float
+        Quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        The value lgm_min is the base-10 log of the minimum halo mass in the MAH
+        used as target data. Should typically correspond to a few hundred particles.
+
+    dlogm_cut : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH.
+        Snapshots will not be used when log_mah_sim falls below
+        log_mah_sim[-1] - dlogm_cut. Default is set as global at top of module.
+
+    t_fit_min : float, optional
+        Additional quantity used to place a cut on which simulated snapshots are used to
+        define the target halo MAH. The value of t_fit_min defines the minimum cosmic
+        time in Gyr used to define the target MAH.
+        Default is set as global at top of module.
+
+    Returns
+    -------
+    logt_target : ndarray of shape (n_target, )
+        Base-10 log of cosmic time of the simulation snapshots used to define
+        the target MAH
+
+    log_mah_target : ndarray of shape (n_target, )
+        Base-10 log of halo mass in Msun of the target MAH
+
+    """
     logmp_sim = log_mah_sim[-1]
 
     msk = log_mah_sim > (logmp_sim - dlogm_cut)
