@@ -176,10 +176,22 @@ def get_loss_data_variable_mp_x0(
 
 
 def get_loss_data_lge_fixed_x0(
-    t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut=DLOGM_CUT, t_fit_min=T_FIT_MIN
+    t_sim,
+    log_mah_sim,
+    tmp,
+    lgm_min,
+    dlogm_cut=DLOGM_CUT,
+    t_fit_min=T_FIT_MIN,
+    dt_fit_beyond_tmpeak=0,
 ):
     logt_target, log_mah_target = _get_target_data(
-        t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min
+        t_sim,
+        log_mah_sim,
+        tmp,
+        lgm_min,
+        dlogm_cut,
+        t_fit_min,
+        dt_fit_beyond_tmpeak=dt_fit_beyond_tmpeak,
     )
     logmp_init = log_mah_sim[-1]
     lge_init = np.log10(_MAH_PARS["mah_early"])
@@ -365,7 +377,9 @@ def _mse(pred, target):
     return jnp.mean(diff * diff)
 
 
-def _get_target_data(t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min):
+def _get_target_data(
+    t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min, dt_fit_beyond_tmpeak=0
+):
     """Retrieve the target values of the halo MAH used to fit the model.
 
     Parameters
@@ -412,7 +426,7 @@ def _get_target_data(t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min):
     msk = log_mah_sim > (logmp_sim - dlogm_cut)
     msk &= log_mah_sim >= lgm_min
     msk &= t_sim >= t_fit_min
-    msk &= t_sim <= tmp
+    msk &= t_sim <= tmp + dt_fit_beyond_tmpeak
 
     logt_target = np.log10(t_sim)[msk]
     log_mah_target = np.maximum.accumulate(log_mah_sim[msk])
