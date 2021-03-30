@@ -10,8 +10,22 @@ from .individual_halo_assembly import _get_params_from_u_params
 from .individual_halo_assembly import _get_x0_from_early_index
 from .individual_halo_assembly import _get_early_index, _get_late_index, _get_k
 
-T_FIT_MIN = 2.0
-DLOGM_CUT = 2.0
+T_FIT_MIN = 1.5
+DLOGM_CUT = 2.5
+
+
+@jjit
+def lge_mse_loss_fixed_x0(u_params, loss_data):
+    logt, log_mah_target, logtmp, u_k = loss_data
+    logmp, lge, u_dy = u_params
+    early = 10 ** lge
+    late = _get_late_index(u_dy, early)
+    x0 = _get_x0_from_early_index(early)
+    k = _get_k(u_k)
+
+    log_mah_pred = _rolling_plaw_vs_logt(logt, logtmp, logmp, x0, k, early, late)
+    log_mah_loss = _mse(log_mah_pred, log_mah_target)
+    return log_mah_loss
 
 
 @jjit
@@ -153,6 +167,24 @@ def get_loss_data_variable_mp_x0(
     u_dy_init = 0.0
     u_x0_init = _get_u_x0(_MAH_PARS["mah_x0"])
     p_init = np.array((logmp_init, u_x0_init, mah_u_early_init, u_dy_init)).astype("f4")
+
+    u_k_fixed = _get_u_k(_MAH_PARS["mah_k"])
+    logtmp = np.log10(tmp)
+
+    loss_data = (logt_target, log_mah_target, logtmp, u_k_fixed)
+    return p_init, loss_data
+
+
+def get_loss_data_lge_fixed_x0(
+    t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut=DLOGM_CUT, t_fit_min=T_FIT_MIN
+):
+    logt_target, log_mah_target = _get_target_data(
+        t_sim, log_mah_sim, tmp, lgm_min, dlogm_cut, t_fit_min
+    )
+    logmp_init = log_mah_sim[-1]
+    lge_init = np.log10(_MAH_PARS["mah_early"])
+    u_dy_init = 0.0
+    p_init = np.array((logmp_init, lge_init, u_dy_init)).astype("f4")
 
     u_k_fixed = _get_u_k(_MAH_PARS["mah_k"])
     logtmp = np.log10(tmp)
@@ -393,6 +425,21 @@ def get_outline_variable_mp_x0(halo_id, loss_data, p_best, loss_best):
     logtmp, u_k = loss_data[-2:]
     tmp = 10 ** logtmp
     x0, k, early, late = _get_params_from_u_params(u_x0, u_k, u_early, u_dy)
+    _d = np.array((logmp_fit, x0, k, early, late)).astype("f4")
+    data_out = (halo_id, *_d, tmp, float(loss_best))
+    out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
+    return out + "\n"
+
+
+def get_outline_lge_fixed_x0(halo_id, loss_data, p_best, loss_best):
+    """Return the string storing fitting results that will be written to disk"""
+    logmp_fit, lge, u_dy = p_best
+    logtmp, u_k = loss_data[-2:]
+    tmp = 10 ** logtmp
+    early = 10 ** lge
+    late = _get_late_index(u_dy, early)
+    x0 = _get_x0_from_early_index(early)
+    k = _get_k(u_k)
     _d = np.array((logmp_fit, x0, k, early, late)).astype("f4")
     data_out = (halo_id, *_d, tmp, float(loss_best))
     out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
