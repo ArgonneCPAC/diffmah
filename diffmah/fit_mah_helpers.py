@@ -6,7 +6,6 @@ from jax import numpy as jnp
 from .individual_halo_assembly import _MAH_PARS
 from .individual_halo_assembly import _rolling_plaw_vs_logt
 from .individual_halo_assembly import _get_u_k, _get_u_early_index, _get_u_x0
-from .individual_halo_assembly import _get_params_from_u_params
 from .individual_halo_assembly import _get_x0_from_early_index, _get_x0
 from .individual_halo_assembly import _get_early_index, _get_late_index, _get_k
 
