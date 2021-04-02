@@ -13,6 +13,62 @@ T_FIT_MIN = 1.5
 DLOGM_CUT = 2.5
 
 
+def get_outline_lge_lgl_x0(halo_id, loss_data, p_best, loss_best):
+    """Return the string storing fitting results that will be written to disk"""
+    logmp_fit, x0, lge, lgl = p_best
+    logtmp, u_k = loss_data[-2:]
+    tmp = 10 ** logtmp
+    early = 10 ** lge
+    late = 10 ** lgl
+    k = _get_k(u_k)
+    _d = np.array((logmp_fit, x0, k, early, late)).astype("f4")
+    data_out = (halo_id, *_d, tmp, float(loss_best))
+    out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
+    return out + "\n"
+
+
+@jjit
+def lge_lgl_x0_mse_loss(lge_params, loss_data):
+    logt, log_mah_target, logtmp, u_k = loss_data
+    logmp, x0, lge, lgl = lge_params
+    early = 10 ** lge
+    late = 10 ** lgl
+    k = _get_k(u_k)
+
+    log_mah_pred = _rolling_plaw_vs_logt(logt, logtmp, logmp, x0, k, early, late)
+    log_mah_loss = _mse(log_mah_pred, log_mah_target)
+    return log_mah_loss
+
+
+def get_loss_data_lge_lgl_x0(
+    t_sim,
+    log_mah_sim,
+    tmp,
+    lgm_min,
+    dlogm_cut=DLOGM_CUT,
+    t_fit_min=T_FIT_MIN,
+):
+    logt_target, log_mah_target = _get_target_data(
+        t_sim,
+        log_mah_sim,
+        tmp,
+        lgm_min,
+        dlogm_cut,
+        t_fit_min,
+    )
+    logmp_init = log_mah_sim[-1]
+    lge_init = np.log10(_MAH_PARS["mah_early"])
+    lgl_init = np.log10(_MAH_PARS["mah_late"])
+    x0_init = _MAH_PARS["mah_x0"]
+    p_init = np.array((logmp_init, x0_init, lge_init, lgl_init)).astype("f4")
+
+    u_k_fixed = _get_u_k(_MAH_PARS["mah_k"])
+    logtmp = np.log10(tmp)
+
+    loss_data = (logt_target, log_mah_target, logtmp, u_k_fixed)
+    return p_init, loss_data
+
+
 @jjit
 def lge_mse_loss_fixed_x0(u_params, loss_data):
     logt, log_mah_target, logtmp, u_k = loss_data
