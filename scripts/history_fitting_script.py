@@ -19,11 +19,19 @@ from diffmah.fit_mah_helpers import mse_loss_variable_mp_x0, mse_loss_fixed_mp
 from diffmah.fit_mah_helpers import mse_loss_variable_mp
 from diffmah.fit_mah_helpers import get_outline_variable_mp_x0, get_outline_fixed_mp
 from diffmah.fit_mah_helpers import get_outline_variable_mp
+
+from diffmah.fit_mah_helpers import lge_mse_loss_fixed_x0, get_loss_data_lge_fixed_x0
+from diffmah.fit_mah_helpers import get_outline_lge_fixed_x0
+
+from diffmah.fit_mah_helpers import lge_lgl_x0_mse_loss, get_loss_data_lge_lgl_x0
+from diffmah.fit_mah_helpers import get_outline_lge_lgl_x0
+
 from diffmah.utils import jax_adam_wrapper
 import subprocess
 import h5py
 
 TMP_OUTPAT = "_tmp_mah_fits_rank_{0}.dat"
+TODAY = 13.8
 
 
 def _write_collated_data(outname, data):
@@ -50,7 +58,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "fit_type",
         help="Defines the loss function",
-        choices=("variable_mp_x0", "fixed_mp", "variable_mp"),
+        choices=(
+            "variable_mp_x0",
+            "fixed_mp",
+            "variable_mp",
+            "lge_fixed_mp",
+            "lge_lgl_x0",
+        ),
     )
     parser.add_argument("outdir", help="Output directory")
     parser.add_argument("outbase", help="Basename of the output hdf5 file")
@@ -62,6 +76,7 @@ if __name__ == "__main__":
         help="Galaxy type (only relevant for Bolshoi and MDPl2)",
         default="cens",
     )
+
     args = parser.parse_args()
 
     start = time()
@@ -84,6 +99,16 @@ if __name__ == "__main__":
         mse_loss = mse_loss_variable_mp
         get_loss_data = get_loss_data_variable_mp
         get_outline = get_outline_variable_mp
+    elif fit_type == "lge_fixed_mp":
+        mse_loss = lge_mse_loss_fixed_x0
+        get_loss_data = get_loss_data_lge_fixed_x0
+        get_outline = get_outline_lge_fixed_x0
+    elif fit_type == "lge_lgl_x0":
+        mse_loss = lge_lgl_x0_mse_loss
+        get_loss_data = get_loss_data_lge_lgl_x0
+        get_outline = get_outline_lge_lgl_x0
+    else:
+        raise ValueError("fit_type = {0} not recognized".format(fit_type))
 
     if args.indir == "TASSO":
         indir = TASSO
@@ -127,12 +152,12 @@ if __name__ == "__main__":
         for i in range(nhalos_for_rank):
             halo_id = halo_ids_for_rank[i]
             lgmah = log_mahs_for_rank[i, :]
-            tmp = tmpeaks_for_rank[i]
+            tmp_fit = TODAY
 
             p_init, loss_data = get_loss_data(
                 tarr,
                 lgmah,
-                tmp,
+                tmp_fit,
                 lgm_min,
             )
             _res = jax_adam_wrapper(mse_loss, p_init, loss_data, nstep, n_warmup=2)
@@ -141,7 +166,7 @@ if __name__ == "__main__":
             if fit_terminates == 1:
                 outline = get_outline(halo_id, loss_data, p_best, loss_best)
             else:
-                outline = get_outline_bad_fit(halo_id, lgmah[-1], tmp)
+                outline = get_outline_bad_fit(halo_id, lgmah[-1], tmp_fit)
 
             fout.write(outline)
 
