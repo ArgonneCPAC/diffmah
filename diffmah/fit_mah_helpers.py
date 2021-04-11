@@ -93,7 +93,7 @@ def get_loss_data(
             Fixed value of the bounded diffmah parameter k
 
     """
-    logt_target, log_mah_target = _get_target_data(
+    logt_target, log_mah_target = get_target_data(
         t_sim,
         log_mah_sim,
         lgm_min,
@@ -120,7 +120,7 @@ def _mse(pred, target):
     return jnp.mean(diff * diff)
 
 
-def _get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
+def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
     """Retrieve the target values of the halo MAH used to fit the model.
 
     Parameters
@@ -179,5 +179,5 @@ def get_outline_bad_fit(halo_id, lgmp_sim, tmp):
     return out + "\n"
 
 
-def _get_header():
+def get_header():
     return "# halo_id logmp_fit mah_x0 mah_k early_index late_index tmpeak loss\n"

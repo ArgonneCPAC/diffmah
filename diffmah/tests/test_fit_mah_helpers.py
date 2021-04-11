@@ -1,7 +1,7 @@
 """
 """
 import numpy as np
-from ..fit_mah_helpers import _get_target_data
+from ..fit_mah_helpers import get_target_data
 
 
 def test_get_target_data_no_cuts():
@@ -11,7 +11,7 @@ def test_get_target_data_no_cuts():
     lgm_min = log_mah_sim[0]
     dlogm_cut = float("inf")
     t_fit_min = -float("inf")
-    logt_target, log_mah_target = _get_target_data(
+    logt_target, log_mah_target = get_target_data(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     assert np.allclose(10 ** logt_target, t_sim)
@@ -25,7 +25,7 @@ def test_get_target_data_lgm_cut():
     lgm_min = log_mah_sim[1]
     dlogm_cut = float("inf")
     t_fit_min = -float("inf")
-    logt_target, log_mah_target = _get_target_data(
+    logt_target, log_mah_target = get_target_data(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     assert logt_target.shape == log_mah_target.shape
