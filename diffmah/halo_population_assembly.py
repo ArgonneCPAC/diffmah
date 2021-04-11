@@ -3,7 +3,7 @@ from jax import numpy as jnp
 from jax import jit as jjit
 from jax import vmap
 from jax.scipy.stats import multivariate_normal as jnorm
-from .individual_halo_assembly import _calc_halo_history, _MAH_PARS
+from .individual_halo_assembly import _calc_halo_history, DEFAULT_MAH_PARAMS
 from .mah_pop_param_model import frac_late_forming
 from .mah_pop_param_model import _get_cov_early, _get_cov_late
 from .mah_pop_param_model import _get_mean_mah_params_early, _get_mean_mah_params_late
@@ -45,7 +45,13 @@ def _get_mah_weights(lge_arr, lgl_arr, x0_arr, mu_arr, cov_arr):
 
 @jjit
 def _get_halo_mahs(
-    logt, logmp_arr, lge_arr, lgl_arr, x0_arr, k=_MAH_PARS["mah_k"], logtmp=LGT0
+    logt,
+    logmp_arr,
+    lge_arr,
+    lgl_arr,
+    x0_arr,
+    k=DEFAULT_MAH_PARAMS["mah_k"],
+    logtmp=LGT0,
 ):
     dmhdt, log_mah = _halo_history_integrand(
         logt, logtmp, logmp_arr, x0_arr, k, 10 ** lge_arr, 10 ** lgl_arr
@@ -88,7 +94,7 @@ def _get_average_halo_histories(
     cho_lge_lgl_late=COV_PARAMS_LATE["cho_lge_lgl_late"],
     cho_lge_x0_late=COV_PARAMS_LATE["cho_lge_x0_late"],
     cho_lgl_x0_late=COV_PARAMS_LATE["cho_lgl_x0_late"],
-    k=_MAH_PARS["mah_k"],
+    k=DEFAULT_MAH_PARAMS["mah_k"],
     logtmp=LGT0,
 ):
     dmhdts, log_mahs = _halo_history_integrand(
