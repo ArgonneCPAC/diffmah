@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("outdir", help="Output directory")
     parser.add_argument("outbase", help="Basename of the output hdf5 file")
     parser.add_argument("-indir", help="Input directory", default="TASSO")
-    parser.add_argument("-nstep", help="Num opt steps per halo", type=int, default=500)
+    parser.add_argument("-nstep", help="Num opt steps per halo", type=int, default=200)
     parser.add_argument("-test", help="Short test run?", type=bool, default=False)
     parser.add_argument(
         "-gal_type",

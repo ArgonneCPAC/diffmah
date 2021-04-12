@@ -6,7 +6,7 @@ from jax import numpy as jnp
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
 from .individual_halo_assembly import _rolling_plaw_vs_logt
 
-T_FIT_MIN = 1.5
+T_FIT_MIN = 1.0
 DLOGM_CUT = 2.5
 
 
