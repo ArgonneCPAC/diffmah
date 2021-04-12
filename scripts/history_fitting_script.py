@@ -12,19 +12,10 @@ from load_mah_data import (
     load_mdpl2_data,
 )
 
-from diffmah.fit_mah_helpers import _get_header, get_outline_bad_fit
-from diffmah.fit_mah_helpers import get_loss_data_variable_mp_x0
-from diffmah.fit_mah_helpers import get_loss_data_variable_mp, get_loss_data_fixed_mp
-from diffmah.fit_mah_helpers import mse_loss_variable_mp_x0, mse_loss_fixed_mp
-from diffmah.fit_mah_helpers import mse_loss_variable_mp
-from diffmah.fit_mah_helpers import get_outline_variable_mp_x0, get_outline_fixed_mp
-from diffmah.fit_mah_helpers import get_outline_variable_mp
-
-from diffmah.fit_mah_helpers import lge_mse_loss_fixed_x0, get_loss_data_lge_fixed_x0
-from diffmah.fit_mah_helpers import get_outline_lge_fixed_x0
-
-from diffmah.fit_mah_helpers import lge_lgl_x0_mse_loss, get_loss_data_lge_lgl_x0
-from diffmah.fit_mah_helpers import get_outline_lge_lgl_x0
+from diffmah.fit_mah_helpers import get_header, get_outline_bad_fit
+from diffmah.fit_mah_helpers import get_loss_data
+from diffmah.fit_mah_helpers import log_mah_mse_loss
+from diffmah.fit_mah_helpers import get_outline
 
 from diffmah.utils import jax_adam_wrapper
 import subprocess
@@ -36,7 +27,7 @@ TODAY = 13.8
 
 def _write_collated_data(outname, data):
     nrows, ncols = np.shape(data)
-    colnames = _get_header()[1:].strip().split()
+    colnames = get_header()[1:].strip().split()
     assert len(colnames) == ncols, "data mismatched with header"
     with h5py.File(outname, "w") as hdf:
         for i, name in enumerate(colnames):
@@ -55,21 +46,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "simulation", help="name of the simulation (used to select the data loader)"
     )
-    parser.add_argument(
-        "fit_type",
-        help="Defines the loss function",
-        choices=(
-            "variable_mp_x0",
-            "fixed_mp",
-            "variable_mp",
-            "lge_fixed_mp",
-            "lge_lgl_x0",
-        ),
-    )
     parser.add_argument("outdir", help="Output directory")
     parser.add_argument("outbase", help="Basename of the output hdf5 file")
     parser.add_argument("-indir", help="Input directory", default="TASSO")
-    parser.add_argument("-nstep", help="Num opt steps per halo", type=int, default=300)
+    parser.add_argument("-nstep", help="Num opt steps per halo", type=int, default=200)
     parser.add_argument("-test", help="Short test run?", type=bool, default=False)
     parser.add_argument(
         "-gal_type",
@@ -85,30 +65,6 @@ if __name__ == "__main__":
     rank_basepat = args.outbase + TMP_OUTPAT
     rank_outname = os.path.join(args.outdir, rank_basepat).format(rank)
     nstep = args.nstep
-
-    fit_type = args.fit_type
-    if fit_type == "variable_mp_x0":
-        mse_loss = mse_loss_variable_mp_x0
-        get_loss_data = get_loss_data_variable_mp_x0
-        get_outline = get_outline_variable_mp_x0
-    elif fit_type == "fixed_mp":
-        mse_loss = mse_loss_fixed_mp
-        get_loss_data = get_loss_data_fixed_mp
-        get_outline = get_outline_fixed_mp
-    elif fit_type == "variable_mp":
-        mse_loss = mse_loss_variable_mp
-        get_loss_data = get_loss_data_variable_mp
-        get_outline = get_outline_variable_mp
-    elif fit_type == "lge_fixed_mp":
-        mse_loss = lge_mse_loss_fixed_x0
-        get_loss_data = get_loss_data_lge_fixed_x0
-        get_outline = get_outline_lge_fixed_x0
-    elif fit_type == "lge_lgl_x0":
-        mse_loss = lge_lgl_x0_mse_loss
-        get_loss_data = get_loss_data_lge_lgl_x0
-        get_outline = get_outline_lge_lgl_x0
-    else:
-        raise ValueError("fit_type = {0} not recognized".format(fit_type))
 
     if args.indir == "TASSO":
         indir = TASSO
@@ -126,8 +82,6 @@ if __name__ == "__main__":
     elif args.simulation == "mdpl":
         _mah_data = load_mdpl2_data(args.gal_type, data_drn=indir)
         halo_ids, log_mahs, tmpeaks, tarr, lgm_min = _mah_data
-    else:
-        raise NotImplementedError("Your data loader here")
 
     # Ensure the target MAHs are cumulative peak masses
     log_mahs = np.maximum.accumulate(log_mahs, axis=1)
@@ -145,28 +99,28 @@ if __name__ == "__main__":
     tmpeaks_for_rank = tmpeaks[indx]
     nhalos_for_rank = len(halo_ids_for_rank)
 
-    header = _get_header()
+    header = get_header()
     with open(rank_outname, "w") as fout:
         fout.write(header)
 
         for i in range(nhalos_for_rank):
             halo_id = halo_ids_for_rank[i]
             lgmah = log_mahs_for_rank[i, :]
-            tmp_fit = TODAY
 
             p_init, loss_data = get_loss_data(
                 tarr,
                 lgmah,
-                tmp_fit,
                 lgm_min,
             )
-            _res = jax_adam_wrapper(mse_loss, p_init, loss_data, nstep, n_warmup=2)
+            _res = jax_adam_wrapper(
+                log_mah_mse_loss, p_init, loss_data, nstep, n_warmup=2
+            )
             p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
 
             if fit_terminates == 1:
                 outline = get_outline(halo_id, loss_data, p_best, loss_best)
             else:
-                outline = get_outline_bad_fit(halo_id, lgmah[-1], tmp_fit)
+                outline = get_outline_bad_fit(halo_id, lgmah[-1], TODAY)
 
             fout.write(outline)
 
