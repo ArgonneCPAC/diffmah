@@ -102,7 +102,7 @@ def get_loss_data(
     )
     logmp_init = log_mah_sim[-1]
     lge_init = np.log10(DEFAULT_MAH_PARAMS["mah_early"])
-    lgl_init = -0.25
+    lgl_init = np.log10(DEFAULT_MAH_PARAMS["mah_late"])
     x0_init = DEFAULT_MAH_PARAMS["mah_x0"]
     fixed_k = DEFAULT_MAH_PARAMS["mah_k"]
     p_init = np.array((logmp_init, x0_init, lge_init, lgl_init)).astype("f4")

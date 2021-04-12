@@ -106,12 +106,10 @@ if __name__ == "__main__":
         for i in range(nhalos_for_rank):
             halo_id = halo_ids_for_rank[i]
             lgmah = log_mahs_for_rank[i, :]
-            tmp_fit = TODAY
 
             p_init, loss_data = get_loss_data(
                 tarr,
                 lgmah,
-                tmp_fit,
                 lgm_min,
             )
             _res = jax_adam_wrapper(
@@ -122,7 +120,7 @@ if __name__ == "__main__":
             if fit_terminates == 1:
                 outline = get_outline(halo_id, loss_data, p_best, loss_best)
             else:
-                outline = get_outline_bad_fit(halo_id, lgmah[-1], tmp_fit)
+                outline = get_outline_bad_fit(halo_id, lgmah[-1], TODAY)
 
             fout.write(outline)
 
