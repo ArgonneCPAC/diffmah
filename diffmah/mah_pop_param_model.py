@@ -7,62 +7,51 @@ from jax import vmap
 from jax.scipy.stats import multivariate_normal as jnorm
 
 FRAC_LATE_FORMING_PARAMS = OrderedDict(
-    frac_late_forming_lo=0.45, frac_late_forming_hi=0.58
+    frac_late_forming_lo=0.45, frac_late_forming_hi=0.65
+)
+MEAN_PARAMS_EARLY = OrderedDict(
+    lge_early_lo=0.48,
+    lge_early_hi=0.98,
+    lgl_early_lo=-0.60,
+    lgl_early_hi=0.22,
+    x0_early_lo=-0.30,
+    x0_early_hi=-0.21,
 )
 
-LGE_EARLY_PARAMS = OrderedDict(lge_early_lo=0.425, lge_early_hi=0.875)
-LGL_EARLY_PARAMS = OrderedDict(lgl_early_lo=-0.6, lgl_early_hi=0.15)
-X0_EARLY_PARAMS = OrderedDict(x0_early=-0.26)
-MEAN_PARAMS_EARLY = OrderedDict()
-MEAN_PARAMS_EARLY.update(LGE_EARLY_PARAMS)
-MEAN_PARAMS_EARLY.update(LGL_EARLY_PARAMS)
-MEAN_PARAMS_EARLY.update(X0_EARLY_PARAMS)
-
-LGE_LATE_PARAMS = OrderedDict(lge_late_lo=-0.1, lge_late_hi=0.7)
-LGL_LATE_PARAMS = OrderedDict(lgl_late_lo=-1.5, lgl_late_hi=0.4)
-X0_LATE_PARAMS = OrderedDict(x0_late=0.55)
-MEAN_PARAMS_LATE = OrderedDict()
-MEAN_PARAMS_LATE.update(LGE_LATE_PARAMS)
-MEAN_PARAMS_LATE.update(LGL_LATE_PARAMS)
-MEAN_PARAMS_LATE.update(X0_LATE_PARAMS)
-
-
-LOG_CHO_LGE_LGE_EARLY_PARAMS = OrderedDict(
-    log_cho_lge_lge_early_lo=-0.4, log_cho_lge_lge_early_hi=-0.8
+MEAN_PARAMS_LATE = OrderedDict(
+    lge_late_lo=-0.15,
+    lge_late_hi=0.76,
+    lgl_late_lo=-1.23,
+    lgl_late_hi=0.44,
+    x0_late_lo=0.42,
+    x0_late_hi=0.62,
 )
-LOG_CHO_LGL_LGL_EARLY_PARAMS = OrderedDict(
-    log_cho_lgl_lgl_early_lo=-0.25, log_cho_lgl_lgl_early_hi=-1.05
+COV_PARAMS_EARLY = OrderedDict(
+    log_cho_lge_lge_early_lo=-0.50,
+    log_cho_lge_lge_early_hi=-0.79,
+    log_cho_lgl_lgl_early_lo=-0.16,
+    log_cho_lgl_lgl_early_hi=-1.14,
+    log_cho_x0_x0_early=-0.97,
+    cho_lge_lgl_early=-0.05,
+    cho_lge_x0_early=-0.05,
+    cho_lgl_x0_early=-0.11,
 )
-LOG_CHO_X0_X0_EARLY_PARAMS = OrderedDict(log_cho_x0_x0_early=-0.85)
-CHO_LGE_LGL_EARLY_PARAMS = OrderedDict(cho_lge_lgl_early=-0.08)
-CHO_LGE_X0_EARLY_PARAMS = OrderedDict(cho_lge_x0_early=-0.1)
-CHO_LGL_X0_EARLY_PARAMS = OrderedDict(cho_lgl_x0_early=-0.08)
-COV_PARAMS_EARLY = OrderedDict()
-COV_PARAMS_EARLY.update(LOG_CHO_LGE_LGE_EARLY_PARAMS)
-COV_PARAMS_EARLY.update(LOG_CHO_LGL_LGL_EARLY_PARAMS)
-COV_PARAMS_EARLY.update(LOG_CHO_X0_X0_EARLY_PARAMS)
-COV_PARAMS_EARLY.update(CHO_LGE_LGL_EARLY_PARAMS)
-COV_PARAMS_EARLY.update(CHO_LGE_X0_EARLY_PARAMS)
-COV_PARAMS_EARLY.update(CHO_LGL_X0_EARLY_PARAMS)
-
-
-LOG_CHO_LGE_LGE_LATE_PARAMS = OrderedDict(
-    log_cho_lge_lge_late_lo=-0.675, log_cho_lge_lge_late_hi=-1.125
+COV_PARAMS_LATE = OrderedDict(
+    log_cho_lge_lge_late_lo=-0.51,
+    log_cho_lge_lge_late_hi=-1.34,
+    log_cho_lgl_lgl_late_lo=-0.35,
+    log_cho_lgl_lgl_late_hi=-0.44,
+    log_cho_x0_x0_late=-0.80,
+    cho_lge_lgl_late=-0.02,
+    cho_lge_x0_late=0.00,
+    cho_lgl_x0_late=0.02,
 )
-LOG_CHO_LGL_LGL_LATE_PARAMS = OrderedDict(
-    log_cho_lgl_lgl_late_lo=-0.3, log_cho_lgl_lgl_late_hi=-0.45
-)
-LOG_CHO_X0_X0_LATE_PARAMS = OrderedDict(log_cho_x0_x0_late=-0.75)
-CHO_LGE_LGL_LATE_PARAMS = OrderedDict(cho_lge_lgl_late=-0.1)
-CHO_LGE_X0_LATE_PARAMS = OrderedDict(cho_lge_x0_late=-0.08)
-CHO_LGL_X0_LATE_PARAMS = OrderedDict(cho_lgl_x0_late=-0.02)
-COV_PARAMS_LATE = OrderedDict()
-COV_PARAMS_LATE.update(LOG_CHO_LGE_LGE_LATE_PARAMS)
-COV_PARAMS_LATE.update(LOG_CHO_LGL_LGL_LATE_PARAMS)
-COV_PARAMS_LATE.update(LOG_CHO_X0_X0_LATE_PARAMS)
-COV_PARAMS_LATE.update(CHO_LGE_LGL_LATE_PARAMS)
-COV_PARAMS_LATE.update(CHO_LGE_X0_LATE_PARAMS)
-COV_PARAMS_LATE.update(CHO_LGL_X0_LATE_PARAMS)
+DEFAULT_MAH_PDF_PARAMS = OrderedDict()
+DEFAULT_MAH_PDF_PARAMS.update(FRAC_LATE_FORMING_PARAMS)
+DEFAULT_MAH_PDF_PARAMS.update(MEAN_PARAMS_EARLY)
+DEFAULT_MAH_PDF_PARAMS.update(COV_PARAMS_EARLY)
+DEFAULT_MAH_PDF_PARAMS.update(MEAN_PARAMS_LATE)
+DEFAULT_MAH_PDF_PARAMS.update(COV_PARAMS_LATE)
 
 
 def _get_cov_scalar(
@@ -90,14 +79,14 @@ _get_cov_vmap = jjit(vmap(_get_cov_scalar, in_axes=(0, 0, 0, 0, 0, 0)))
 @jjit
 def _get_cov_early(
     lgm,
-    log_cho_lge_lge_early_lo=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_lo"],
-    log_cho_lge_lge_early_hi=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_hi"],
-    log_cho_lgl_lgl_early_lo=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_lo"],
-    log_cho_lgl_lgl_early_hi=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_hi"],
-    log_cho_x0_x0_early=LOG_CHO_X0_X0_EARLY_PARAMS["log_cho_x0_x0_early"],
-    cho_lge_lgl_early=CHO_LGE_LGL_EARLY_PARAMS["cho_lge_lgl_early"],
-    cho_lge_x0_early=CHO_LGE_X0_EARLY_PARAMS["cho_lge_x0_early"],
-    cho_lgl_x0_early=CHO_LGL_X0_EARLY_PARAMS["cho_lgl_x0_early"],
+    log_cho_lge_lge_early_lo=COV_PARAMS_EARLY["log_cho_lge_lge_early_lo"],
+    log_cho_lge_lge_early_hi=COV_PARAMS_EARLY["log_cho_lge_lge_early_hi"],
+    log_cho_lgl_lgl_early_lo=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_lo"],
+    log_cho_lgl_lgl_early_hi=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_hi"],
+    log_cho_x0_x0_early=COV_PARAMS_EARLY["log_cho_x0_x0_early"],
+    cho_lge_lgl_early=COV_PARAMS_EARLY["cho_lge_lgl_early"],
+    cho_lge_x0_early=COV_PARAMS_EARLY["cho_lge_x0_early"],
+    cho_lgl_x0_early=COV_PARAMS_EARLY["cho_lgl_x0_early"],
 ):
     _res = _get_cov_mah_params_early(
         lgm,
@@ -116,14 +105,14 @@ def _get_cov_early(
 @jjit
 def _get_cov_late(
     lgm,
-    log_cho_lge_lge_late_lo=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_lo"],
-    log_cho_lge_lge_late_hi=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_hi"],
-    log_cho_lgl_lgl_late_lo=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_lo"],
-    log_cho_lgl_lgl_late_hi=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_hi"],
-    log_cho_x0_x0_late=LOG_CHO_X0_X0_LATE_PARAMS["log_cho_x0_x0_late"],
-    cho_lge_lgl_late=CHO_LGE_LGL_LATE_PARAMS["cho_lge_lgl_late"],
-    cho_lge_x0_late=CHO_LGE_X0_LATE_PARAMS["cho_lge_x0_late"],
-    cho_lgl_x0_late=CHO_LGL_X0_LATE_PARAMS["cho_lgl_x0_late"],
+    log_cho_lge_lge_late_lo=COV_PARAMS_LATE["log_cho_lge_lge_late_lo"],
+    log_cho_lge_lge_late_hi=COV_PARAMS_LATE["log_cho_lge_lge_late_hi"],
+    log_cho_lgl_lgl_late_lo=COV_PARAMS_LATE["log_cho_lgl_lgl_late_lo"],
+    log_cho_lgl_lgl_late_hi=COV_PARAMS_LATE["log_cho_lgl_lgl_late_hi"],
+    log_cho_x0_x0_late=COV_PARAMS_LATE["log_cho_x0_x0_late"],
+    cho_lge_lgl_late=COV_PARAMS_LATE["cho_lge_lgl_late"],
+    cho_lge_x0_late=COV_PARAMS_LATE["cho_lge_x0_late"],
+    cho_lgl_x0_late=COV_PARAMS_LATE["cho_lgl_x0_late"],
 ):
     _res = _get_cov_mah_params_late(
         lgm,
@@ -142,14 +131,14 @@ def _get_cov_late(
 @jjit
 def _get_cov_mah_params_early(
     lgm,
-    log_cho_lge_lge_early_lo=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_lo"],
-    log_cho_lge_lge_early_hi=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_hi"],
-    log_cho_lgl_lgl_early_lo=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_lo"],
-    log_cho_lgl_lgl_early_hi=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_hi"],
-    log_cho_x0_x0_early=LOG_CHO_X0_X0_EARLY_PARAMS["log_cho_x0_x0_early"],
-    cho_lge_lgl_early=CHO_LGE_LGL_EARLY_PARAMS["cho_lge_lgl_early"],
-    cho_lge_x0_early=CHO_LGE_X0_EARLY_PARAMS["cho_lge_x0_early"],
-    cho_lgl_x0_early=CHO_LGL_X0_EARLY_PARAMS["cho_lgl_x0_early"],
+    log_cho_lge_lge_early_lo=COV_PARAMS_EARLY["log_cho_lge_lge_early_lo"],
+    log_cho_lge_lge_early_hi=COV_PARAMS_EARLY["log_cho_lge_lge_early_hi"],
+    log_cho_lgl_lgl_early_lo=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_lo"],
+    log_cho_lgl_lgl_early_hi=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_hi"],
+    log_cho_x0_x0_early=COV_PARAMS_EARLY["log_cho_x0_x0_early"],
+    cho_lge_lgl_early=COV_PARAMS_EARLY["cho_lge_lgl_early"],
+    cho_lge_x0_early=COV_PARAMS_EARLY["cho_lge_x0_early"],
+    cho_lgl_x0_early=COV_PARAMS_EARLY["cho_lgl_x0_early"],
 ):
     log10_lge_lge = _log_cho_lge_lge_early(
         lgm, log_cho_lge_lge_early_lo, log_cho_lge_lge_early_hi
@@ -168,14 +157,14 @@ def _get_cov_mah_params_early(
 @jjit
 def _get_cov_mah_params_late(
     lgm,
-    log_cho_lge_lge_late_lo=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_lo"],
-    log_cho_lge_lge_late_hi=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_hi"],
-    log_cho_lgl_lgl_late_lo=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_lo"],
-    log_cho_lgl_lgl_late_hi=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_hi"],
-    log_cho_x0_x0_late=LOG_CHO_X0_X0_LATE_PARAMS["log_cho_x0_x0_late"],
-    cho_lge_lgl_late=CHO_LGE_LGL_LATE_PARAMS["cho_lge_lgl_late"],
-    cho_lge_x0_late=CHO_LGE_X0_LATE_PARAMS["cho_lge_x0_late"],
-    cho_lgl_x0_late=CHO_LGL_X0_LATE_PARAMS["cho_lgl_x0_late"],
+    log_cho_lge_lge_late_lo=COV_PARAMS_LATE["log_cho_lge_lge_late_lo"],
+    log_cho_lge_lge_late_hi=COV_PARAMS_LATE["log_cho_lge_lge_late_hi"],
+    log_cho_lgl_lgl_late_lo=COV_PARAMS_LATE["log_cho_lgl_lgl_late_lo"],
+    log_cho_lgl_lgl_late_hi=COV_PARAMS_LATE["log_cho_lgl_lgl_late_hi"],
+    log_cho_x0_x0_late=COV_PARAMS_LATE["log_cho_x0_x0_late"],
+    cho_lge_lgl_late=COV_PARAMS_LATE["cho_lge_lgl_late"],
+    cho_lge_x0_late=COV_PARAMS_LATE["cho_lge_x0_late"],
+    cho_lgl_x0_late=COV_PARAMS_LATE["cho_lgl_x0_late"],
 ):
     log10_lge_lge = _log_cho_lge_lge_late(
         lgm, log_cho_lge_lge_late_lo, log_cho_lge_lge_late_hi
@@ -194,30 +183,32 @@ def _get_cov_mah_params_late(
 @jjit
 def _get_mean_mah_params_early(
     lgm,
-    lge_early_lo=LGE_EARLY_PARAMS["lge_early_lo"],
-    lge_early_hi=LGE_EARLY_PARAMS["lge_early_hi"],
-    lgl_early_lo=LGL_EARLY_PARAMS["lgl_early_lo"],
-    lgl_early_hi=LGL_EARLY_PARAMS["lgl_early_hi"],
-    x0_early=X0_EARLY_PARAMS["x0_early"],
+    lge_early_lo=MEAN_PARAMS_EARLY["lge_early_lo"],
+    lge_early_hi=MEAN_PARAMS_EARLY["lge_early_hi"],
+    lgl_early_lo=MEAN_PARAMS_EARLY["lgl_early_lo"],
+    lgl_early_hi=MEAN_PARAMS_EARLY["lgl_early_hi"],
+    x0_early_lo=MEAN_PARAMS_EARLY["x0_early_lo"],
+    x0_early_hi=MEAN_PARAMS_EARLY["x0_early_hi"],
 ):
     lge = _lge_vs_lgm_early(lgm, lge_early_lo, lge_early_hi)
     lgl = _lgl_vs_lgm_early(lgm, lgl_early_lo, lgl_early_hi)
-    x0 = _x0_vs_lgm_early(lgm, x0_early)
+    x0 = _x0_vs_lgm_early(lgm, x0_early_lo, x0_early_hi)
     return lge, lgl, x0
 
 
 @jjit
 def _get_mean_mah_params_late(
     lgm,
-    lge_late_lo=LGE_LATE_PARAMS["lge_late_lo"],
-    lge_late_hi=LGE_LATE_PARAMS["lge_late_hi"],
-    lgl_late_lo=LGL_LATE_PARAMS["lgl_late_lo"],
-    lgl_late_hi=LGL_LATE_PARAMS["lgl_late_hi"],
-    x0_late=X0_LATE_PARAMS["x0_late"],
+    lge_late_lo=MEAN_PARAMS_LATE["lge_late_lo"],
+    lge_late_hi=MEAN_PARAMS_LATE["lge_late_hi"],
+    lgl_late_lo=MEAN_PARAMS_LATE["lgl_late_lo"],
+    lgl_late_hi=MEAN_PARAMS_LATE["lgl_late_hi"],
+    x0_late_lo=MEAN_PARAMS_LATE["x0_late_lo"],
+    x0_late_hi=MEAN_PARAMS_LATE["x0_late_hi"],
 ):
     lge = _lge_vs_lgm_late(lgm, lge_late_lo, lge_late_hi)
     lgl = _lgl_vs_lgm_late(lgm, lgl_late_lo, lgl_late_hi)
-    x0 = _x0_vs_lgm_late(lgm, x0_late)
+    x0 = _x0_vs_lgm_late(lgm, x0_late_lo, x0_late_hi)
     return lge, lgl, x0
 
 
@@ -234,7 +225,7 @@ def frac_late_forming(
 @jjit
 def _cho_lgl_x0_late(
     lgm,
-    cho_lgl_x0_late=CHO_LGL_X0_LATE_PARAMS["cho_lgl_x0_late"],
+    cho_lgl_x0_late=COV_PARAMS_LATE["cho_lgl_x0_late"],
 ):
     return jnp.zeros_like(lgm) + cho_lgl_x0_late
 
@@ -242,7 +233,7 @@ def _cho_lgl_x0_late(
 @jjit
 def _cho_lgl_x0_early(
     lgm,
-    cho_lgl_x0_early=CHO_LGL_X0_EARLY_PARAMS["cho_lgl_x0_early"],
+    cho_lgl_x0_early=COV_PARAMS_EARLY["cho_lgl_x0_early"],
 ):
     return jnp.zeros_like(lgm) + cho_lgl_x0_early
 
@@ -250,7 +241,7 @@ def _cho_lgl_x0_early(
 @jjit
 def _cho_lge_x0_late(
     lgm,
-    cho_lge_x0_late=CHO_LGE_X0_LATE_PARAMS["cho_lge_x0_late"],
+    cho_lge_x0_late=COV_PARAMS_LATE["cho_lge_x0_late"],
 ):
     return jnp.zeros_like(lgm) + cho_lge_x0_late
 
@@ -258,7 +249,7 @@ def _cho_lge_x0_late(
 @jjit
 def _cho_lge_x0_early(
     lgm,
-    cho_lge_x0_early=CHO_LGE_X0_EARLY_PARAMS["cho_lge_x0_early"],
+    cho_lge_x0_early=COV_PARAMS_EARLY["cho_lge_x0_early"],
 ):
     return jnp.zeros_like(lgm) + cho_lge_x0_early
 
@@ -266,7 +257,7 @@ def _cho_lge_x0_early(
 @jjit
 def _cho_lge_lgl_late(
     lgm,
-    cho_lge_lgl_late=CHO_LGE_LGL_LATE_PARAMS["cho_lge_lgl_late"],
+    cho_lge_lgl_late=COV_PARAMS_LATE["cho_lge_lgl_late"],
 ):
     return jnp.zeros_like(lgm) + cho_lge_lgl_late
 
@@ -274,7 +265,7 @@ def _cho_lge_lgl_late(
 @jjit
 def _cho_lge_lgl_early(
     lgm,
-    cho_lge_lgl_early=CHO_LGE_LGL_EARLY_PARAMS["cho_lge_lgl_early"],
+    cho_lge_lgl_early=COV_PARAMS_EARLY["cho_lge_lgl_early"],
 ):
     return jnp.zeros_like(lgm) + cho_lge_lgl_early
 
@@ -282,7 +273,7 @@ def _cho_lge_lgl_early(
 @jjit
 def _log_cho_x0_x0_early(
     lgm,
-    log_cho_x0_x0_early=LOG_CHO_X0_X0_EARLY_PARAMS["log_cho_x0_x0_early"],
+    log_cho_x0_x0_early=COV_PARAMS_EARLY["log_cho_x0_x0_early"],
 ):
     return jnp.zeros_like(lgm) + log_cho_x0_x0_early
 
@@ -290,7 +281,7 @@ def _log_cho_x0_x0_early(
 @jjit
 def _log_cho_x0_x0_late(
     lgm,
-    log_cho_x0_x0_late=LOG_CHO_X0_X0_LATE_PARAMS["log_cho_x0_x0_late"],
+    log_cho_x0_x0_late=COV_PARAMS_LATE["log_cho_x0_x0_late"],
 ):
     return jnp.zeros_like(lgm) + log_cho_x0_x0_late
 
@@ -298,8 +289,8 @@ def _log_cho_x0_x0_late(
 @jjit
 def _log_cho_lgl_lgl_early(
     lgm,
-    log_cho_lgl_lgl_early_lo=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_lo"],
-    log_cho_lgl_lgl_early_hi=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_hi"],
+    log_cho_lgl_lgl_early_lo=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_lo"],
+    log_cho_lgl_lgl_early_hi=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_hi"],
 ):
     return _sigmoid(lgm, 13, 0.5, log_cho_lgl_lgl_early_lo, log_cho_lgl_lgl_early_hi)
 
@@ -307,8 +298,8 @@ def _log_cho_lgl_lgl_early(
 @jjit
 def _log_cho_lgl_lgl_late(
     lgm,
-    log_cho_lgl_lgl_late_lo=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_lo"],
-    log_cho_lgl_lgl_late_hi=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_hi"],
+    log_cho_lgl_lgl_late_lo=COV_PARAMS_LATE["log_cho_lgl_lgl_late_lo"],
+    log_cho_lgl_lgl_late_hi=COV_PARAMS_LATE["log_cho_lgl_lgl_late_hi"],
 ):
     return _sigmoid(lgm, 13.5, 2.0, log_cho_lgl_lgl_late_lo, log_cho_lgl_lgl_late_hi)
 
@@ -316,8 +307,8 @@ def _log_cho_lgl_lgl_late(
 @jjit
 def _log_cho_lge_lge_late(
     lgm,
-    log_cho_lge_lge_late_lo=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_lo"],
-    log_cho_lge_lge_late_hi=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_hi"],
+    log_cho_lge_lge_late_lo=COV_PARAMS_LATE["log_cho_lge_lge_late_lo"],
+    log_cho_lge_lge_late_hi=COV_PARAMS_LATE["log_cho_lge_lge_late_hi"],
 ):
     return _sigmoid(lgm, 13, 0.5, log_cho_lge_lge_late_lo, log_cho_lge_lge_late_hi)
 
@@ -325,8 +316,8 @@ def _log_cho_lge_lge_late(
 @jjit
 def _log_cho_lge_lge_early(
     lgm,
-    log_cho_lge_lge_early_lo=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_lo"],
-    log_cho_lge_lge_early_hi=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_hi"],
+    log_cho_lge_lge_early_lo=COV_PARAMS_EARLY["log_cho_lge_lge_early_lo"],
+    log_cho_lge_lge_early_hi=COV_PARAMS_EARLY["log_cho_lge_lge_early_hi"],
 ):
     return _sigmoid(lgm, 13, 0.5, log_cho_lge_lge_early_lo, log_cho_lge_lge_early_hi)
 
@@ -340,8 +331,8 @@ def _sigmoid(x, x0, k, ymin, ymax):
 @jjit
 def _lge_vs_lgm_late(
     lgm,
-    lge_late_lo=LGE_LATE_PARAMS["lge_late_lo"],
-    lge_late_hi=LGE_LATE_PARAMS["lge_late_hi"],
+    lge_late_lo=MEAN_PARAMS_LATE["lge_late_lo"],
+    lge_late_hi=MEAN_PARAMS_LATE["lge_late_hi"],
 ):
     return _sigmoid(lgm, 13, 0.5, lge_late_lo, lge_late_hi)
 
@@ -349,8 +340,8 @@ def _lge_vs_lgm_late(
 @jjit
 def _lge_vs_lgm_early(
     lgm,
-    lge_early_lo=LGE_EARLY_PARAMS["lge_early_lo"],
-    lge_early_hi=LGE_EARLY_PARAMS["lge_early_hi"],
+    lge_early_lo=MEAN_PARAMS_EARLY["lge_early_lo"],
+    lge_early_hi=MEAN_PARAMS_EARLY["lge_early_hi"],
 ):
     return _sigmoid(lgm, 13, 0.5, lge_early_lo, lge_early_hi)
 
@@ -358,8 +349,8 @@ def _lge_vs_lgm_early(
 @jjit
 def _lgl_vs_lgm_late(
     lgm,
-    lgl_late_lo=LGL_LATE_PARAMS["lgl_late_lo"],
-    lgl_late_hi=LGL_LATE_PARAMS["lgl_late_hi"],
+    lgl_late_lo=MEAN_PARAMS_LATE["lgl_late_lo"],
+    lgl_late_hi=MEAN_PARAMS_LATE["lgl_late_hi"],
 ):
     return _sigmoid(lgm, 13, 0.5, lgl_late_lo, lgl_late_hi)
 
@@ -367,8 +358,8 @@ def _lgl_vs_lgm_late(
 @jjit
 def _lgl_vs_lgm_early(
     lgm,
-    lgl_early_lo=LGL_EARLY_PARAMS["lgl_early_lo"],
-    lgl_early_hi=LGL_EARLY_PARAMS["lgl_early_hi"],
+    lgl_early_lo=MEAN_PARAMS_EARLY["lgl_early_lo"],
+    lgl_early_hi=MEAN_PARAMS_EARLY["lgl_early_hi"],
 ):
     return _sigmoid(lgm, 12.5, 1.5, lgl_early_lo, lgl_early_hi)
 
@@ -376,17 +367,19 @@ def _lgl_vs_lgm_early(
 @jjit
 def _x0_vs_lgm_late(
     lgm,
-    x0_late=X0_LATE_PARAMS["x0_late"],
+    x0_late_lo=MEAN_PARAMS_LATE["x0_late_lo"],
+    x0_late_hi=MEAN_PARAMS_LATE["x0_late_hi"],
 ):
-    return jnp.zeros_like(lgm) + x0_late
+    return _sigmoid(lgm, 13, 0.5, x0_late_lo, x0_late_hi)
 
 
 @jjit
 def _x0_vs_lgm_early(
     lgm,
-    x0_early=X0_EARLY_PARAMS["x0_early"],
+    x0_early_lo=MEAN_PARAMS_EARLY["x0_early_lo"],
+    x0_early_hi=MEAN_PARAMS_EARLY["x0_early_hi"],
 ):
-    return jnp.zeros_like(lgm) + x0_early
+    return _sigmoid(lgm, 13, 0.5, x0_early_lo, x0_early_hi)
 
 
 @jjit
@@ -395,19 +388,20 @@ def _mah_pdf_early(
     lge,
     lgl,
     x0,
-    lge_early_lo=LGE_EARLY_PARAMS["lge_early_lo"],
-    lge_early_hi=LGE_EARLY_PARAMS["lge_early_hi"],
-    lgl_early_lo=LGL_EARLY_PARAMS["lgl_early_lo"],
-    lgl_early_hi=LGL_EARLY_PARAMS["lgl_early_hi"],
-    x0_early=X0_EARLY_PARAMS["x0_early"],
-    log_cho_lge_lge_early_lo=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_lo"],
-    log_cho_lge_lge_early_hi=LOG_CHO_LGE_LGE_EARLY_PARAMS["log_cho_lge_lge_early_hi"],
-    log_cho_lgl_lgl_early_lo=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_lo"],
-    log_cho_lgl_lgl_early_hi=LOG_CHO_LGL_LGL_EARLY_PARAMS["log_cho_lgl_lgl_early_hi"],
-    log_cho_x0_x0_early=LOG_CHO_X0_X0_EARLY_PARAMS["log_cho_x0_x0_early"],
-    cho_lge_lgl_early=CHO_LGE_LGL_EARLY_PARAMS["cho_lge_lgl_early"],
-    cho_lge_x0_early=CHO_LGE_X0_EARLY_PARAMS["cho_lge_x0_early"],
-    cho_lgl_x0_early=CHO_LGL_X0_EARLY_PARAMS["cho_lgl_x0_early"],
+    lge_early_lo=MEAN_PARAMS_EARLY["lge_early_lo"],
+    lge_early_hi=MEAN_PARAMS_EARLY["lge_early_hi"],
+    lgl_early_lo=MEAN_PARAMS_EARLY["lgl_early_lo"],
+    lgl_early_hi=MEAN_PARAMS_EARLY["lgl_early_hi"],
+    x0_early_lo=MEAN_PARAMS_EARLY["x0_early_lo"],
+    x0_early_hi=MEAN_PARAMS_EARLY["x0_early_hi"],
+    log_cho_lge_lge_early_lo=COV_PARAMS_EARLY["log_cho_lge_lge_early_lo"],
+    log_cho_lge_lge_early_hi=COV_PARAMS_EARLY["log_cho_lge_lge_early_hi"],
+    log_cho_lgl_lgl_early_lo=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_lo"],
+    log_cho_lgl_lgl_early_hi=COV_PARAMS_EARLY["log_cho_lgl_lgl_early_hi"],
+    log_cho_x0_x0_early=COV_PARAMS_EARLY["log_cho_x0_x0_early"],
+    cho_lge_lgl_early=COV_PARAMS_EARLY["cho_lge_lgl_early"],
+    cho_lge_x0_early=COV_PARAMS_EARLY["cho_lge_x0_early"],
+    cho_lgl_x0_early=COV_PARAMS_EARLY["cho_lgl_x0_early"],
 ):
     X = jnp.array((lge, lgl, x0)).astype("f4").T
     mu = _get_mean_mah_params_early(
@@ -416,7 +410,8 @@ def _mah_pdf_early(
         lge_early_hi,
         lgl_early_lo,
         lgl_early_hi,
-        x0_early,
+        x0_early_lo,
+        x0_early_hi,
     )
     cov = _get_cov_early(
         lgm,
@@ -438,19 +433,20 @@ def _mah_pdf_late(
     lge,
     lgl,
     x0,
-    lge_late_lo=LGE_LATE_PARAMS["lge_late_lo"],
-    lge_late_hi=LGE_LATE_PARAMS["lge_late_hi"],
-    lgl_late_lo=LGL_LATE_PARAMS["lgl_late_lo"],
-    lgl_late_hi=LGL_LATE_PARAMS["lgl_late_hi"],
-    x0_late=X0_LATE_PARAMS["x0_late"],
-    log_cho_lge_lge_late_lo=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_lo"],
-    log_cho_lge_lge_late_hi=LOG_CHO_LGE_LGE_LATE_PARAMS["log_cho_lge_lge_late_hi"],
-    log_cho_lgl_lgl_late_lo=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_lo"],
-    log_cho_lgl_lgl_late_hi=LOG_CHO_LGL_LGL_LATE_PARAMS["log_cho_lgl_lgl_late_hi"],
-    log_cho_x0_x0_late=LOG_CHO_X0_X0_LATE_PARAMS["log_cho_x0_x0_late"],
-    cho_lge_lgl_late=CHO_LGE_LGL_LATE_PARAMS["cho_lge_lgl_late"],
-    cho_lge_x0_late=CHO_LGE_X0_LATE_PARAMS["cho_lge_x0_late"],
-    cho_lgl_x0_late=CHO_LGL_X0_LATE_PARAMS["cho_lgl_x0_late"],
+    lge_late_lo=MEAN_PARAMS_LATE["lge_late_lo"],
+    lge_late_hi=MEAN_PARAMS_LATE["lge_late_hi"],
+    lgl_late_lo=MEAN_PARAMS_LATE["lgl_late_lo"],
+    lgl_late_hi=MEAN_PARAMS_LATE["lgl_late_hi"],
+    x0_late_lo=MEAN_PARAMS_LATE["x0_late_lo"],
+    x0_late_hi=MEAN_PARAMS_LATE["x0_late_hi"],
+    log_cho_lge_lge_late_lo=COV_PARAMS_LATE["log_cho_lge_lge_late_lo"],
+    log_cho_lge_lge_late_hi=COV_PARAMS_LATE["log_cho_lge_lge_late_hi"],
+    log_cho_lgl_lgl_late_lo=COV_PARAMS_LATE["log_cho_lgl_lgl_late_lo"],
+    log_cho_lgl_lgl_late_hi=COV_PARAMS_LATE["log_cho_lgl_lgl_late_hi"],
+    log_cho_x0_x0_late=COV_PARAMS_LATE["log_cho_x0_x0_late"],
+    cho_lge_lgl_late=COV_PARAMS_LATE["cho_lge_lgl_late"],
+    cho_lge_x0_late=COV_PARAMS_LATE["cho_lge_x0_late"],
+    cho_lgl_x0_late=COV_PARAMS_LATE["cho_lgl_x0_late"],
 ):
     X = jnp.array((lge, lgl, x0)).astype("f4").T
     mu = _get_mean_mah_params_late(
@@ -459,7 +455,8 @@ def _mah_pdf_late(
         lge_late_hi,
         lgl_late_lo,
         lgl_late_hi,
-        x0_late,
+        x0_late_lo,
+        x0_late_hi,
     )
     cov = _get_cov_late(
         lgm,
