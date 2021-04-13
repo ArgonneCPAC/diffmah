@@ -1,7 +1,9 @@
 """Calculate differentiable probabilistic history of an individual halo."""
+import numpy as np
 from jax import numpy as jnp
 from jax import jit as jjit
 from jax import vmap
+from jax import random as jran
 from jax.scipy.stats import multivariate_normal as jnorm
 from .individual_halo_assembly import _calc_halo_history, DEFAULT_MAH_PARAMS
 from .mah_pop_param_model import frac_late_forming
@@ -14,6 +16,9 @@ TODAY = 13.8
 LGT0 = jnp.log10(TODAY)
 CLIP = -10.0
 
+LGE_ARR = np.linspace(-1, 1.5, 25)
+LGL_ARR = np.linspace(-1.5, 1.5, 25)
+X0_ARR = np.linspace(-1.5, 1.5, 25)
 
 _g1 = vmap(_calc_halo_history, in_axes=(*[None] * 5, 0, None))
 _g2 = vmap(_g1, in_axes=(*[None] * 5, None, 0))
@@ -86,7 +91,7 @@ _multimass_bimodal_halo_history_kern = jjit(
 
 
 @jjit
-def _get_bimodal_halo_history(
+def _get_mah_means_and_covs(
     logt,
     logmp_arr,
     lge_arr,
@@ -126,7 +131,6 @@ def _get_bimodal_halo_history(
     logtmp=LGT0,
 ):
     frac_late = frac_late_forming(logmp_arr, frac_late_forming_lo, frac_late_forming_hi)
-
     lge_early, lgl_early, x0_early = _get_mean_mah_params_early(
         logmp_arr,
         lge_early_lo,
@@ -171,6 +175,89 @@ def _get_bimodal_halo_history(
         cho_lgl_x0_late,
     )
 
+    return frac_late, means_early, covs_early, means_late, covs_late
+
+
+@jjit
+def _get_bimodal_halo_history(
+    logt,
+    logmp_arr,
+    lge_arr,
+    lgl_arr,
+    x0_arr,
+    frac_late_forming_lo=DEFAULT_MAH_PDF_PARAMS["frac_late_forming_lo"],
+    frac_late_forming_hi=DEFAULT_MAH_PDF_PARAMS["frac_late_forming_hi"],
+    lge_early_lo=DEFAULT_MAH_PDF_PARAMS["lge_early_lo"],
+    lge_early_hi=DEFAULT_MAH_PDF_PARAMS["lge_early_hi"],
+    lgl_early_lo=DEFAULT_MAH_PDF_PARAMS["lgl_early_lo"],
+    lgl_early_hi=DEFAULT_MAH_PDF_PARAMS["lgl_early_hi"],
+    x0_early_lo=DEFAULT_MAH_PDF_PARAMS["x0_early_lo"],
+    x0_early_hi=DEFAULT_MAH_PDF_PARAMS["x0_early_hi"],
+    log_cho_lge_lge_early_lo=DEFAULT_MAH_PDF_PARAMS["log_cho_lge_lge_early_lo"],
+    log_cho_lge_lge_early_hi=DEFAULT_MAH_PDF_PARAMS["log_cho_lge_lge_early_hi"],
+    log_cho_lgl_lgl_early_lo=DEFAULT_MAH_PDF_PARAMS["log_cho_lgl_lgl_early_lo"],
+    log_cho_lgl_lgl_early_hi=DEFAULT_MAH_PDF_PARAMS["log_cho_lgl_lgl_early_hi"],
+    log_cho_x0_x0_early=DEFAULT_MAH_PDF_PARAMS["log_cho_x0_x0_early"],
+    cho_lge_lgl_early=DEFAULT_MAH_PDF_PARAMS["cho_lge_lgl_early"],
+    cho_lge_x0_early=DEFAULT_MAH_PDF_PARAMS["cho_lge_x0_early"],
+    cho_lgl_x0_early=DEFAULT_MAH_PDF_PARAMS["cho_lgl_x0_early"],
+    lge_late_lo=DEFAULT_MAH_PDF_PARAMS["lge_late_lo"],
+    lge_late_hi=DEFAULT_MAH_PDF_PARAMS["lge_late_hi"],
+    lgl_late_lo=DEFAULT_MAH_PDF_PARAMS["lgl_late_lo"],
+    lgl_late_hi=DEFAULT_MAH_PDF_PARAMS["lgl_late_hi"],
+    x0_late_lo=DEFAULT_MAH_PDF_PARAMS["x0_late_lo"],
+    x0_late_hi=DEFAULT_MAH_PDF_PARAMS["x0_late_hi"],
+    log_cho_lge_lge_late_lo=DEFAULT_MAH_PDF_PARAMS["log_cho_lge_lge_late_lo"],
+    log_cho_lge_lge_late_hi=DEFAULT_MAH_PDF_PARAMS["log_cho_lge_lge_late_hi"],
+    log_cho_lgl_lgl_late_lo=DEFAULT_MAH_PDF_PARAMS["log_cho_lgl_lgl_late_lo"],
+    log_cho_lgl_lgl_late_hi=DEFAULT_MAH_PDF_PARAMS["log_cho_lgl_lgl_late_hi"],
+    log_cho_x0_x0_late=DEFAULT_MAH_PDF_PARAMS["log_cho_x0_x0_late"],
+    cho_lge_lgl_late=DEFAULT_MAH_PDF_PARAMS["cho_lge_lgl_late"],
+    cho_lge_x0_late=DEFAULT_MAH_PDF_PARAMS["cho_lge_x0_late"],
+    cho_lgl_x0_late=DEFAULT_MAH_PDF_PARAMS["cho_lgl_x0_late"],
+    k=DEFAULT_MAH_PARAMS["mah_k"],
+    logtmp=LGT0,
+):
+    _res = _get_mah_means_and_covs(
+        logt,
+        logmp_arr,
+        lge_arr,
+        lgl_arr,
+        x0_arr,
+        frac_late_forming_lo,
+        frac_late_forming_hi,
+        lge_early_lo,
+        lge_early_hi,
+        lgl_early_lo,
+        lgl_early_hi,
+        x0_early_lo,
+        x0_early_hi,
+        log_cho_lge_lge_early_lo,
+        log_cho_lge_lge_early_hi,
+        log_cho_lgl_lgl_early_lo,
+        log_cho_lgl_lgl_early_hi,
+        log_cho_x0_x0_early,
+        cho_lge_lgl_early,
+        cho_lge_x0_early,
+        cho_lgl_x0_early,
+        lge_late_lo,
+        lge_late_hi,
+        lgl_late_lo,
+        lgl_late_hi,
+        x0_late_lo,
+        x0_late_hi,
+        log_cho_lge_lge_late_lo,
+        log_cho_lge_lge_late_hi,
+        log_cho_lgl_lgl_late_lo,
+        log_cho_lgl_lgl_late_hi,
+        log_cho_x0_x0_late,
+        cho_lge_lgl_late,
+        cho_lge_x0_late,
+        cho_lgl_x0_late,
+        k,
+        logtmp,
+    )
+    frac_late, means_early, covs_early, means_late, covs_late = _res
     return _multimass_bimodal_halo_history_kern(
         logt,
         logmp_arr,
