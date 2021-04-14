@@ -68,6 +68,9 @@ def mc_halo_population(
     x0 : ndarray of shape (n_halos, )
         Halo MAH parameter specifying the transition time between early and late times.
 
+    mah_type : ndarray of shape (n_halos, )
+        Stores 0 for early-forming halos and 1 for late-forming
+
     """
     logmh = np.atleast_1d(logmh).astype("f4")
     assert logmh.size == 1, "Input halo mass must be a scalar"
@@ -81,6 +84,7 @@ def mc_halo_population(
     cov_early = np.array(_covs_early[0])
     mu_late = np.array(_means_late[0])
     cov_late = np.array(_covs_late[0])
+    mah_type_arr = np.zeros(n_halos).astype("i4")
 
     if mah_type is None:
         u = RandomState(seed).uniform(0, 1, n_halos)
@@ -94,12 +98,14 @@ def mc_halo_population(
         lge = np.concatenate((lge_e, lge_l))
         lgl = np.concatenate((lgl_e, lgl_l))
         x0 = np.concatenate((x0_e, x0_l))
+        mah_type_arr[-n_l:] = 1
     elif mah_type == "early":
         data = RandomState(seed).multivariate_normal(mu_early, cov_early, size=n_halos)
         lge, lgl, x0 = data[:, 0], data[:, 1], data[:, 2]
     elif mah_type == "late":
         data = RandomState(seed).multivariate_normal(mu_late, cov_late, size=n_halos)
         lge, lgl, x0 = data[:, 0], data[:, 1], data[:, 2]
+        mah_type_arr[:] = 1
     else:
         msg = "`mah_type` argument = {0} but accepted values are `early` or `late`"
         raise ValueError(msg.format(mah_type))
@@ -107,4 +113,4 @@ def mc_halo_population(
     lgt, lgt0 = np.log10(cosmic_time), np.log10(t0)
     _res = _vmap_calc_halo_history(lgt, lgt0, logmh[0], x0, mah_k, 10 ** lge, 10 ** lgl)
     dmhdt, log_mah = _res
-    return dmhdt, log_mah, 10 ** lge, 10 ** lgl, x0
+    return dmhdt, log_mah, 10 ** lge, 10 ** lgl, x0, mah_type_arr
