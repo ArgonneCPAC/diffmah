@@ -7,41 +7,41 @@ from jax import vmap
 from jax.scipy.stats import multivariate_normal as jnorm
 
 FRAC_LATE_FORMING_PARAMS = OrderedDict(
-    frac_late_forming_lo=0.45, frac_late_forming_hi=0.65
+    frac_late_forming_lo=0.53, frac_late_forming_hi=0.69
 )
 MEAN_PARAMS_EARLY = OrderedDict(
     lge_early_lo=0.48,
-    lge_early_hi=0.98,
-    lgl_early_lo=-0.60,
-    lgl_early_hi=0.22,
-    x0_early_lo=-0.30,
-    x0_early_hi=-0.21,
+    lge_early_hi=0.86,
+    lgl_early_lo=-0.53,
+    lgl_early_hi=0.18,
+    x0_early_lo=-0.24,
+    x0_early_hi=-0.28,
 )
 
 MEAN_PARAMS_LATE = OrderedDict(
-    lge_late_lo=-0.15,
-    lge_late_hi=0.76,
-    lgl_late_lo=-1.23,
-    lgl_late_hi=0.44,
-    x0_late_lo=0.42,
-    x0_late_hi=0.62,
+    lge_late_lo=-0.20,
+    lge_late_hi=0.73,
+    lgl_late_lo=-1.11,
+    lgl_late_hi=0.45,
+    x0_late_lo=0.53,
+    x0_late_hi=0.64,
 )
 COV_PARAMS_EARLY = OrderedDict(
-    log_cho_lge_lge_early_lo=-0.50,
-    log_cho_lge_lge_early_hi=-0.79,
-    log_cho_lgl_lgl_early_lo=-0.16,
-    log_cho_lgl_lgl_early_hi=-1.14,
-    log_cho_x0_x0_early=-0.97,
+    log_cho_lge_lge_early_lo=-0.33,
+    log_cho_lge_lge_early_hi=-1.07,
+    log_cho_lgl_lgl_early_lo=-0.11,
+    log_cho_lgl_lgl_early_hi=-1.30,
+    log_cho_x0_x0_early=-1.06,
     cho_lge_lgl_early=-0.05,
     cho_lge_x0_early=-0.05,
     cho_lgl_x0_early=-0.11,
 )
 COV_PARAMS_LATE = OrderedDict(
-    log_cho_lge_lge_late_lo=-0.51,
-    log_cho_lge_lge_late_hi=-1.34,
-    log_cho_lgl_lgl_late_lo=-0.35,
+    log_cho_lge_lge_late_lo=-0.49,
+    log_cho_lge_lge_late_hi=-1.47,
+    log_cho_lgl_lgl_late_lo=-0.65,
     log_cho_lgl_lgl_late_hi=-0.44,
-    log_cho_x0_x0_late=-0.80,
+    log_cho_x0_x0_late=-0.92,
     cho_lge_lgl_late=-0.02,
     cho_lge_x0_late=0.00,
     cho_lgl_x0_late=0.02,

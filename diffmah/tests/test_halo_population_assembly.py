@@ -17,7 +17,7 @@ def test_get_average_halo_histories():
     lgt_arr = np.log10(tarr)
     lgmp_arr = np.array((11.25, 11.75, 12, 12.5, 13, 13.5, 14, 14.5))
     _res = _get_bimodal_halo_history(lgt_arr, lgmp_arr, lge_arr, lgl_arr, x0_arr)
-    mean_dmhdt, mean_mah, variance_dmhdt, variance_mah = _res
+    mean_dmhdt, mean_mah, mean_log_mah, variance_dmhdt, variance_mah = _res
     mean_log_mahs = np.log10(mean_mah)
 
     #  Average halo MAHs should agree at t=today
