@@ -3,7 +3,6 @@ import numpy as np
 from jax import numpy as jnp
 from jax import jit as jjit
 from jax import vmap
-from jax import random as jran
 from jax.scipy.stats import multivariate_normal as jnorm
 from .individual_halo_assembly import _calc_halo_history, DEFAULT_MAH_PARAMS
 from .mah_pop_param_model import frac_late_forming
@@ -92,11 +91,7 @@ _multimass_bimodal_halo_history_kern = jjit(
 
 @jjit
 def _get_mah_means_and_covs(
-    logt,
     logmp_arr,
-    lge_arr,
-    lgl_arr,
-    x0_arr,
     frac_late_forming_lo=DEFAULT_MAH_PDF_PARAMS["frac_late_forming_lo"],
     frac_late_forming_hi=DEFAULT_MAH_PDF_PARAMS["frac_late_forming_hi"],
     lge_early_lo=DEFAULT_MAH_PDF_PARAMS["lge_early_lo"],
@@ -219,11 +214,7 @@ def _get_bimodal_halo_history(
     logtmp=LGT0,
 ):
     _res = _get_mah_means_and_covs(
-        logt,
         logmp_arr,
-        lge_arr,
-        lgl_arr,
-        x0_arr,
         frac_late_forming_lo,
         frac_late_forming_hi,
         lge_early_lo,
