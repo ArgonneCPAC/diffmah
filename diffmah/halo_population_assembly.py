@@ -68,19 +68,18 @@ def _get_bimodal_halo_history_kern(
     weights_late = weights_late.reshape((n_x0, n_late, n_early, 1))
 
     w = frac_late * weights_late + (1 - frac_late) * weights_early
-    w_mahs = mahs * w
-    w_dmhdts = dmhdts * w
 
-    mean_dmhdt = jnp.sum(w_dmhdts, axis=(0, 1, 2))
-    mean_mah = jnp.sum(w_mahs, axis=(0, 1, 2))
+    mean_dmhdt = jnp.sum(dmhdts * w, axis=(0, 1, 2))
+    mean_mah = jnp.sum(mahs * w, axis=(0, 1, 2))
+    mean_log_mah = jnp.sum(log_mahs * w, axis=(0, 1, 2))
 
     delta_dmhdt_sq = (dmhdts - mean_dmhdt) ** 2
-    delta_mah_sq = (mahs - mean_mah) ** 2
+    delta_log_mah_sq = (log_mahs - mean_log_mah) ** 2
 
     variance_dmhdt = jnp.sum(delta_dmhdt_sq * w, axis=(0, 1, 2))
-    variance_mah = jnp.sum(delta_mah_sq * w, axis=(0, 1, 2))
+    variance_log_mah = jnp.sum(delta_log_mah_sq * w, axis=(0, 1, 2))
 
-    return mean_dmhdt, mean_mah, variance_dmhdt, variance_mah
+    return mean_dmhdt, mean_mah, mean_log_mah, variance_dmhdt, variance_log_mah
 
 
 _a = (None, 0, None, None, None, *[0] * 5)
