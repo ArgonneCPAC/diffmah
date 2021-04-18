@@ -48,7 +48,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("outdir", help="Output directory")
     parser.add_argument("outbase", help="Basename of the output hdf5 file")
-    parser.add_argument("-indir", help="Input directory", default="TASSO")
+    parser.add_argument("-indir", help="Input directory", default="BEBOP")
     parser.add_argument("-nstep", help="Num opt steps per halo", type=int, default=200)
     parser.add_argument("-test", help="Short test run?", type=bool, default=False)
     parser.add_argument(
@@ -75,13 +75,13 @@ if __name__ == "__main__":
 
     if args.simulation == "tng":
         _mah_data = load_tng_data(data_drn=indir)
-        halo_ids, log_mahs, tmpeaks, tarr, lgm_min = _mah_data
+        halo_ids, log_mahs, tarr, lgm_min = _mah_data
     elif args.simulation == "bpl":
         _mah_data = load_bolshoi_data(args.gal_type, data_drn=indir)
-        halo_ids, log_mahs, tmpeaks, tarr, lgm_min = _mah_data
+        halo_ids, log_mahs, tarr, lgm_min = _mah_data
     elif args.simulation == "mdpl":
         _mah_data = load_mdpl2_data(args.gal_type, data_drn=indir)
-        halo_ids, log_mahs, tmpeaks, tarr, lgm_min = _mah_data
+        halo_ids, log_mahs, tarr, lgm_min = _mah_data
 
     # Ensure the target MAHs are cumulative peak masses
     log_mahs = np.maximum.accumulate(log_mahs, axis=1)
@@ -96,7 +96,6 @@ if __name__ == "__main__":
 
     halo_ids_for_rank = halo_ids[indx]
     log_mahs_for_rank = log_mahs[indx]
-    tmpeaks_for_rank = tmpeaks[indx]
     nhalos_for_rank = len(halo_ids_for_rank)
 
     header = get_header()
