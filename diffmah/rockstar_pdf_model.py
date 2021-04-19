@@ -6,9 +6,13 @@ from jax import numpy as jnp
 from jax import ops as jops
 from jax import vmap
 from jax.scipy.stats import multivariate_normal as jnorm
+from .individual_halo_assembly import DEFAULT_MAH_PARAMS
+
+TODAY = 13.8
+LGT0 = jnp.log10(TODAY)
 
 
-MAH_PDF_PARAMS = OrderedDict(
+DEFAULT_MAH_PDF_PARAMS = OrderedDict(
     frac_late_ylo=0.645,
     frac_late_yhi=0.645,
     mean_lge_early_ylo=0.45,
@@ -55,8 +59,16 @@ def _sigmoid(x, x0, k, ymin, ymax):
     return ymin + (ymax - ymin) / (1 + jnp.exp(-k * (x - x0)))
 
 
+def frac_late_forming(
+    lgm0,
+    frac_late_ylo=DEFAULT_MAH_PDF_PARAMS["frac_late_ylo"],
+    frac_late_yhi=DEFAULT_MAH_PDF_PARAMS["frac_late_yhi"],
+):
+    return _sigmoid(lgm0, 13, 0.5, frac_late_ylo, frac_late_yhi)
+
+
 def get_default_params(lgm):
-    frac_late = frac_late_vs_lgm0(lgm)
+    frac_late = frac_late_forming(lgm)
 
     lge_e = mean_lge_early_vs_lgm0(lgm)
     lgl_e = mean_lgl_early_vs_lgm0(lgm)
@@ -131,18 +143,18 @@ _get_cov_vmap = jjit(vmap(_get_cov_scalar, in_axes=(0, 0, 0, 0, 0, 0)))
 @jjit
 def _get_cov_early(
     lgmp_arr,
-    cov_lge_lge_early_ylo=MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
-    cov_lge_lge_early_yhi=MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
-    cov_lgl_lgl_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
-    cov_lgl_lgl_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
-    cov_lgtc_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
-    cov_lgtc_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
-    cov_lge_lgl_early_ylo=MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
-    cov_lge_lgl_early_yhi=MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
-    cov_lge_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
-    cov_lge_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
-    cov_lgl_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
-    cov_lgl_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+    cov_lge_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lgl_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lge_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
 ):
     _res = _get_cov_params_early(
         lgmp_arr,
@@ -165,18 +177,18 @@ def _get_cov_early(
 @jjit
 def _get_cov_params_early(
     lgm,
-    cov_lge_lge_early_ylo=MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
-    cov_lge_lge_early_yhi=MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
-    cov_lgl_lgl_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
-    cov_lgl_lgl_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
-    cov_lgtc_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
-    cov_lgtc_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
-    cov_lge_lgl_early_ylo=MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
-    cov_lge_lgl_early_yhi=MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
-    cov_lge_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
-    cov_lge_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
-    cov_lgl_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
-    cov_lgl_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+    cov_lge_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lgl_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lge_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
 ):
     lge_lge = cov_lge_lge_early_vs_lgm0(
         lgm, cov_lge_lge_early_ylo, cov_lge_lge_early_yhi
@@ -203,18 +215,18 @@ def _get_cov_params_early(
 @jjit
 def _get_cov_late(
     lgmp_arr,
-    cov_lge_lge_late_ylo=MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
-    cov_lge_lge_late_yhi=MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
-    cov_lgl_lgl_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
-    cov_lgl_lgl_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
-    cov_lgtc_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
-    cov_lgtc_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
-    cov_lge_lgl_late_ylo=MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
-    cov_lge_lgl_late_yhi=MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
-    cov_lge_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
-    cov_lge_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
-    cov_lgl_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
-    cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+    cov_lge_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lgl_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lge_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
 ):
     _res = _get_cov_params_late(
         lgmp_arr,
@@ -237,18 +249,18 @@ def _get_cov_late(
 @jjit
 def _get_cov_params_late(
     lgm,
-    cov_lge_lge_late_ylo=MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
-    cov_lge_lge_late_yhi=MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
-    cov_lgl_lgl_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
-    cov_lgl_lgl_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
-    cov_lgtc_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
-    cov_lgtc_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
-    cov_lge_lgl_late_ylo=MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
-    cov_lge_lgl_late_yhi=MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
-    cov_lge_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
-    cov_lge_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
-    cov_lgl_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
-    cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+    cov_lge_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lgl_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lge_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
 ):
     lge_lge = cov_lge_lge_late_vs_lgm0(lgm, cov_lge_lge_late_ylo, cov_lge_lge_late_yhi)
     lgl_lgl = cov_lgl_lgl_late_vs_lgm0(lgm, cov_lgl_lgl_late_ylo, cov_lgl_lgl_late_yhi)
@@ -269,12 +281,12 @@ def _get_cov_params_late(
 @jjit
 def _get_mean_mah_params_early(
     lgm,
-    mean_lge_early_ylo=MAH_PDF_PARAMS["mean_lge_early_ylo"],
-    mean_lge_early_yhi=MAH_PDF_PARAMS["mean_lge_early_yhi"],
-    mean_lgl_early_ylo=MAH_PDF_PARAMS["mean_lgl_early_ylo"],
-    mean_lgl_early_yhi=MAH_PDF_PARAMS["mean_lgl_early_yhi"],
-    mean_lgtc_early_ylo=MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
-    mean_lgtc_early_yhi=MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
+    mean_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_ylo"],
+    mean_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_yhi"],
+    mean_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_ylo"],
+    mean_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_yhi"],
+    mean_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
+    mean_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
 ):
     lge = mean_lge_early_vs_lgm0(lgm, mean_lge_early_ylo, mean_lge_early_yhi)
     lgl = mean_lgl_early_vs_lgm0(lgm, mean_lgl_early_ylo, mean_lgl_early_yhi)
@@ -285,12 +297,12 @@ def _get_mean_mah_params_early(
 @jjit
 def _get_mean_mah_params_late(
     lgm,
-    mean_lge_late_ylo=MAH_PDF_PARAMS["mean_lge_late_ylo"],
-    mean_lge_late_yhi=MAH_PDF_PARAMS["mean_lge_late_yhi"],
-    mean_lgl_late_ylo=MAH_PDF_PARAMS["mean_lgl_late_ylo"],
-    mean_lgl_late_yhi=MAH_PDF_PARAMS["mean_lgl_late_yhi"],
-    mean_lgtc_late_ylo=MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
-    mean_lgtc_late_yhi=MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
+    mean_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_ylo"],
+    mean_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_yhi"],
+    mean_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_ylo"],
+    mean_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_yhi"],
+    mean_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
+    mean_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
 ):
     lge = mean_lge_late_vs_lgm0(lgm, mean_lge_late_ylo, mean_lge_late_yhi)
     lgl = mean_lgl_late_vs_lgm0(lgm, mean_lgl_late_ylo, mean_lgl_late_yhi)
@@ -298,154 +310,146 @@ def _get_mean_mah_params_late(
     return lge, lgl, x0
 
 
-def frac_late_vs_lgm0(
-    lgm0,
-    frac_late_ylo=MAH_PDF_PARAMS["frac_late_ylo"],
-    frac_late_yhi=MAH_PDF_PARAMS["frac_late_yhi"],
-):
-    return _sigmoid(lgm0, 13, 0.5, frac_late_ylo, frac_late_yhi)
-
-
 def mean_lge_early_vs_lgm0(
     lgm0,
-    mean_lge_early_ylo=MAH_PDF_PARAMS["mean_lge_early_ylo"],
-    mean_lge_early_yhi=MAH_PDF_PARAMS["mean_lge_early_yhi"],
+    mean_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_ylo"],
+    mean_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, mean_lge_early_ylo, mean_lge_early_yhi)
 
 
 def mean_lgl_early_vs_lgm0(
     lgm0,
-    mean_lgl_early_ylo=MAH_PDF_PARAMS["mean_lgl_early_ylo"],
-    mean_lgl_early_yhi=MAH_PDF_PARAMS["mean_lgl_early_yhi"],
+    mean_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_ylo"],
+    mean_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, mean_lgl_early_ylo, mean_lgl_early_yhi)
 
 
 def mean_lgtc_early_vs_lgm0(
     lgm0,
-    mean_lgtc_early_ylo=MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
-    mean_lgtc_early_yhi=MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
+    mean_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
+    mean_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, mean_lgtc_early_ylo, mean_lgtc_early_yhi)
 
 
 def mean_lge_late_vs_lgm0(
     lgm0,
-    mean_lge_late_ylo=MAH_PDF_PARAMS["mean_lge_late_ylo"],
-    mean_lge_late_yhi=MAH_PDF_PARAMS["mean_lge_late_yhi"],
+    mean_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_ylo"],
+    mean_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, mean_lge_late_ylo, mean_lge_late_yhi)
 
 
 def mean_lgl_late_vs_lgm0(
     lgm0,
-    mean_lgl_late_ylo=MAH_PDF_PARAMS["mean_lgl_late_ylo"],
-    mean_lgl_late_yhi=MAH_PDF_PARAMS["mean_lgl_late_yhi"],
+    mean_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_ylo"],
+    mean_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_yhi"],
 ):
     return _sigmoid(lgm0, 14, 0.5, mean_lgl_late_ylo, mean_lgl_late_yhi)
 
 
 def mean_lgtc_late_vs_lgm0(
     lgm0,
-    mean_lgtc_late_ylo=MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
-    mean_lgtc_late_yhi=MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
+    mean_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
+    mean_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, mean_lgtc_late_ylo, mean_lgtc_late_yhi)
 
 
 def cov_lge_lge_early_vs_lgm0(
     lgm0,
-    cov_lge_lge_early_ylo=MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
-    cov_lge_lge_early_yhi=MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lge_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
 ):
     return _sigmoid(lgm0, 12, 1, cov_lge_lge_early_ylo, cov_lge_lge_early_yhi)
 
 
 def cov_lgl_lgl_early_vs_lgm0(
     lgm0,
-    cov_lgl_lgl_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
-    cov_lgl_lgl_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgl_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
 ):
     return _sigmoid(lgm0, 12.75, 0.5, cov_lgl_lgl_early_ylo, cov_lgl_lgl_early_yhi)
 
 
 def cov_lgtc_lgtc_early_vs_lgm0(
     lgm0,
-    cov_lgtc_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
-    cov_lgtc_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lgtc_lgtc_early_ylo, cov_lgtc_lgtc_early_yhi)
 
 
 def cov_lge_lge_late_vs_lgm0(
     lgm0,
-    cov_lge_lge_late_ylo=MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
-    cov_lge_lge_late_yhi=MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lge_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lge_lge_late_ylo, cov_lge_lge_late_yhi)
 
 
 def cov_lgl_lgl_late_vs_lgm0(
     lgm0,
-    cov_lgl_lgl_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
-    cov_lgl_lgl_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgl_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
 ):
     return _sigmoid(lgm0, 14, 1, cov_lgl_lgl_late_ylo, cov_lgl_lgl_late_yhi)
 
 
 def cov_lgtc_lgtc_late_vs_lgm0(
     lgm0,
-    cov_lgtc_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
-    cov_lgtc_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lgtc_lgtc_late_ylo, cov_lgtc_lgtc_late_yhi)
 
 
 def cov_lge_lgl_early_vs_lgm0(
     lgm0,
-    cov_lge_lgl_early_ylo=MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
-    cov_lge_lgl_early_yhi=MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lge_lgl_early_ylo, cov_lge_lgl_early_yhi)
 
 
 def cov_lge_lgtc_early_vs_lgm0(
     lgm0,
-    cov_lge_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
-    cov_lge_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lge_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lge_lgtc_early_ylo, cov_lge_lgtc_early_yhi)
 
 
 def cov_lgl_lgtc_early_vs_lgm0(
     lgm0,
-    cov_lgl_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
-    cov_lgl_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lgl_lgtc_early_ylo, cov_lgl_lgtc_early_yhi)
 
 
 def cov_lge_lgl_late_vs_lgm0(
     lgm0,
-    cov_lge_lgl_late_ylo=MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
-    cov_lge_lgl_late_yhi=MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lge_lgl_late_ylo, cov_lge_lgl_late_yhi)
 
 
 def cov_lge_lgtc_late_vs_lgm0(
     lgm0,
-    cov_lge_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
-    cov_lge_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lge_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lge_lgtc_late_ylo, cov_lge_lgtc_late_yhi)
 
 
 def cov_lgl_lgtc_late_vs_lgm0(
     lgm0,
-    cov_lgl_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
-    cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lgl_lgtc_late_ylo, cov_lgl_lgtc_late_yhi)
 
@@ -456,24 +460,24 @@ def _mah_pdf_early(
     lge,
     lgl,
     x0,
-    mean_lge_early_ylo=MAH_PDF_PARAMS["mean_lge_early_ylo"],
-    mean_lge_early_yhi=MAH_PDF_PARAMS["mean_lge_early_yhi"],
-    mean_lgl_early_ylo=MAH_PDF_PARAMS["mean_lgl_early_ylo"],
-    mean_lgl_early_yhi=MAH_PDF_PARAMS["mean_lgl_early_yhi"],
-    mean_lgtc_early_ylo=MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
-    mean_lgtc_early_yhi=MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
-    cov_lge_lge_early_ylo=MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
-    cov_lge_lge_early_yhi=MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
-    cov_lgl_lgl_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
-    cov_lgl_lgl_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
-    cov_lgtc_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
-    cov_lgtc_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
-    cov_lge_lgl_early_ylo=MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
-    cov_lge_lgl_early_yhi=MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
-    cov_lge_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
-    cov_lge_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
-    cov_lgl_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
-    cov_lgl_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+    mean_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_ylo"],
+    mean_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_yhi"],
+    mean_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_ylo"],
+    mean_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_yhi"],
+    mean_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
+    mean_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
+    cov_lge_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lgl_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lge_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
 ):
     X = jnp.array((lge, lgl, x0)).astype("f4").T
     mu = _get_mean_mah_params_early(
@@ -509,24 +513,24 @@ def _mah_pdf_late(
     lge,
     lgl,
     x0,
-    mean_lge_late_ylo=MAH_PDF_PARAMS["mean_lge_late_ylo"],
-    mean_lge_late_yhi=MAH_PDF_PARAMS["mean_lge_late_yhi"],
-    mean_lgl_late_ylo=MAH_PDF_PARAMS["mean_lgl_late_ylo"],
-    mean_lgl_late_yhi=MAH_PDF_PARAMS["mean_lgl_late_yhi"],
-    mean_lgtc_late_ylo=MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
-    mean_lgtc_late_yhi=MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
-    cov_lge_lge_late_ylo=MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
-    cov_lge_lge_late_yhi=MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
-    cov_lgl_lgl_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
-    cov_lgl_lgl_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
-    cov_lgtc_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
-    cov_lgtc_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
-    cov_lge_lgl_late_ylo=MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
-    cov_lge_lgl_late_yhi=MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
-    cov_lge_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
-    cov_lge_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
-    cov_lgl_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
-    cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+    mean_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_ylo"],
+    mean_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_yhi"],
+    mean_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_ylo"],
+    mean_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_yhi"],
+    mean_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
+    mean_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
+    cov_lge_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lgl_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lge_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
 ):
     X = jnp.array((lge, lgl, x0)).astype("f4").T
     mu = _get_mean_mah_params_late(
@@ -554,3 +558,104 @@ def _mah_pdf_late(
         cov_lgl_lgtc_late_yhi,
     )
     return jnorm.pdf(X, mu, cov)
+
+
+@jjit
+def _get_mah_means_and_covs(
+    logmp_arr,
+    frac_late_ylo=DEFAULT_MAH_PDF_PARAMS["frac_late_ylo"],
+    frac_late_yhi=DEFAULT_MAH_PDF_PARAMS["frac_late_yhi"],
+    mean_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_ylo"],
+    mean_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_yhi"],
+    mean_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_ylo"],
+    mean_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_yhi"],
+    mean_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
+    mean_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
+    cov_lge_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lgl_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lge_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+    mean_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_ylo"],
+    mean_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_yhi"],
+    mean_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_ylo"],
+    mean_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_yhi"],
+    mean_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
+    mean_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
+    cov_lge_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lgl_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lge_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+    k=DEFAULT_MAH_PARAMS["mah_k"],
+    logtmp=LGT0,
+):
+    frac_late = frac_late_forming(logmp_arr, frac_late_ylo, frac_late_yhi)
+    lge_early, lgl_early, x0_early = _get_mean_mah_params_early(
+        logmp_arr,
+        mean_lge_early_ylo,
+        mean_lge_early_yhi,
+        mean_lgl_early_ylo,
+        mean_lgl_early_yhi,
+        mean_lgtc_early_ylo,
+        mean_lgtc_early_yhi,
+    )
+    means_early = jnp.array((lge_early, lgl_early, x0_early)).T
+
+    covs_early = _get_cov_early(
+        logmp_arr,
+        cov_lge_lge_early_ylo,
+        cov_lge_lge_early_yhi,
+        cov_lgl_lgl_early_ylo,
+        cov_lgl_lgl_early_yhi,
+        cov_lgtc_lgtc_early_ylo,
+        cov_lgtc_lgtc_early_yhi,
+        cov_lge_lgl_early_ylo,
+        cov_lge_lgl_early_yhi,
+        cov_lge_lgtc_early_ylo,
+        cov_lge_lgtc_early_yhi,
+        cov_lgl_lgtc_early_ylo,
+        cov_lgl_lgtc_early_yhi,
+    )
+
+    lge_late, lgl_late, x0_late = _get_mean_mah_params_late(
+        logmp_arr,
+        mean_lge_late_ylo,
+        mean_lge_late_yhi,
+        mean_lgl_late_ylo,
+        mean_lgl_late_yhi,
+        mean_lgtc_late_ylo,
+        mean_lgtc_late_yhi,
+    )
+    means_late = jnp.array((lge_late, lgl_late, x0_late)).T
+
+    covs_late = _get_cov_late(
+        logmp_arr,
+        cov_lge_lge_late_ylo,
+        cov_lge_lge_late_yhi,
+        cov_lgl_lgl_late_ylo,
+        cov_lgl_lgl_late_yhi,
+        cov_lgtc_lgtc_late_ylo,
+        cov_lgtc_lgtc_late_yhi,
+        cov_lge_lgl_late_ylo,
+        cov_lge_lgl_late_yhi,
+        cov_lge_lgtc_late_ylo,
+        cov_lge_lgtc_late_yhi,
+        cov_lgl_lgtc_late_ylo,
+        cov_lgl_lgtc_late_yhi,
+    )
+    return frac_late, means_early, covs_early, means_late, covs_late

@@ -4,7 +4,7 @@ from jax import vmap
 from jax import jit as jjit
 from numpy.random import RandomState
 import numpy as np
-from .halo_population_assembly import _get_mah_means_and_covs
+from .rockstar_pdf_model import _get_mah_means_and_covs
 from .individual_halo_assembly import _calc_halo_history, DEFAULT_MAH_PARAMS
 
 _vmap_calc_halo_history = jjit(
@@ -49,7 +49,7 @@ def mc_halo_population(
 
     **kwargs : floats
         All parameters of the MAH PDF model are accepted as keyword arguments.
-        Default values are set by mah_pop_param_model.DEFAULT_MAH_PDF_PARAMS
+        Default values are set by rockstar_pdf_model.DEFAULT_MAH_PDF_PARAMS
 
     Returns
     -------
