@@ -290,7 +290,7 @@ def _get_mean_mah_params_early(
 ):
     lge = mean_lge_early_vs_lgm0(lgm, mean_lge_early_ylo, mean_lge_early_yhi)
     lgl = mean_lgl_early_vs_lgm0(lgm, mean_lgl_early_ylo, mean_lgl_early_yhi)
-    lgtc = mean_lgtc_early_vs_lgm0(lgm, mean_lgtc_early_yhi, mean_lgtc_early_yhi)
+    lgtc = mean_lgtc_early_vs_lgm0(lgm, mean_lgtc_early_ylo, mean_lgtc_early_yhi)
     return lge, lgl, lgtc
 
 
@@ -306,7 +306,7 @@ def _get_mean_mah_params_late(
 ):
     lge = mean_lge_late_vs_lgm0(lgm, mean_lge_late_ylo, mean_lge_late_yhi)
     lgl = mean_lgl_late_vs_lgm0(lgm, mean_lgl_late_ylo, mean_lgl_late_yhi)
-    lgtc = mean_lgtc_late_vs_lgm0(lgm, mean_lgtc_late_yhi, mean_lgtc_late_yhi)
+    lgtc = mean_lgtc_late_vs_lgm0(lgm, mean_lgtc_late_ylo, mean_lgtc_late_yhi)
     return lge, lgl, lgtc
 
 
