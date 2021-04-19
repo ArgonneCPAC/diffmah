@@ -121,18 +121,18 @@ def get_default_params(lgm):
 def _get_cov_scalar(
     log10_lge_lge,
     log10_lgl_lgl,
-    log10_x0_x0,
+    log10_lgtc_lgtc,
     lge_lgl,
-    lge_x0,
-    lgl_x0,
+    lge_lgtc,
+    lgl_lgtc,
 ):
     cho = jnp.zeros((3, 3)).astype("f4")
     cho = jops.index_update(cho, jops.index[0, 0], 10 ** log10_lge_lge)
     cho = jops.index_update(cho, jops.index[1, 1], 10 ** log10_lgl_lgl)
-    cho = jops.index_update(cho, jops.index[2, 2], 10 ** log10_x0_x0)
+    cho = jops.index_update(cho, jops.index[2, 2], 10 ** log10_lgtc_lgtc)
     cho = jops.index_update(cho, jops.index[1, 0], lge_lgl)
-    cho = jops.index_update(cho, jops.index[2, 0], lge_x0)
-    cho = jops.index_update(cho, jops.index[2, 1], lgl_x0)
+    cho = jops.index_update(cho, jops.index[2, 0], lge_lgtc)
+    cho = jops.index_update(cho, jops.index[2, 1], lgl_lgtc)
     cov = jnp.dot(cho, cho.T)
     return cov
 
@@ -290,8 +290,8 @@ def _get_mean_mah_params_early(
 ):
     lge = mean_lge_early_vs_lgm0(lgm, mean_lge_early_ylo, mean_lge_early_yhi)
     lgl = mean_lgl_early_vs_lgm0(lgm, mean_lgl_early_ylo, mean_lgl_early_yhi)
-    x0 = mean_lgtc_early_vs_lgm0(lgm, mean_lgtc_early_yhi, mean_lgtc_early_yhi)
-    return lge, lgl, x0
+    lgtc = mean_lgtc_early_vs_lgm0(lgm, mean_lgtc_early_yhi, mean_lgtc_early_yhi)
+    return lge, lgl, lgtc
 
 
 @jjit
@@ -306,8 +306,8 @@ def _get_mean_mah_params_late(
 ):
     lge = mean_lge_late_vs_lgm0(lgm, mean_lge_late_ylo, mean_lge_late_yhi)
     lgl = mean_lgl_late_vs_lgm0(lgm, mean_lgl_late_ylo, mean_lgl_late_yhi)
-    x0 = mean_lgtc_late_vs_lgm0(lgm, mean_lgtc_late_yhi, mean_lgtc_late_yhi)
-    return lge, lgl, x0
+    lgtc = mean_lgtc_late_vs_lgm0(lgm, mean_lgtc_late_yhi, mean_lgtc_late_yhi)
+    return lge, lgl, lgtc
 
 
 def mean_lge_early_vs_lgm0(
@@ -459,7 +459,7 @@ def _mah_pdf_early(
     lgm,
     lge,
     lgl,
-    x0,
+    lgtc,
     mean_lge_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_ylo"],
     mean_lge_early_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_early_yhi"],
     mean_lgl_early_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_early_ylo"],
@@ -479,7 +479,7 @@ def _mah_pdf_early(
     cov_lgl_lgtc_early_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
     cov_lgl_lgtc_early_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
 ):
-    X = jnp.array((lge, lgl, x0)).astype("f4").T
+    X = jnp.array((lge, lgl, lgtc)).astype("f4").T
     mu = _get_mean_mah_params_early(
         lgm,
         mean_lge_early_ylo,
@@ -512,7 +512,7 @@ def _mah_pdf_late(
     lgm,
     lge,
     lgl,
-    x0,
+    lgtc,
     mean_lge_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_ylo"],
     mean_lge_late_yhi=DEFAULT_MAH_PDF_PARAMS["mean_lge_late_yhi"],
     mean_lgl_late_ylo=DEFAULT_MAH_PDF_PARAMS["mean_lgl_late_ylo"],
@@ -532,7 +532,7 @@ def _mah_pdf_late(
     cov_lgl_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
     cov_lgl_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
 ):
-    X = jnp.array((lge, lgl, x0)).astype("f4").T
+    X = jnp.array((lge, lgl, lgtc)).astype("f4").T
     mu = _get_mean_mah_params_late(
         lgm,
         mean_lge_late_ylo,
@@ -605,7 +605,7 @@ def _get_mah_means_and_covs(
     logtmp=LGT0,
 ):
     frac_late = frac_late_forming(logmp_arr, frac_late_ylo, frac_late_yhi)
-    lge_early, lgl_early, x0_early = _get_mean_mah_params_early(
+    lge_early, lgl_early, lgtc_early = _get_mean_mah_params_early(
         logmp_arr,
         mean_lge_early_ylo,
         mean_lge_early_yhi,
@@ -614,7 +614,7 @@ def _get_mah_means_and_covs(
         mean_lgtc_early_ylo,
         mean_lgtc_early_yhi,
     )
-    means_early = jnp.array((lge_early, lgl_early, x0_early)).T
+    means_early = jnp.array((lge_early, lgl_early, lgtc_early)).T
 
     covs_early = _get_cov_early(
         logmp_arr,
@@ -632,7 +632,7 @@ def _get_mah_means_and_covs(
         cov_lgl_lgtc_early_yhi,
     )
 
-    lge_late, lgl_late, x0_late = _get_mean_mah_params_late(
+    lge_late, lgl_late, lgtc_late = _get_mean_mah_params_late(
         logmp_arr,
         mean_lge_late_ylo,
         mean_lge_late_yhi,
@@ -641,7 +641,7 @@ def _get_mah_means_and_covs(
         mean_lgtc_late_ylo,
         mean_lgtc_late_yhi,
     )
-    means_late = jnp.array((lge_late, lgl_late, x0_late)).T
+    means_late = jnp.array((lge_late, lgl_late, lgtc_late)).T
 
     covs_late = _get_cov_late(
         logmp_arr,
