@@ -3,6 +3,9 @@
 from collections import OrderedDict
 from jax import jit as jjit
 from jax import numpy as jnp
+from jax import ops as jops
+from jax import vmap
+from jax.scipy.stats import multivariate_normal as jnorm
 
 
 MAH_PDF_PARAMS = OrderedDict(
@@ -101,6 +104,198 @@ def get_default_params(lgm):
         lgl_lgtc_l,
     )
     return all_params
+
+
+def _get_cov_scalar(
+    log10_lge_lge,
+    log10_lgl_lgl,
+    log10_x0_x0,
+    lge_lgl,
+    lge_x0,
+    lgl_x0,
+):
+    cho = jnp.zeros((3, 3)).astype("f4")
+    cho = jops.index_update(cho, jops.index[0, 0], 10 ** log10_lge_lge)
+    cho = jops.index_update(cho, jops.index[1, 1], 10 ** log10_lgl_lgl)
+    cho = jops.index_update(cho, jops.index[2, 2], 10 ** log10_x0_x0)
+    cho = jops.index_update(cho, jops.index[1, 0], lge_lgl)
+    cho = jops.index_update(cho, jops.index[2, 0], lge_x0)
+    cho = jops.index_update(cho, jops.index[2, 1], lgl_x0)
+    cov = jnp.dot(cho, cho.T)
+    return cov
+
+
+_get_cov_vmap = jjit(vmap(_get_cov_scalar, in_axes=(0, 0, 0, 0, 0, 0)))
+
+
+@jjit
+def _get_cov_early(
+    lgmp_arr,
+    cov_lge_lge_early_ylo=MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lgl_lgl_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lge_lgl_early_ylo=MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+):
+    _res = _get_cov_params_early(
+        lgmp_arr,
+        cov_lge_lge_early_ylo,
+        cov_lge_lge_early_yhi,
+        cov_lgl_lgl_early_ylo,
+        cov_lgl_lgl_early_yhi,
+        cov_lgtc_lgtc_early_ylo,
+        cov_lgtc_lgtc_early_yhi,
+        cov_lge_lgl_early_ylo,
+        cov_lge_lgl_early_yhi,
+        cov_lge_lgtc_early_ylo,
+        cov_lge_lgtc_early_yhi,
+        cov_lgl_lgtc_early_ylo,
+        cov_lgl_lgtc_early_yhi,
+    )
+    return _get_cov_vmap(*_res)
+
+
+@jjit
+def _get_cov_params_early(
+    lgm,
+    cov_lge_lge_early_ylo=MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lgl_lgl_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lge_lgl_early_ylo=MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+):
+    lge_lge = cov_lge_lge_early_vs_lgm0(
+        lgm, cov_lge_lge_early_ylo, cov_lge_lge_early_yhi
+    )
+    lgl_lgl = cov_lgl_lgl_early_vs_lgm0(
+        lgm, cov_lgl_lgl_early_ylo, cov_lgl_lgl_early_yhi
+    )
+    lgtc_lgtc = cov_lgtc_lgtc_early_vs_lgm0(
+        lgm, cov_lgtc_lgtc_early_ylo, cov_lgtc_lgtc_early_yhi
+    )
+    lge_lgl = cov_lge_lgl_early_vs_lgm0(
+        lgm, cov_lge_lgl_early_ylo, cov_lge_lgl_early_yhi
+    )
+    lge_lgtc = cov_lge_lgtc_early_vs_lgm0(
+        lgm, cov_lge_lgtc_early_ylo, cov_lge_lgtc_early_yhi
+    )
+    lgl_lgtc = cov_lgl_lgtc_early_vs_lgm0(
+        lgm, cov_lgl_lgtc_early_ylo, cov_lgl_lgtc_early_yhi
+    )
+
+    return lge_lge, lgl_lgl, lgtc_lgtc, lge_lgl, lge_lgtc, lgl_lgtc
+
+
+@jjit
+def _get_cov_late(
+    lgmp_arr,
+    cov_lge_lge_late_ylo=MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lgl_lgl_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lge_lgl_late_ylo=MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+):
+    _res = _get_cov_params_late(
+        lgmp_arr,
+        cov_lge_lge_late_ylo,
+        cov_lge_lge_late_yhi,
+        cov_lgl_lgl_late_ylo,
+        cov_lgl_lgl_late_yhi,
+        cov_lgtc_lgtc_late_ylo,
+        cov_lgtc_lgtc_late_yhi,
+        cov_lge_lgl_late_ylo,
+        cov_lge_lgl_late_yhi,
+        cov_lge_lgtc_late_ylo,
+        cov_lge_lgtc_late_yhi,
+        cov_lgl_lgtc_late_ylo,
+        cov_lgl_lgtc_late_yhi,
+    )
+    return _get_cov_vmap(*_res)
+
+
+@jjit
+def _get_cov_params_late(
+    lgm,
+    cov_lge_lge_late_ylo=MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lgl_lgl_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lge_lgl_late_ylo=MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+):
+    lge_lge = cov_lge_lge_late_vs_lgm0(lgm, cov_lge_lge_late_ylo, cov_lge_lge_late_yhi)
+    lgl_lgl = cov_lgl_lgl_late_vs_lgm0(lgm, cov_lgl_lgl_late_ylo, cov_lgl_lgl_late_yhi)
+    lgtc_lgtc = cov_lgtc_lgtc_late_vs_lgm0(
+        lgm, cov_lgtc_lgtc_late_ylo, cov_lgtc_lgtc_late_yhi
+    )
+    lge_lgl = cov_lge_lgl_late_vs_lgm0(lgm, cov_lge_lgl_late_ylo, cov_lge_lgl_late_yhi)
+    lge_lgtc = cov_lge_lgtc_late_vs_lgm0(
+        lgm, cov_lge_lgtc_late_ylo, cov_lge_lgtc_late_yhi
+    )
+    lgl_lgtc = cov_lgl_lgtc_late_vs_lgm0(
+        lgm, cov_lgl_lgtc_late_ylo, cov_lgl_lgtc_late_yhi
+    )
+
+    return lge_lge, lgl_lgl, lgtc_lgtc, lge_lgl, lge_lgtc, lgl_lgtc
+
+
+@jjit
+def _get_mean_mah_params_early(
+    lgm,
+    mean_lge_early_ylo=MAH_PDF_PARAMS["mean_lge_early_ylo"],
+    mean_lge_early_yhi=MAH_PDF_PARAMS["mean_lge_early_yhi"],
+    mean_lgl_early_ylo=MAH_PDF_PARAMS["mean_lgl_early_ylo"],
+    mean_lgl_early_yhi=MAH_PDF_PARAMS["mean_lgl_early_yhi"],
+    mean_lgtc_early_ylo=MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
+    mean_lgtc_early_yhi=MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
+):
+    lge = mean_lge_early_vs_lgm0(lgm, mean_lge_early_ylo, mean_lge_early_yhi)
+    lgl = mean_lgl_early_vs_lgm0(lgm, mean_lgl_early_ylo, mean_lgl_early_yhi)
+    x0 = mean_lgtc_early_vs_lgm0(lgm, mean_lgtc_early_yhi, mean_lgtc_early_yhi)
+    return lge, lgl, x0
+
+
+@jjit
+def _get_mean_mah_params_late(
+    lgm,
+    mean_lge_late_ylo=MAH_PDF_PARAMS["mean_lge_late_ylo"],
+    mean_lge_late_yhi=MAH_PDF_PARAMS["mean_lge_late_yhi"],
+    mean_lgl_late_ylo=MAH_PDF_PARAMS["mean_lgl_late_ylo"],
+    mean_lgl_late_yhi=MAH_PDF_PARAMS["mean_lgl_late_yhi"],
+    mean_lgtc_late_ylo=MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
+    mean_lgtc_late_yhi=MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
+):
+    lge = mean_lge_late_vs_lgm0(lgm, mean_lge_late_ylo, mean_lge_late_yhi)
+    lgl = mean_lgl_late_vs_lgm0(lgm, mean_lgl_late_ylo, mean_lgl_late_yhi)
+    x0 = mean_lgtc_late_vs_lgm0(lgm, mean_lgtc_late_yhi, mean_lgtc_late_yhi)
+    return lge, lgl, x0
 
 
 def frac_late_vs_lgm0(
@@ -253,3 +448,109 @@ def cov_lgl_lgtc_late_vs_lgm0(
     cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
 ):
     return _sigmoid(lgm0, 13, 0.5, cov_lgl_lgtc_late_ylo, cov_lgl_lgtc_late_yhi)
+
+
+@jjit
+def _mah_pdf_early(
+    lgm,
+    lge,
+    lgl,
+    x0,
+    mean_lge_early_ylo=MAH_PDF_PARAMS["mean_lge_early_ylo"],
+    mean_lge_early_yhi=MAH_PDF_PARAMS["mean_lge_early_yhi"],
+    mean_lgl_early_ylo=MAH_PDF_PARAMS["mean_lgl_early_ylo"],
+    mean_lgl_early_yhi=MAH_PDF_PARAMS["mean_lgl_early_yhi"],
+    mean_lgtc_early_ylo=MAH_PDF_PARAMS["mean_lgtc_early_ylo"],
+    mean_lgtc_early_yhi=MAH_PDF_PARAMS["mean_lgtc_early_yhi"],
+    cov_lge_lge_early_ylo=MAH_PDF_PARAMS["cov_lge_lge_early_ylo"],
+    cov_lge_lge_early_yhi=MAH_PDF_PARAMS["cov_lge_lge_early_yhi"],
+    cov_lgl_lgl_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_early_ylo"],
+    cov_lgl_lgl_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_early_yhi"],
+    cov_lgtc_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_ylo"],
+    cov_lgtc_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_early_yhi"],
+    cov_lge_lgl_early_ylo=MAH_PDF_PARAMS["cov_lge_lgl_early_ylo"],
+    cov_lge_lgl_early_yhi=MAH_PDF_PARAMS["cov_lge_lgl_early_yhi"],
+    cov_lge_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_early_ylo"],
+    cov_lge_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_early_yhi"],
+    cov_lgl_lgtc_early_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_early_ylo"],
+    cov_lgl_lgtc_early_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_early_yhi"],
+):
+    X = jnp.array((lge, lgl, x0)).astype("f4").T
+    mu = _get_mean_mah_params_early(
+        lgm,
+        mean_lge_early_ylo,
+        mean_lge_early_yhi,
+        mean_lgl_early_ylo,
+        mean_lgl_early_yhi,
+        mean_lgtc_early_ylo,
+        mean_lgtc_early_yhi,
+    )
+    cov = _get_cov_early(
+        lgm,
+        cov_lge_lge_early_ylo,
+        cov_lge_lge_early_yhi,
+        cov_lgl_lgl_early_ylo,
+        cov_lgl_lgl_early_yhi,
+        cov_lgtc_lgtc_early_ylo,
+        cov_lgtc_lgtc_early_yhi,
+        cov_lge_lgl_early_ylo,
+        cov_lge_lgl_early_yhi,
+        cov_lge_lgtc_early_ylo,
+        cov_lge_lgtc_early_yhi,
+        cov_lgl_lgtc_early_ylo,
+        cov_lgl_lgtc_early_yhi,
+    )
+    return jnorm.pdf(X, mu, cov)
+
+
+@jjit
+def _mah_pdf_late(
+    lgm,
+    lge,
+    lgl,
+    x0,
+    mean_lge_late_ylo=MAH_PDF_PARAMS["mean_lge_late_ylo"],
+    mean_lge_late_yhi=MAH_PDF_PARAMS["mean_lge_late_yhi"],
+    mean_lgl_late_ylo=MAH_PDF_PARAMS["mean_lgl_late_ylo"],
+    mean_lgl_late_yhi=MAH_PDF_PARAMS["mean_lgl_late_yhi"],
+    mean_lgtc_late_ylo=MAH_PDF_PARAMS["mean_lgtc_late_ylo"],
+    mean_lgtc_late_yhi=MAH_PDF_PARAMS["mean_lgtc_late_yhi"],
+    cov_lge_lge_late_ylo=MAH_PDF_PARAMS["cov_lge_lge_late_ylo"],
+    cov_lge_lge_late_yhi=MAH_PDF_PARAMS["cov_lge_lge_late_yhi"],
+    cov_lgl_lgl_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgl_late_ylo"],
+    cov_lgl_lgl_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgl_late_yhi"],
+    cov_lgtc_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_ylo"],
+    cov_lgtc_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgtc_lgtc_late_yhi"],
+    cov_lge_lgl_late_ylo=MAH_PDF_PARAMS["cov_lge_lgl_late_ylo"],
+    cov_lge_lgl_late_yhi=MAH_PDF_PARAMS["cov_lge_lgl_late_yhi"],
+    cov_lge_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lge_lgtc_late_ylo"],
+    cov_lge_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lge_lgtc_late_yhi"],
+    cov_lgl_lgtc_late_ylo=MAH_PDF_PARAMS["cov_lgl_lgtc_late_ylo"],
+    cov_lgl_lgtc_late_yhi=MAH_PDF_PARAMS["cov_lgl_lgtc_late_yhi"],
+):
+    X = jnp.array((lge, lgl, x0)).astype("f4").T
+    mu = _get_mean_mah_params_late(
+        lgm,
+        mean_lge_late_ylo,
+        mean_lge_late_yhi,
+        mean_lgl_late_ylo,
+        mean_lgl_late_yhi,
+        mean_lgtc_late_ylo,
+        mean_lgtc_late_yhi,
+    )
+    cov = _get_cov_late(
+        lgm,
+        cov_lge_lge_late_ylo,
+        cov_lge_lge_late_yhi,
+        cov_lgl_lgl_late_ylo,
+        cov_lgl_lgl_late_yhi,
+        cov_lgtc_lgtc_late_ylo,
+        cov_lgtc_lgtc_late_yhi,
+        cov_lge_lgl_late_ylo,
+        cov_lge_lgl_late_yhi,
+        cov_lge_lgtc_late_ylo,
+        cov_lge_lgtc_late_yhi,
+        cov_lgl_lgtc_late_ylo,
+        cov_lgl_lgtc_late_yhi,
+    )
+    return jnorm.pdf(X, mu, cov)
