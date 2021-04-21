@@ -9,9 +9,15 @@ DEFAULT_MAH_PARAMS = OrderedDict(mah_logtc=0.05, mah_k=3.5, mah_early=2.5, mah_l
 
 
 @jjit
+def _power_law_index_vs_logt(logt, logtc, k, early, late):
+    rolling_index = _sigmoid(logt, logtc, k, early, late)
+    return rolling_index
+
+
+@jjit
 def _rolling_plaw_vs_logt(logt, logt0, logmp, logtc, k, early, late):
     """Kernel of the rolling power-law between halo mass and time."""
-    rolling_index = _sigmoid(logt, logtc, k, early, late)
+    rolling_index = _power_law_index_vs_logt(logt, logtc, k, early, late)
     log_mah = rolling_index * (logt - logt0) + logmp
     return log_mah
 

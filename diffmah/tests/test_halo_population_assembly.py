@@ -54,22 +54,22 @@ def test_average_halo_histories_agree_with_nbody_simulations():
         )
     )
     lgmp_targets = np.array([float(lgm) for lgm in mlist])
-    lgt = np.log10(np.load(os.path.join(DDRN, "nbody_t_target.npy")))
-    mah_pat = "mean_log_mah_nbody_logmp_{}.npy"
+    lgt = np.log10(np.loadtxt(os.path.join(DDRN, "nbody_t_target.dat")))
+    mah_pat = "mean_log_mah_nbody_logmp_{}.dat"
     lgmah_fnames = list((os.path.join(DDRN, mah_pat.format(lgm)) for lgm in mlist))
-    mean_log_mah_targets = np.array([np.load(fn) for fn in lgmah_fnames])
+    mean_log_mah_targets = np.array([np.loadtxt(fn) for fn in lgmah_fnames])
 
-    vmah_pat = "var_log_mah_nbody_logmp_{}.npy"
+    vmah_pat = "var_log_mah_nbody_logmp_{}.dat"
     vlgmah_fnames = list((os.path.join(DDRN, vmah_pat.format(lgm)) for lgm in mlist))
-    var_log_mah_targets = np.array([np.load(fn) for fn in vlgmah_fnames])
+    var_log_mah_targets = np.array([np.loadtxt(fn) for fn in vlgmah_fnames])
 
-    dmhdt_pat = "mean_dmhdt_nbody_logmp_{}.npy"
+    dmhdt_pat = "mean_dmhdt_nbody_logmp_{}.dat"
     dmhdt_fnames = list((os.path.join(DDRN, dmhdt_pat.format(lgm)) for lgm in mlist))
-    mean_dmhdt_targets = np.array([np.load(fn) for fn in dmhdt_fnames])
+    mean_dmhdt_targets = np.array([np.loadtxt(fn) for fn in dmhdt_fnames])
 
-    vdmhdt_pat = "var_dmhdt_nbody_logmp_{}.npy"
+    vdmhdt_pat = "var_dmhdt_nbody_logmp_{}.dat"
     vdmhdt_fnames = list((os.path.join(DDRN, vdmhdt_pat.format(lgm)) for lgm in mlist))
-    var_dmhdt_targets = np.array([np.load(fn) for fn in vdmhdt_fnames])
+    var_dmhdt_targets = np.array([np.loadtxt(fn) for fn in vdmhdt_fnames])
 
     _res = _get_bimodal_halo_history(lgt, lgmp_targets, LGE_ARR, LGL_ARR, X0_ARR)
     mean_dmhdt_preds, mean_log_mah_preds = _res[0], _res[2]
