@@ -4,7 +4,7 @@ import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
-from .individual_halo_assembly import _rolling_plaw_vs_logt
+from .individual_halo_assembly import _u_rolling_plaw_vs_logt, _get_early_late
 
 T_FIT_MIN = 1.0
 DLOGM_CUT = 2.5
@@ -12,11 +12,10 @@ DLOGM_CUT = 2.5
 
 def get_outline(halo_id, loss_data, p_best, loss_best):
     """Return the string storing fitting results that will be written to disk"""
-    logmp_fit, logtc, lge, lgl = p_best
+    logmp_fit, logtc, ue, ud = p_best
     logt0, u_k = loss_data[-2:]
     t0 = 10 ** logt0
-    early = 10 ** lge
-    late = 10 ** lgl
+    early, late = _get_early_late(ue, ud)
     fixed_k = DEFAULT_MAH_PARAMS["mah_k"]
     _d = np.array((logmp_fit, logtc, fixed_k, early, late)).astype("f4")
     data_out = (halo_id, *_d, t0, float(loss_best))
@@ -25,15 +24,12 @@ def get_outline(halo_id, loss_data, p_best, loss_best):
 
 
 @jjit
-def log_mah_mse_loss(lge_params, loss_data):
+def log_mah_mse_loss(params, loss_data):
     """"""
     logt, log_mah_target, logt0, fixed_k = loss_data
-    logmp, logtc, lge, lgl = lge_params
-    early, late = 10 ** lge, 10 ** lgl
+    logmp, logtc, ue, ud = params
 
-    log_mah_pred = _rolling_plaw_vs_logt(
-        logt, logt0, logmp, logtc, fixed_k, early, late
-    )
+    log_mah_pred = _u_rolling_plaw_vs_logt(logt, logt0, logmp, logtc, fixed_k, ue, ud)
     log_mah_loss = _mse(log_mah_pred, log_mah_target)
     return log_mah_loss
 
@@ -103,11 +99,8 @@ def get_loss_data(
         t_fit_min,
     )
     logmp_init = log_mah_sim[-1]
-    lge_init = np.log10(DEFAULT_MAH_PARAMS["mah_early"])
-    lgl_init = np.log10(DEFAULT_MAH_PARAMS["mah_late"])
-    logtc_init = DEFAULT_MAH_PARAMS["mah_logtc"]
-    fixed_k = DEFAULT_MAH_PARAMS["mah_k"]
-    p_init = np.array((logmp_init, logtc_init, lge_init, lgl_init)).astype("f4")
+    lgtc_init, fixed_k, ue_init, ud_init = list(DEFAULT_MAH_PARAMS.values())
+    p_init = np.array((logmp_init, lgtc_init, ue_init, ud_init)).astype("f4")
 
     logt0 = np.log10(t_sim[-1])
 
