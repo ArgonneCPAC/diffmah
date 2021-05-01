@@ -5,7 +5,8 @@ from jax import jit as jjit
 from numpy.random import RandomState
 import numpy as np
 from .rockstar_pdf_model import _get_mah_means_and_covs
-from .individual_halo_assembly import _calc_halo_history, DEFAULT_MAH_PARAMS
+from .individual_halo_assembly import _calc_halo_history, _get_early_late
+from .individual_halo_assembly import DEFAULT_MAH_PARAMS
 
 _vmap_calc_halo_history = jjit(
     vmap(_calc_halo_history, in_axes=(None, None, None, 0, None, 0, 0))
@@ -65,7 +66,7 @@ def mc_halo_population(
     late_index : ndarray of shape (n_halos, )
         Halo MAH parameter specifying the power-law index at late times
 
-    x0 : ndarray of shape (n_halos, )
+    lgtc : ndarray of shape (n_halos, )
         Halo MAH parameter specifying the transition time between early and late times.
 
     mah_type : ndarray of shape (n_halos, )
@@ -92,25 +93,26 @@ def mc_halo_population(
         n_l = is_late_forming.sum()
         n_e = n_halos - n_l
         _e = RandomState(seed + 1).multivariate_normal(mu_early, cov_early, size=n_e)
-        lge_e, lgl_e, x0_e = _e[:, 0], _e[:, 1], _e[:, 2]
+        ue_e, ul_e, lgtc_e = _e[:, 0], _e[:, 1], _e[:, 2]
         _l = RandomState(seed + 2).multivariate_normal(mu_late, cov_late, size=n_l)
-        lge_l, lgl_l, x0_l = _l[:, 0], _l[:, 1], _l[:, 2]
-        lge = np.concatenate((lge_e, lge_l))
-        lgl = np.concatenate((lgl_e, lgl_l))
-        x0 = np.concatenate((x0_e, x0_l))
+        ue_l, ul_l, lgtc_l = _l[:, 0], _l[:, 1], _l[:, 2]
+        ue = np.concatenate((ue_e, ue_l))
+        ul = np.concatenate((ul_e, ul_l))
+        lgtc = np.concatenate((lgtc_e, lgtc_l))
         mah_type_arr[-n_l:] = 1
     elif mah_type == "early":
         data = RandomState(seed).multivariate_normal(mu_early, cov_early, size=n_halos)
-        lge, lgl, x0 = data[:, 0], data[:, 1], data[:, 2]
+        ue, ul, lgtc = data[:, 0], data[:, 1], data[:, 2]
     elif mah_type == "late":
         data = RandomState(seed).multivariate_normal(mu_late, cov_late, size=n_halos)
-        lge, lgl, x0 = data[:, 0], data[:, 1], data[:, 2]
+        ue, ul, lgtc = data[:, 0], data[:, 1], data[:, 2]
         mah_type_arr[:] = 1
     else:
         msg = "`mah_type` argument = {0} but accepted values are `early` or `late`"
         raise ValueError(msg.format(mah_type))
 
     lgt, lgt0 = np.log10(cosmic_time), np.log10(t0)
-    _res = _vmap_calc_halo_history(lgt, lgt0, logmh[0], x0, mah_k, 10 ** lge, 10 ** lgl)
+    early, late = _get_early_late(ue, ul)
+    _res = _vmap_calc_halo_history(lgt, lgt0, logmh[0], lgtc, mah_k, early, late)
     dmhdt, log_mah = _res
-    return dmhdt, log_mah, 10 ** lge, 10 ** lgl, x0, mah_type_arr
+    return dmhdt, log_mah, early, late, lgtc, mah_type_arr
