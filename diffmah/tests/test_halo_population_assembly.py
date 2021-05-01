@@ -6,7 +6,7 @@ from ..halo_population_assembly import _get_bimodal_halo_history
 from ..halo_population_assembly import UE_ARR, UL_ARR, LGTC_ARR
 
 _THIS_DRNAME = os.path.dirname(os.path.abspath(__file__))
-DDRN = os.path.join(os.path.dirname(_THIS_DRNAME), "data")
+DDRN = os.path.join(_THIS_DRNAME, "testing_data")
 
 
 def test_get_average_halo_histories():
@@ -31,6 +31,7 @@ def test_get_average_halo_histories():
 def test_average_halo_histories_agree_with_nbody_simulations():
     mlist = list(
         (
+            "11.50",
             "11.75",
             "12.00",
             "12.25",
@@ -42,6 +43,7 @@ def test_average_halo_histories_agree_with_nbody_simulations():
             "13.75",
             "14.00",
             "14.25",
+            "14.50",
         )
     )
     lgmp_targets = np.array([float(lgm) for lgm in mlist])
@@ -74,14 +76,14 @@ def test_average_halo_histories_agree_with_nbody_simulations():
     for im, lgmp in enumerate(lgmp_targets):
         x, y = np.log10(mean_dmhdt_targets[im, :]), np.log10(mean_dmhdt_preds[im, :])
         msg = "Inaccurate prediction for <dMh/dt> at lgmp = {0:.2f}"
-        assert np.allclose(x, y, atol=0.15), msg.format(lgmp)
+        assert np.allclose(x, y, atol=0.1), msg.format(lgmp)
 
     for im, lgmp in enumerate(lgmp_targets):
         x, y = var_log_mah_targets[im, :], var_log_mah_preds[im, :]
         msg = "Inaccurate prediction for std(log10(MAH)) at lgmp = {0:.2f}"
-        assert np.allclose(x, y, atol=0.2), msg.format(lgmp)
+        assert np.allclose(x, y, atol=0.1), msg.format(lgmp)
 
     for im, lgmp in enumerate(lgmp_targets):
         x, y = np.log10(var_dmhdt_targets[im, :]), np.log10(var_dmhdt_preds[im, :])
         msg = "Inaccurate prediction for std(dMh/dt) at lgmp = {0:.2f}"
-        assert np.allclose(x, y, rtol=0.2), msg.format(lgmp)
+        assert np.allclose(x, y, atol=0.1), msg.format(lgmp)
