@@ -3,8 +3,8 @@
 from collections import OrderedDict
 from jax import jit as jjit
 from jax import numpy as jnp
-from diffmah.halo_population_assembly import _get_bimodal_halo_history
-from diffmah.halo_population_assembly import UE_ARR, UL_ARR, LGTC_ARR
+from .halo_population_assembly import _get_bimodal_halo_history
+from .halo_population_assembly import UE_ARR, UL_ARR, LGTC_ARR
 
 BOUNDS = OrderedDict(
     frac_late_ylo=(0.3, 0.6),
