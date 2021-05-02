@@ -4,7 +4,7 @@ import numpy as np
 from ..monte_carlo_halo_population import mc_halo_population
 
 
-def test_mc_halo_assembly_returns_reasonable_results():
+def test_mc_halo_assembly_returns_correctly_shaped_arrays():
     n_halos, n_times = 500, 50
     tarr = np.linspace(1, 13.8, n_times)
     t0 = tarr[-1]
@@ -13,7 +13,45 @@ def test_mc_halo_assembly_returns_reasonable_results():
     dmhdt, log_mah, early, late, x0, mah_type = res
     assert dmhdt.shape == (n_halos, n_times)
     assert log_mah.shape == (n_halos, n_times)
+
+
+def test_mc_halo_assembly_returns_correct_z0_masses():
+    n_halos, n_times = 500, 100
+    tarr = np.linspace(0.1, 13.8, n_times)
+    t0 = tarr[-1]
+    logmh = 12.0
+    res = mc_halo_population(tarr, t0, logmh, n_halos)
+    dmhdt, log_mah, early, late, x0, mah_type = res
     assert np.allclose(log_mah[:, -1], logmh)
+
+
+def test_mc_halo_assembly_returns_monotonic_halo_histories():
+    n_halos, n_times = 5000, 40
+    tarr = np.linspace(0.1, 13.8, n_times)
+    t0 = tarr[-1]
+    for logmh in (10, 12, 14, 16):
+        res = mc_halo_population(tarr, t0, logmh, n_halos)
+        dmhdt, log_mah, early, late, x0, mah_type = res
+
+        msg = "Some MC generated halos have non-increasing masses across time"
+        delta_log_mah = np.diff(log_mah, axis=1)
+        neg_msk = np.any(delta_log_mah < 0, axis=1)
+        assert neg_msk.sum() == 0, msg
+        assert dmhdt.min() >= 0, msg
+
+        msg2 = "Some MC generated halos have early_index <= late_index"
+        assert np.all(early > late), msg2
+
+
+def test_mc_halo_assembly_returns_mix_of_halo_types():
+    n_halos, n_times = 500, 10
+    tarr = np.linspace(0.1, 13.8, n_times)
+    t0 = tarr[-1]
+    for logmh in (10, 12, 14, 16):
+        res = mc_halo_population(tarr, t0, logmh, n_halos)
+        dmhdt, log_mah, early, late, x0, mah_type = res
+        assert np.any(mah_type == 0)
+        assert np.any(mah_type == 1)
 
 
 def test_mc_halo_assembly_early_late_options():
