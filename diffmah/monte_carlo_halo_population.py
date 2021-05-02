@@ -70,7 +70,7 @@ def mc_halo_population(
         Halo MAH parameter specifying the transition time between early and late times.
 
     mah_type : ndarray of shape (n_halos, )
-        Stores 0 for early-forming halos and 1 for late-forming
+        Array of strings, either 'early' or 'late'
 
     """
     logmh = np.atleast_1d(logmh).astype("f4")
@@ -85,7 +85,9 @@ def mc_halo_population(
     cov_early = np.array(_covs_early[0])
     mu_late = np.array(_means_late[0])
     cov_late = np.array(_covs_late[0])
-    mah_type_arr = np.zeros(n_halos).astype("i4")
+
+    _e = np.array(["early"])
+    _l = np.array(["late"])
 
     if mah_type is None:
         u = RandomState(seed).uniform(0, 1, n_halos)
@@ -99,14 +101,18 @@ def mc_halo_population(
         ue = np.concatenate((ue_e, ue_l))
         ul = np.concatenate((ul_e, ul_l))
         lgtc = np.concatenate((lgtc_e, lgtc_l))
-        mah_type_arr[-n_l:] = 1
+        se = ["early"] * n_e
+        sl = ["late"] * n_l
+        se.extend(sl)
+        mah_type_arr = np.array(se)
     elif mah_type == "early":
         data = RandomState(seed).multivariate_normal(mu_early, cov_early, size=n_halos)
         ue, ul, lgtc = data[:, 0], data[:, 1], data[:, 2]
+        mah_type_arr = np.repeat(_e, n_halos)
     elif mah_type == "late":
         data = RandomState(seed).multivariate_normal(mu_late, cov_late, size=n_halos)
         ue, ul, lgtc = data[:, 0], data[:, 1], data[:, 2]
-        mah_type_arr[:] = 1
+        mah_type_arr = np.repeat(_l, n_halos)
     else:
         msg = "`mah_type` argument = {0} but accepted values are `early` or `late`"
         raise ValueError(msg.format(mah_type))
