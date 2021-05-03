@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 lgm_min,
             )
             _res = jax_adam_wrapper(
-                log_mah_mse_loss, p_init, loss_data, nstep, n_warmup=2
+                log_mah_mse_loss, p_init, loss_data, nstep, n_warmup=1
             )
             p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
 
