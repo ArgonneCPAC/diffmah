@@ -4,47 +4,47 @@ from collections import OrderedDict
 from jax import jit as jjit
 from jax import numpy as jnp
 from .halo_population_assembly import _get_bimodal_halo_history
-from .halo_population_assembly import LGE_ARR, LGL_ARR, X0_ARR
+from .halo_population_assembly import UE_ARR, UL_ARR, LGTC_ARR
 
 BOUNDS = OrderedDict(
-    frac_late_ylo=(0.6, 0.7),
-    frac_late_yhi=(0.6, 0.7),
-    mean_lge_early_ylo=(0.4, 0.5),
-    mean_lge_early_yhi=(0.65, 0.75),
-    mean_lgl_early_ylo=(-1, -0.8),
-    mean_lgl_early_yhi=(0.7, 0.8),
-    mean_lgtc_early_ylo=(-0.5, -0.25),
-    mean_lgtc_early_yhi=(-0.25, -0.025),
-    cov_lge_lge_early_ylo=(-0.75, -0.5),
-    cov_lge_lge_early_yhi=(-1.0, -0.6),
-    cov_lgl_lgl_early_ylo=(-0.2, 0.2),
-    cov_lgl_lgl_early_yhi=(-1.6, -1.0),
-    cov_lgtc_lgtc_early_ylo=(-1.0, -0.6),
-    cov_lgtc_lgtc_early_yhi=(-1.2, -0.8),
-    cov_lge_lgl_early_ylo=(-0.35, 0.05),
-    cov_lge_lgl_early_yhi=(-0.35, 0.05),
-    cov_lge_lgtc_early_ylo=(-0.35, 0.05),
-    cov_lge_lgtc_early_yhi=(-0.35, 0.05),
-    cov_lgl_lgtc_early_ylo=(-0.35, 0.05),
-    cov_lgl_lgtc_early_yhi=(-0.35, 0.05),
-    mean_lge_late_ylo=(-0.1, 0.05),
-    mean_lge_late_yhi=(0.55, 0.7),
-    mean_lgl_late_ylo=(-1.8, -1.2),
-    mean_lgl_late_yhi=(0.7, 1.1),
-    mean_lgtc_late_ylo=(0.35, 0.55),
-    mean_lgtc_late_yhi=(0.5, 0.75),
-    cov_lge_lge_late_ylo=(-1.0, -0.7),
-    cov_lge_lge_late_yhi=(-1.5, -1.0),
-    cov_lgl_lgl_late_ylo=(-0.4, -0.05),
-    cov_lgl_lgl_late_yhi=(-0.7, -0.5),
-    cov_lgtc_lgtc_late_ylo=(-1.0, -0.6),
-    cov_lgtc_lgtc_late_yhi=(-0.7, -0.4),
-    cov_lge_lgl_late_ylo=(-0.35, -0.05),
-    cov_lge_lgl_late_yhi=(-0.15, 0.15),
-    cov_lge_lgtc_late_ylo=(-0.35, -0.05),
-    cov_lge_lgtc_late_yhi=(-0.25, -0.05),
-    cov_lgl_lgtc_late_ylo=(-0.15, 0.15),
-    cov_lgl_lgtc_late_yhi=(-0.25, -0.05),
+    frac_late_ylo=(0.35, 0.45),
+    frac_late_yhi=(0.45, 0.6),
+    mean_ue_early_ylo=(0.7, 0.85),
+    mean_ue_early_yhi=(3.5, 3.9),
+    mean_ul_early_ylo=(-0.4, -0.25),
+    mean_ul_early_yhi=(-0.4, -0.25),
+    mean_lgtc_early_ylo=(-0.5, -0.35),
+    mean_lgtc_early_yhi=(0.75, 1.0),
+    chol_ue_ue_early_ylo=(0.0, 0.1),
+    chol_ue_ue_early_yhi=(-0.25, -0.05),
+    chol_ul_ul_early_ylo=(-0.4, -0.25),
+    chol_ul_ul_early_yhi=(-0.15, 0.0),
+    chol_lgtc_lgtc_early_ylo=(-0.5, -0.3),
+    chol_lgtc_lgtc_early_yhi=(-1.3, -1.0),
+    chol_ue_ul_early_ylo=(-0.65, -0.5),
+    chol_ue_ul_early_yhi=(-0.55, -0.45),
+    chol_ue_lgtc_early_ylo=(-0.1, 0.0),
+    chol_ue_lgtc_early_yhi=(-0.15, -0.05),
+    chol_ul_lgtc_early_ylo=(-0.2, -0.1),
+    chol_ul_lgtc_early_yhi=(-0.25, -0.1),
+    mean_ue_late_ylo=(0.5, 0.6),
+    mean_ue_late_yhi=(2.6, 2.9),
+    mean_ul_late_ylo=(-3.05, -2.8),
+    mean_ul_late_yhi=(-1.65, -1.4),
+    mean_lgtc_late_ylo=(0.1, 0.25),
+    mean_lgtc_late_yhi=(1.6, 1.9),
+    chol_ue_ue_late_ylo=(-0.2, 0.0),
+    chol_ue_ue_late_yhi=(-0.75, -0.6),
+    chol_ul_ul_late_ylo=(-0.1, 0.1),
+    chol_ul_ul_late_yhi=(-0.4, -0.25),
+    chol_lgtc_lgtc_late_ylo=(-0.5, -0.3),
+    chol_lgtc_lgtc_late_yhi=(-1.15, -0.85),
+    chol_ue_ul_late_ylo=(-1.4, -1.2),
+    chol_ue_ul_late_yhi=(0.25, 0.5),
+    chol_ue_lgtc_late_ylo=(-0.2, -0.05),
+    chol_ue_lgtc_late_yhi=(-0.15, 0.04),
+    chol_ul_lgtc_late_ylo=(0.25, 0.6),
+    chol_ul_lgtc_late_yhi=(0.3, 0.4),
 )
 
 
@@ -60,7 +60,7 @@ def mse_loss(params, data):
     mean_log_mah_targets, var_log_mah_targets = data[2:4]
     mean_dmhdt_targets, var_dmhdt_targets = data[4:]
 
-    _res = _get_bimodal_halo_history(_lgt, _lgmparr, LGE_ARR, LGL_ARR, X0_ARR, *params)
+    _res = _get_bimodal_halo_history(_lgt, _lgmparr, UE_ARR, UL_ARR, LGTC_ARR, *params)
     mean_dmhdt_preds, var_dmhdt_preds = _res[0], _res[3]
     mean_log_mah_preds, var_log_mah_preds = _res[2], _res[4]
 
