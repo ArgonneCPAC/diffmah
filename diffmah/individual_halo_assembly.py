@@ -23,7 +23,7 @@ def calc_halo_history(t, t0, logmp, tauc, early, late, k=DEFAULT_MAH_PARAMS["mah
         Base-10 log of present-day peak halo mass in units of Msun assuming h=1
 
     tauc : float or ndarray of shape (n_halos, )
-        Transition time between the fast- and slow-accretion regimes
+        Transition time between the fast- and slow-accretion regimes in Gyr
 
     early : float or ndarray of shape (n_halos, )
         Early-time power-law index in the scaling relation M(t)~t^a
@@ -44,6 +44,9 @@ def calc_halo_history(t, t0, logmp, tauc, early, late, k=DEFAULT_MAH_PARAMS["mah
         Base-10 log of cumulative peak halo mass in units of Msun assuming h=1
 
     """
+    assert jnp.all(early > 0), "early-time index must be strictly positive"
+    assert jnp.all(late > 0), "late-time index must be strictly positive"
+    assert jnp.all(tauc > 0), "tauc must be strictly positive"
     lgt = jnp.log10(t)
     lgt0 = jnp.log10(t0)
     lgtc = jnp.log10(tauc)
