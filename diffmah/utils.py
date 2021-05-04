@@ -1,3 +1,4 @@
+"""Utility functions used throughout the package."""
 import numpy as np
 from jax import numpy as jnp
 from jax import value_and_grad
