@@ -1,11 +1,27 @@
-"""
-"""
+"""Functions used to define the target data for fitting the halo population model."""
 from scipy.stats.mstats import trimmed_mean, trimmed_std
 import numpy as np
 import warnings
 
 
 def get_clean_sample_mask(log_mah_fit, logmp_sample, it_min, lim=0.01, z_cut=3):
+    """Calculate mask to remove halos with outlier MAH behavior.
+
+    Parameters
+    ----------
+    log_mah_fit : ndarray of shape (n_halos, n_times)
+
+    logmp_sample : float
+
+    it_min : int
+        Index of the minimum time used to define MAH outliers
+
+    Returns
+    -------
+    clean_mask : ndarray of shape (n_halos, )
+        Boolean mask is True for halos that should be kept after discarding MAH outliers
+
+    """
     n_h, n_t = log_mah_fit.shape
     log_mah_scaled = log_mah_fit - log_mah_fit[:, -1].reshape((-1, 1)) + logmp_sample
     clean_mask = np.ones(n_h).astype(bool)
@@ -19,6 +35,33 @@ def get_clean_sample_mask(log_mah_fit, logmp_sample, it_min, lim=0.01, z_cut=3):
 
 
 def measure_target_data(mah, dmhdt, lgt, lgt_target, logmp_sample):
+    """Measure the average and variance of halo MAHs to use as target data.
+
+    Parameters
+    ----------
+    mah : ndarray of shape (n_halos, n_times)
+
+    dmhdt : ndarray of shape (n_halos, n_times)
+
+    lgt : ndarray of shape (n_times, )
+
+    lgt_target : ndarray of shape (nt_out, )
+
+    logmp_sample : float
+
+    Returns
+    -------
+    mean_mah : ndarray of shape (nt_out, )
+
+    mean_log_mah : ndarray of shape (nt_out, )
+
+    var_log_mah : ndarray of shape (nt_out, )
+
+    mean_dmhdt : ndarray of shape (nt_out, )
+
+    var_dmhdt : ndarray of shape (nt_out, )
+
+    """
     mah0 = mah[:, -1].reshape(-1, 1)
     mp_sample = 10 ** logmp_sample
     scaled_mah = mp_sample * mah / mah0

@@ -1,5 +1,4 @@
-"""
-"""
+"""Model of halo population assembly calibrated to Rockstar halos."""
 from collections import OrderedDict
 from jax import jit as jjit
 from jax import numpy as jnp
