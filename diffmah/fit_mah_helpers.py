@@ -11,10 +11,10 @@ DLOGM_CUT = 2.5
 
 def get_outline(halo_id, loss_data, p_best, loss_best):
     """Return the string storing fitting results that will be written to disk"""
-    logtc, ue, ud = p_best
+    logtc, ue, ul = p_best
     logt0, u_k, logm0 = loss_data[-3:]
     t0 = 10 ** logt0
-    early, late = _get_early_late(ue, ud)
+    early, late = _get_early_late(ue, ul)
     fixed_k = DEFAULT_MAH_PARAMS["mah_k"]
     _d = np.array((logm0, logtc, fixed_k, early, late)).astype("f4")
     data_out = (halo_id, *_d, t0, float(loss_best))
@@ -26,9 +26,9 @@ def get_outline(halo_id, loss_data, p_best, loss_best):
 def log_mah_mse_loss(params, loss_data):
     """MSE loss function for fitting individual halo growth."""
     logt, log_mah_target, logt0, fixed_k, logm0 = loss_data
-    logtc, ue, ud = params
+    logtc, ue, ul = params
 
-    log_mah_pred = _u_rolling_plaw_vs_logt(logt, logt0, logm0, logtc, fixed_k, ue, ud)
+    log_mah_pred = _u_rolling_plaw_vs_logt(logt, logt0, logm0, logtc, fixed_k, ue, ul)
     log_mah_loss = _mse(log_mah_pred, log_mah_target)
     return log_mah_loss
 

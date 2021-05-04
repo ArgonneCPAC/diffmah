@@ -3,7 +3,7 @@ import numpy as np
 import os
 import warnings
 
-TASSO = "/Users/aphearin/work/DATA/diffmah_data"
+TASSO = "/Users/aphearin/work/DATA/diffmah_data/PUBLISHED_DATA"
 BEBOP = "/lcrc/project/halotools/diffmah_data/PUBLISHED_DATA"
 
 
