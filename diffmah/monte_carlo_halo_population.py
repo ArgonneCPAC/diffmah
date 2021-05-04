@@ -1,16 +1,10 @@
 """
 """
-from jax import vmap
-from jax import jit as jjit
 from numpy.random import RandomState
 import numpy as np
 from .rockstar_pdf_model import _get_mah_means_and_covs
-from .individual_halo_assembly import _calc_halo_history, _get_early_late
+from .individual_halo_assembly import calc_halo_history, _get_early_late
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
-
-_vmap_calc_halo_history = jjit(
-    vmap(_calc_halo_history, in_axes=(None, None, None, 0, None, 0, 0))
-)
 
 
 def mc_halo_population(
@@ -119,6 +113,6 @@ def mc_halo_population(
 
     lgt, lgt0 = np.log10(cosmic_time), np.log10(t0)
     early, late = _get_early_late(ue, ul)
-    _res = _vmap_calc_halo_history(lgt, lgt0, logmh[0], lgtc, mah_k, early, late)
+    _res = calc_halo_history(10 ** lgt, 10 ** lgt0, logmh[0], 10 ** lgtc, early, late)
     dmhdt, log_mah = _res
     return dmhdt, log_mah, early, late, lgtc, mah_type_arr
