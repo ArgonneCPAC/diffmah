@@ -1,7 +1,6 @@
 import numpy as np
 from jax import numpy as jnp
 from jax import value_and_grad
-from jax import jit as jjit
 from jax.experimental import optimizers as jax_opt
 
 
@@ -69,29 +68,6 @@ def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
     """
     lnarg = (yhi - ylo) / (y - ylo) - 1
     return x0 - jnp.log(lnarg) / k
-
-
-@jjit
-def _jax_triweight_sigmoid_kernel(y):
-    val = jnp.where(
-        y < 3,
-        -5 * y ** 7 / 69984
-        + 7 * y ** 5 / 2592
-        - 35 * y ** 3 / 864
-        + 35 * y / 96
-        + 1 / 2,
-        1,
-    )
-    return jnp.where(y > -3, val, 0)
-
-
-@jjit
-def _jax_tw_cuml_kern(x, m, h):
-    y = (x - m) / h
-    v = -5 * y ** 7 / 69984 + 7 * y ** 5 / 2592 - 35 * y ** 3 / 864 + 35 * y / 96 + 0.5
-    res = jnp.where(y < -3, 0, v)
-    res = jnp.where(y > 3, 1, res)
-    return res
 
 
 def jax_adam_wrapper(
