@@ -1,7 +1,5 @@
 """
 """
-from jax import vmap
-from jax import jit as jjit
 from numpy.random import RandomState
 import numpy as np
 from .rockstar_pdf_model import _get_mah_means_and_covs
