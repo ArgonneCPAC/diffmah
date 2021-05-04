@@ -1,5 +1,4 @@
-"""
-"""
+"""Helper functions used by the script to fit individual halo histories."""
 import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
@@ -12,12 +11,12 @@ DLOGM_CUT = 2.5
 
 def get_outline(halo_id, loss_data, p_best, loss_best):
     """Return the string storing fitting results that will be written to disk"""
-    logmp_fit, logtc, ue, ud = p_best
-    logt0, u_k = loss_data[-2:]
+    logtc, ue, ud = p_best
+    logt0, u_k, logm0 = loss_data[-3:]
     t0 = 10 ** logt0
     early, late = _get_early_late(ue, ud)
     fixed_k = DEFAULT_MAH_PARAMS["mah_k"]
-    _d = np.array((logmp_fit, logtc, fixed_k, early, late)).astype("f4")
+    _d = np.array((logm0, logtc, fixed_k, early, late)).astype("f4")
     data_out = (halo_id, *_d, t0, float(loss_best))
     out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
     return out + "\n"
@@ -25,11 +24,11 @@ def get_outline(halo_id, loss_data, p_best, loss_best):
 
 @jjit
 def log_mah_mse_loss(params, loss_data):
-    """"""
-    logt, log_mah_target, logt0, fixed_k = loss_data
-    logmp, logtc, ue, ud = params
+    """MSE loss function for fitting individual halo growth."""
+    logt, log_mah_target, logt0, fixed_k, logm0 = loss_data
+    logtc, ue, ud = params
 
-    log_mah_pred = _u_rolling_plaw_vs_logt(logt, logt0, logmp, logtc, fixed_k, ue, ud)
+    log_mah_pred = _u_rolling_plaw_vs_logt(logt, logt0, logm0, logtc, fixed_k, ue, ud)
     log_mah_loss = _mse(log_mah_pred, log_mah_target)
     return log_mah_loss
 
@@ -100,11 +99,11 @@ def get_loss_data(
     )
     logmp_init = log_mah_sim[-1]
     lgtc_init, fixed_k, ue_init, ud_init = list(DEFAULT_MAH_PARAMS.values())
-    p_init = np.array((logmp_init, lgtc_init, ue_init, ud_init)).astype("f4")
+    p_init = np.array((lgtc_init, ue_init, ud_init)).astype("f4")
 
     logt0 = np.log10(t_sim[-1])
 
-    loss_data = (logt_target, log_mah_target, logt0, fixed_k)
+    loss_data = (logt_target, log_mah_target, logt0, fixed_k, logmp_init)
     return p_init, loss_data
 
 
@@ -151,7 +150,7 @@ def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
         the target MAH
 
     log_mah_target : ndarray of shape (n_target, )
-        Base-10 log of halo mass in Msun of the target MAH
+        Base-10 log of cumulative peak halo mass of the target MAH
 
     """
     logmp_sim = log_mah_sim[-1]

@@ -1,22 +1,15 @@
-"""Script to fit Bolshoi or Multidark MAHs with a smooth model."""
+"""Script to fit Bolshoi, MDPL2, or TNG MAHs with the diffmah model."""
 import numpy as np
 import os
 from mpi4py import MPI
 import argparse
 from time import time
-from load_mah_data import (
-    load_tng_data,
-    TASSO,
-    BEBOP,
-    load_bolshoi_data,
-    load_mdpl2_data,
-)
-
+from diffmah.load_mah_data import load_tng_data, load_bolshoi_data, load_mdpl2_data
+from diffmah.load_mah_data import TASSO, BEBOP
 from diffmah.fit_mah_helpers import get_header, get_outline_bad_fit
 from diffmah.fit_mah_helpers import get_loss_data
 from diffmah.fit_mah_helpers import log_mah_mse_loss
 from diffmah.fit_mah_helpers import get_outline
-
 from diffmah.utils import jax_adam_wrapper
 import subprocess
 import h5py
