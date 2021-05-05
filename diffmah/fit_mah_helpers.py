@@ -2,6 +2,7 @@
 import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
+from jax import value_and_grad
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
 from .individual_halo_assembly import _u_rolling_plaw_vs_logt, _get_early_late
 
@@ -31,6 +32,12 @@ def log_mah_mse_loss(params, loss_data):
     log_mah_pred = _u_rolling_plaw_vs_logt(logt, logt0, logm0, logtc, fixed_k, ue, ul)
     log_mah_loss = _mse(log_mah_pred, log_mah_target)
     return log_mah_loss
+
+
+@jjit
+def log_mah_mse_loss_and_grads(params, loss_data):
+    """MSE loss and grad function for fitting individual halo growth."""
+    return value_and_grad(log_mah_mse_loss, argnums=0)(params, loss_data)
 
 
 def get_loss_data(

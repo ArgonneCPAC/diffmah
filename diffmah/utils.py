@@ -1,7 +1,6 @@
 """Utility functions used throughout the package."""
 import numpy as np
 from jax import numpy as jnp
-from jax import value_and_grad
 from jax.experimental import optimizers as jax_opt
 
 
@@ -72,7 +71,7 @@ def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
 
 
 def jax_adam_wrapper(
-    loss_func,
+    loss_and_grad_func,
     params_init,
     loss_data,
     n_step,
@@ -89,11 +88,10 @@ def jax_adam_wrapper(
 
     Parameters
     ----------
-    loss_func : callable
+    loss_and_grad_func : callable
         Differentiable function to minimize.
 
-        Must accept inputs (params, data) and return a scalar,
-        and be differentiable using jax.grad.
+        Must accept inputs (params, data) and return a scalar and its gradients
 
     params_init : ndarray of shape (n_params, )
         Initial guess at the parameters
@@ -143,7 +141,11 @@ def jax_adam_wrapper(
     p_init = np.copy(params_init)
     for i in range(n_warmup):
         p_init = _jax_adam_wrapper(
-            loss_func, p_init, loss_data, warmup_n_step, step_size=warmup_step_size
+            loss_and_grad_func,
+            p_init,
+            loss_data,
+            warmup_n_step,
+            step_size=warmup_step_size,
         )[0]
 
     if np.all(np.isfinite(p_init)):
@@ -151,7 +153,9 @@ def jax_adam_wrapper(
     else:
         p0 = params_init
 
-    _res = _jax_adam_wrapper(loss_func, p0, loss_data, n_step, step_size=step_size)
+    _res = _jax_adam_wrapper(
+        loss_and_grad_func, p0, loss_data, n_step, step_size=step_size
+    )
     if len(_res[2]) < n_step:
         fit_terminates = 0
     else:
@@ -159,7 +163,9 @@ def jax_adam_wrapper(
     return (*_res, fit_terminates)
 
 
-def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01):
+def _jax_adam_wrapper(
+    loss_and_grad_func, params_init, loss_data, n_step, step_size=0.01
+):
     """Convenience function wrapping JAX's Adam optimizer used to
     minimize the loss function loss_func.
 
@@ -168,11 +174,10 @@ def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01)
 
     Parameters
     ----------
-    loss_func : callable
+    loss_and_grad_func : callable
         Differentiable function to minimize.
 
-        Must accept inputs (params, data) and return a scalar,
-        and be differentiable using jax.grad.
+        Must accept inputs (params, data) and return a scalar loss and its gradients
 
     params_init : ndarray of shape (n_params, )
         Initial guess at the parameters
@@ -211,7 +216,7 @@ def _jax_adam_wrapper(loss_func, params_init, loss_data, n_step, step_size=0.01)
     for istep in range(n_step):
         p = np.array(get_params(opt_state))
 
-        loss, grads = value_and_grad(loss_func, argnums=0)(p, loss_data)
+        loss, grads = loss_and_grad_func(p, loss_data)
 
         no_nan_params = np.all(np.isfinite(p))
         no_nan_loss = np.isfinite(loss)

@@ -8,7 +8,7 @@ from diffmah.load_mah_data import load_tng_data, load_bolshoi_data, load_mdpl2_d
 from diffmah.load_mah_data import TASSO, BEBOP
 from diffmah.fit_mah_helpers import get_header, get_outline_bad_fit
 from diffmah.fit_mah_helpers import get_loss_data
-from diffmah.fit_mah_helpers import log_mah_mse_loss
+from diffmah.fit_mah_helpers import log_mah_mse_loss_and_grads
 from diffmah.fit_mah_helpers import get_outline
 from diffmah.utils import jax_adam_wrapper
 import subprocess
@@ -105,7 +105,7 @@ if __name__ == "__main__":
                 lgm_min,
             )
             _res = jax_adam_wrapper(
-                log_mah_mse_loss, p_init, loss_data, nstep, n_warmup=1
+                log_mah_mse_loss_and_grads, p_init, loss_data, nstep, n_warmup=1
             )
             p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
 
