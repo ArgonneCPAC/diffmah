@@ -1,5 +1,4 @@
 """Functions used to define the target data for fitting the halo population model."""
-from scipy.stats.mstats import trimmed_mean, trimmed_std
 import numpy as np
 import warnings
 
@@ -22,6 +21,8 @@ def get_clean_sample_mask(log_mah_fit, logmp_sample, it_min, lim=0.01, z_cut=3):
         Boolean mask is True for halos that should be kept after discarding MAH outliers
 
     """
+    from scipy.stats.mstats import trimmed_mean, trimmed_std
+
     n_h, n_t = log_mah_fit.shape
     log_mah_scaled = log_mah_fit - log_mah_fit[:, -1].reshape((-1, 1)) + logmp_sample
     clean_mask = np.ones(n_h).astype(bool)
