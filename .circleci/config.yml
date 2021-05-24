@@ -48,17 +48,13 @@ jobs:
             conda install -y -q \
               numpy \
               numba \
-              emcee \
               flake8 \
               pytest \
               scipy \
-              tqdm \
               pyyaml \
               jax \
               jaxlib>=0.1.45 \
-              pytest-runner \
-              "halotools>=0.7" \
-              "astropy>=4"
+              pytest-runner
 
             pip install --no-deps -e .
 
