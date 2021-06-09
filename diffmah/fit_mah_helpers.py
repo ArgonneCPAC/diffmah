@@ -79,9 +79,9 @@ def get_loss_data(
 
     Returns
     -------
-    p_init : ndarray of shape (4, )
+    p_init : ndarray of shape (3, )
         Initial guess at the unbounded value of the best-fit parameter.
-        Here we have p_init = (logmp_fit, u_logtc_fit, u_early_fit, u_late_fit)
+        Here we have p_init = (u_logtc_fit, u_early_fit, u_late_fit)
 
     loss_data : sequence consisting of the following data
         logt_target : ndarray of shape (nt_fit, )
