@@ -37,8 +37,11 @@ def mc_halo_population(
         Default behavior is to generate a random mixture of the two populations
         with a fraction appropriate for the input mass.
 
+    ran_key : jax random seed, optional
+        If no random key is provided, jran.PRNGKey(seed) will be chosen every time
+
     seed : int, optional
-        Random number seed
+        Random number seed. Default is zero.
 
     **kwargs : floats
         All parameters of the MAH PDF model are accepted as keyword arguments.
