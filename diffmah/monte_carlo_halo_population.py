@@ -1,7 +1,8 @@
 """
 """
-from numpy.random import RandomState
 import numpy as np
+from jax import numpy as jnp
+from jax import random as jran
 from .rockstar_pdf_model import _get_mah_means_and_covs
 from .individual_halo_assembly import calc_halo_history, _get_early_late
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
@@ -11,8 +12,8 @@ def mc_halo_population(
     cosmic_time,
     t0,
     logmh,
-    n_halos,
     mah_type=None,
+    ran_key=None,
     seed=0,
     mah_k=DEFAULT_MAH_PARAMS["mah_k"],
     **kwargs
@@ -27,12 +28,9 @@ def mc_halo_population(
     t0 : float
         Present-day age of the universe in Gyr
 
-    logmh : float
+    logmh : float or ndarray of shape (n_halos, )
         Base-10 log of present-day halo mass of the halo population
         Units are Msun assuming h=1
-
-    n_halos : int
-        Number of halos in the population
 
     mah_type : string, optional
         Use 'early' to generate early-forming halos, 'late' for late-forming.
@@ -68,51 +66,47 @@ def mc_halo_population(
 
     """
     logmh = np.atleast_1d(logmh).astype("f4")
-    assert logmh.size == 1, "Input halo mass must be a scalar"
+    n_halos = logmh.size
 
     cosmic_time = np.atleast_1d(cosmic_time)
-
     _res = _get_mah_means_and_covs(logmh, **kwargs)
-    _frac_late, _means_early, _covs_early, _means_late, _covs_late = _res
-    frac_late = np.array(_frac_late[0])
-    mu_early = np.array(_means_early[0])
-    cov_early = np.array(_covs_early[0])
-    mu_late = np.array(_means_late[0])
-    cov_late = np.array(_covs_late[0])
+    frac_late, means_early, covs_early, means_late, covs_late = _res
+    n_mah_dim = means_early.shape[1]
 
+    if ran_key is None:
+        ran_key = jran.PRNGKey(seed)
+    early_key, late_key, frac_key, ran_key = jran.split(ran_key, 4)
+
+    u_p_early = jran.multivariate_normal(early_key, means_early, covs_early)
+    u_p_late = jran.multivariate_normal(late_key, means_late, covs_late)
     _e = np.array(["early"])
     _l = np.array(["late"])
 
     if mah_type is None:
-        u = RandomState(seed).uniform(0, 1, n_halos)
-        is_late_forming = u < frac_late
-        n_l = is_late_forming.sum()
-        n_e = n_halos - n_l
-        _e = RandomState(seed + 1).multivariate_normal(mu_early, cov_early, size=n_e)
-        ue_e, ul_e, lgtc_e = _e[:, 0], _e[:, 1], _e[:, 2]
-        _l = RandomState(seed + 2).multivariate_normal(mu_late, cov_late, size=n_l)
-        ue_l, ul_l, lgtc_l = _l[:, 0], _l[:, 1], _l[:, 2]
-        ue = np.concatenate((ue_e, ue_l))
-        ul = np.concatenate((ul_e, ul_l))
-        lgtc = np.concatenate((lgtc_e, lgtc_l))
-        se = ["early"] * n_e
-        sl = ["late"] * n_l
-        se.extend(sl)
-        mah_type_arr = np.array(se)
+        uran = jran.uniform(frac_key, shape=(n_halos,))
+        umat = jnp.repeat(uran, n_mah_dim).reshape((n_halos, n_mah_dim))
+        frac_late_mat = jnp.repeat(frac_late, n_mah_dim).reshape((n_halos, n_mah_dim))
+        mah_u_params = jnp.where(umat < frac_late_mat, u_p_late, u_p_early)
+        mah_ue = mah_u_params[:, 0]
+        mah_ul = mah_u_params[:, 1]
+        mah_lgtc = mah_u_params[:, 2]
+        mah_type_arr = np.where(uran < frac_late, "late", "early")
     elif mah_type == "early":
-        data = RandomState(seed).multivariate_normal(mu_early, cov_early, size=n_halos)
-        ue, ul, lgtc = data[:, 0], data[:, 1], data[:, 2]
+        mah_ue = u_p_early[:, 0]
+        mah_ul = u_p_early[:, 1]
+        mah_lgtc = u_p_early[:, 2]
         mah_type_arr = np.repeat(_e, n_halos)
     elif mah_type == "late":
-        data = RandomState(seed).multivariate_normal(mu_late, cov_late, size=n_halos)
-        ue, ul, lgtc = data[:, 0], data[:, 1], data[:, 2]
+        mah_ue = u_p_late[:, 0]
+        mah_ul = u_p_late[:, 1]
+        mah_lgtc = u_p_late[:, 2]
         mah_type_arr = np.repeat(_l, n_halos)
     else:
         msg = "`mah_type` argument = {0} but accepted values are `early` or `late`"
         raise ValueError(msg.format(mah_type))
 
     lgt, lgt0 = np.log10(cosmic_time), np.log10(t0)
-    early, late = _get_early_late(ue, ul)
-    _res = calc_halo_history(10 ** lgt, 10 ** lgt0, logmh[0], 10 ** lgtc, early, late)
+    early, late = _get_early_late(mah_ue, mah_ul)
+    _res = calc_halo_history(10 ** lgt, 10 ** lgt0, logmh, 10 ** mah_lgtc, early, late)
     dmhdt, log_mah = _res
-    return dmhdt, log_mah, early, late, lgtc, mah_type_arr
+    return dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr
