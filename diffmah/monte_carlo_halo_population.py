@@ -1,11 +1,25 @@
 """
 """
+from collections import namedtuple
 import numpy as np
 from jax import numpy as jnp
 from jax import random as jran
 from .rockstar_pdf_model import _get_mah_means_and_covs
 from .individual_halo_assembly import calc_halo_history, _get_early_late
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
+
+
+_MCHaloPop = namedtuple(
+    "MCHaloPop",
+    [
+        "dmhdt",
+        "log_mah",
+        "early_index",
+        "late_index",
+        "lgtc",
+        "mah_type",
+    ],
+)
 
 
 def mc_halo_population(
@@ -112,4 +126,4 @@ def mc_halo_population(
     early, late = _get_early_late(mah_ue, mah_ul)
     _res = calc_halo_history(10 ** lgt, 10 ** lgt0, logmh, 10 ** mah_lgtc, early, late)
     dmhdt, log_mah = _res
-    return dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr
+    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
