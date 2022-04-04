@@ -10,6 +10,20 @@ _THIS_DRNAME = os.path.dirname(os.path.abspath(__file__))
 DDRN = os.path.join(_THIS_DRNAME, "testing_data")
 
 
+def test_mc_halo_assembly_namedtuple_syntax():
+    n_halos, n_times = 500, 50
+    tarr = np.linspace(1, 13.8, n_times)
+    t0 = tarr[-1]
+    logmh = 12.0 + np.zeros(n_halos)
+    mc_halopop = mc_halo_population(tarr, t0, logmh)
+    assert mc_halopop.dmhdt.shape == (n_halos, n_times)
+    assert mc_halopop.log_mah.shape == (n_halos, n_times)
+    assert mc_halopop.early_index.shape == (n_halos,)
+    assert mc_halopop.late_index.shape == (n_halos,)
+    assert mc_halopop.lgtc.shape == (n_halos,)
+    assert mc_halopop.mah_type.shape == (n_halos,)
+
+
 def test_mc_halo_assembly_returns_correctly_shaped_arrays():
     n_halos, n_times = 500, 50
     tarr = np.linspace(1, 13.8, n_times)
