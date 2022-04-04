@@ -3,7 +3,6 @@
 from collections import OrderedDict
 from jax import jit as jjit
 from jax import numpy as jnp
-from jax import ops as jops
 from jax import vmap
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
 
@@ -70,12 +69,12 @@ def _get_cov_scalar(
     lgl_lgtc,
 ):
     cho = jnp.zeros((3, 3)).astype("f4")
-    cho = jops.index_update(cho, jops.index[0, 0], 10 ** log10_lge_lge)
-    cho = jops.index_update(cho, jops.index[1, 1], 10 ** log10_lgl_lgl)
-    cho = jops.index_update(cho, jops.index[2, 2], 10 ** log10_lgtc_lgtc)
-    cho = jops.index_update(cho, jops.index[1, 0], lge_lgl)
-    cho = jops.index_update(cho, jops.index[2, 0], lge_lgtc)
-    cho = jops.index_update(cho, jops.index[2, 1], lgl_lgtc)
+    cho = cho.at[(0, 0)].set(10 ** log10_lge_lge)
+    cho = cho.at[(1, 1)].set(10 ** log10_lgl_lgl)
+    cho = cho.at[(2, 2)].set(10 ** log10_lgtc_lgtc)
+    cho = cho.at[(1, 0)].set(lge_lgl)
+    cho = cho.at[(2, 0)].set(lge_lgtc)
+    cho = cho.at[(2, 1)].set(lgl_lgtc)
     cov = jnp.dot(cho, cho.T)
     return cov
 
