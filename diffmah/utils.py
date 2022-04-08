@@ -1,7 +1,7 @@
 """Utility functions used throughout the package."""
 import numpy as np
 from jax import numpy as jnp
-from jax.experimental import optimizers as jax_opt
+from jax.example_libraries import optimizers as jax_opt
 
 
 def get_1d_arrays(*args, jax_arrays=False):
