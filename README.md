@@ -4,6 +4,8 @@
 For a typical development environment in conda:
 
 ```
+$ conda config --add channels conda-forge
+$ conda config --prepend channels conda-forge
 $ conda create -n diffit python=3.7 numpy numba flake8 pytest jax ipython jupyter matplotlib scipy h5py
 ```
 
