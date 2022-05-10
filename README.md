@@ -6,12 +6,12 @@ For a typical development environment in conda:
 ```
 $ conda config --add channels conda-forge
 $ conda config --prepend channels conda-forge
-$ conda create -n diffit python=3.7 numpy numba flake8 pytest jax ipython jupyter matplotlib scipy h5py
+$ conda create -n diffit python=3.9 numpy numba flake8 pytest jax ipython jupyter matplotlib scipy h5py diffmah
 ```
 
-You can install the latest release of diffmah using conda or pip. To install diffmah into your environment from the source code:
+To install diffmah into your environment from the source code:
 ```
-$ conda activate diffit
+$ conda activate my_env_name
 $ cd /path/to/root/diffmah
 $ python setup.py install
 ```
