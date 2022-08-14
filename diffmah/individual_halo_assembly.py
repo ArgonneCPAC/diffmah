@@ -77,13 +77,22 @@ def _rolling_plaw_vs_t(t, logt0, logmp, logtc, k, early, late):
     return _rolling_plaw_vs_logt(logt, logt0, logmp, logtc, k, early, late)
 
 
-_d_log_mh_dt = jjit(vmap(grad(_rolling_plaw_vs_t, argnums=0), in_axes=(0, *[None] * 6)))
+_d_log_mh_dt_scalar = jjit(grad(_rolling_plaw_vs_t, argnums=0))
+_d_log_mh_dt = jjit(vmap(_d_log_mh_dt_scalar, in_axes=(0, *[None] * 6)))
+
+
+@jjit
+def _calc_halo_history_scalar(logt, logt0, logmp, logtc, k, early, late):
+    log_mah = _rolling_plaw_vs_logt(logt, logt0, logmp, logtc, k, early, late)
+    d_log_mh_dt = _d_log_mh_dt_scalar(10.0**logt, logt0, logmp, logtc, k, early, late)
+    dmhdt = d_log_mh_dt * (10.0 ** (log_mah - 9.0)) / jnp.log10(jnp.e)
+    return dmhdt, log_mah
 
 
 @jjit
 def _calc_halo_history(logt, logt0, logmp, logtc, k, early, late):
     log_mah = _rolling_plaw_vs_logt(logt, logt0, logmp, logtc, k, early, late)
-    d_log_mh_dt = _d_log_mh_dt(10.0 ** logt, logt0, logmp, logtc, k, early, late)
+    d_log_mh_dt = _d_log_mh_dt(10.0**logt, logt0, logmp, logtc, k, early, late)
     dmhdt = d_log_mh_dt * (10.0 ** (log_mah - 9.0)) / jnp.log10(jnp.e)
     return dmhdt, log_mah
 
