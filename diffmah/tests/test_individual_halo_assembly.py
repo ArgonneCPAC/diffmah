@@ -1,10 +1,12 @@
 """
 """
 import os
+from jax import numpy as jnp
 import numpy as np
 from ..individual_halo_assembly import _calc_halo_history, DEFAULT_MAH_PARAMS
 from ..individual_halo_assembly import _power_law_index_vs_logt, _get_early_late
 from ..rockstar_pdf_model import _get_mean_mah_params_early, _get_mean_mah_params_late
+from ..individual_halo_assembly import _calc_halo_history_scalar
 
 
 _THIS_DRNAME = os.path.dirname(os.path.abspath(__file__))
@@ -59,3 +61,20 @@ def test_rolling_index_agrees_with_hard_coded_expectation():
     log_mah_l_bn = "log_mah_vs_time_rockstar_default_logmp_{0:.1f}_late.dat"
     log_mah_l_correct = np.loadtxt(os.path.join(DDRN, log_mah_l_bn.format(lgmp_test)))
     assert np.allclose(log_mah_l_correct, log_mah_l, atol=0.01)
+
+
+def test_calc_halo_history_scalar_agrees_with_vmap():
+    tarr = np.linspace(0.1, 14, 15)
+    logt = np.log10(tarr)
+    logtmp = logt[-1]
+    logmp = 12.0
+    lgtc, k, ue, ul = list(DEFAULT_MAH_PARAMS.values())
+    early, late = _get_early_late(ue, ul)
+    dmhdt, log_mah = _calc_halo_history(logt, logtmp, logmp, lgtc, k, early, late)
+
+    for i, t in enumerate(tarr):
+        lgt_i = jnp.log10(t)
+        res = _calc_halo_history_scalar(lgt_i, logtmp, logmp, lgtc, k, early, late)
+        dmhdt_i, log_mah_i = res
+        assert np.allclose(dmhdt[i], dmhdt_i)
+        assert np.allclose(log_mah[i], log_mah_i)
