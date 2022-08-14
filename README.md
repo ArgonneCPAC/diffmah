@@ -1,7 +1,7 @@
 # diffmah
 
 ## Installation
-For a typical development environment in conda:
+The latest release of diffmah on conda-forge is v0.3. For a typical development environment in conda:
 
 ```
 $ conda config --add channels conda-forge
