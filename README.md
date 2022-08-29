@@ -1,21 +1,27 @@
 # diffmah
 
 ## Installation
-The latest release of diffmah on conda-forge is v0.3. For a typical development environment in conda:
-
+The latest release of diffmah on conda-forge is 0.4.0:
 ```
-$ conda config --add channels conda-forge
-$ conda config --prepend channels conda-forge
-$ conda create -n diffit python=3.9 numpy numba flake8 pytest jax ipython jupyter matplotlib scipy h5py diffmah
+$ conda install diffmah
+
 ```
 
 To install diffmah into your environment from the source code:
+
 ```
-$ conda activate my_env_name
 $ cd /path/to/root/diffmah
 $ python setup.py install
 ```
 
+### Environment configuration
+For a typical development environment in conda:
+
+```
+$ conda create -n diffit python=3.9 numpy numba flake8 pytest jax ipython jupyter matplotlib scipy h5py diffmah
+```
+
+## Project data
 Data for this project can be found [at this URL](https://portal.nersc.gov/project/hacc/aphearin/diffmah_data/).
 
 ## Scripts and demo notebooks
