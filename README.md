@@ -4,7 +4,6 @@
 The latest release of diffmah on conda-forge is 0.4.0:
 ```
 $ conda install diffmah
-
 ```
 
 To install diffmah into your environment from the source code:
