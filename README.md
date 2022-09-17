@@ -1,7 +1,7 @@
 # diffmah
 
 ## Installation
-The latest release of diffmah on conda-forge is 0.4.0:
+The latest release of diffmah is 0.4.1:
 ```
 $ conda install diffmah
 ```
