@@ -47,7 +47,9 @@ def test_mc_diffmah_params_all_halos_with_same_mass():
 
 def test_mc_diffmah_params_empty_slice_regression_test():
     """Enforce that we do not compute the median of an empty slice for a halo sample
-    with high-z masses that are more coarsely spaced than our interpolation table
+    with high-z masses that are more coarsely spaced than our interpolation table.
+    This is a regression test for a bug fixed with Pull Request
+    https://github.com/ArgonneCPAC/diffmah/pull/99
     """
     t_obs = 13.4
     t0 = 13.8
