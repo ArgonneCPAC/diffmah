@@ -88,9 +88,14 @@ def _guess_logmp_z0(t_obs, logmh, lgt0, npop):
 
     logmp_hiz_table = np.linspace(logmh.min() - 0.1, logmh.max() + 0.1, 50)
     dlgmp = np.diff(logmp_hiz_table)[0]
-    logmp_z0_table = [
-        np.median(log_mah[:, 1][np.abs(log_mah[:, 0] - lgm) < dlgmp])
-        for lgm in logmp_hiz_table
-    ]
-    logmp_z0 = np.interp(logmh, logmp_hiz_table, logmp_z0_table)
+
+    masks = [np.abs(log_mah[:, 0] - lgm) < dlgmp for lgm in logmp_hiz_table]
+    ns = [msk.sum() for msk in masks]
+    logmp_hiz_table_filtered = [lgm for n, lgm in zip(ns, logmp_hiz_table) if n > 0]
+    masks_filtered = [msk for n, msk in zip(ns, masks) if n > 0]
+
+    logmp_z0_table = [np.median(log_mah[:, 1][msk]) for msk in masks_filtered]
+
+    logmp_z0 = np.interp(logmh, logmp_hiz_table_filtered, logmp_z0_table)
+
     return logmp_z0
