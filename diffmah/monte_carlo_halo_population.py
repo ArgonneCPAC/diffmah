@@ -181,3 +181,25 @@ def _mc_late_type_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
     dmhdt, log_mah = _res
     mah_type_arr = jnp.ones_like(lgm0)
     return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
+
+
+@jjit
+def _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
+    _res = _get_mah_means_and_covs(lgm0, *mah_pdf_params)
+    frac_late, means_early, covs_early, means_late, covs_late = _res
+
+    early_key, late_key, frac_key, ran_key = jran.split(ran_key, 4)
+    uran = jran.uniform(frac_key, shape=(lgm0.size,))
+
+    n_halos = lgm0.size
+    n_times = tarr.size
+    umat = jnp.repeat(uran, n_times).reshape((n_halos, n_times))
+    frac_late_mat = jnp.repeat(frac_late, n_times).reshape((n_halos, n_times))
+
+    msk_is_late = jnp.where(umat < frac_late_mat, 1, 0)
+
+    halopop_late = _mc_late_type_halo_mahs(late_key, tarr, lgm0, lgt0, mah_pdf_params)
+    halopop_early = _mc_late_type_halo_mahs(early_key, tarr, lgm0, lgt0, mah_pdf_params)
+
+    log_mah = jnp.where(msk_is_late, halopop_late.log_mah, halopop_early.log_mah)
+    return log_mah
