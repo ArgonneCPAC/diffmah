@@ -164,3 +164,20 @@ def _mc_early_type_halo_mahs(ran_key, tarr, lgm0, lgt0):
     dmhdt, log_mah = _res
     mah_type_arr = jnp.zeros_like(lgm0)
     return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
+
+
+@jjit
+def _mc_late_type_halo_mahs(ran_key, tarr, lgm0, lgt0):
+    _res = _get_mah_means_and_covs(lgm0)
+    means_late, covs_late = _res[3:]
+    mah_u_params = jran.multivariate_normal(ran_key, means_late, covs_late)
+    mah_ue = mah_u_params[:, 0]
+    mah_ul = mah_u_params[:, 1]
+    mah_lgtc = mah_u_params[:, 2]
+    early, late = _get_early_late(mah_ue, mah_ul)
+
+    lgtarr = jnp.log10(tarr)
+    _res = _calc_halo_history_vmap(lgtarr, lgt0, lgm0, mah_lgtc, MAH_K, early, late)
+    dmhdt, log_mah = _res
+    mah_type_arr = jnp.ones_like(lgm0)
+    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
