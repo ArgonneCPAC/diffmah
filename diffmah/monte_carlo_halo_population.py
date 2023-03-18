@@ -124,6 +124,19 @@ def mc_halo_population(
 
     lgt, lgt0 = np.log10(cosmic_time), np.log10(t0)
     early, late = _get_early_late(mah_ue, mah_ul)
-    _res = calc_halo_history(10 ** lgt, 10 ** lgt0, logmh, 10 ** mah_lgtc, early, late)
+    _res = calc_halo_history(10**lgt, 10**lgt0, logmh, 10**mah_lgtc, early, late)
     dmhdt, log_mah = _res
     return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
+
+
+def mc_halo_population2(
+    cosmic_time,
+    t0,
+    logmh,
+    mah_type=None,
+    ran_key=None,
+    seed=0,
+    mah_k=DEFAULT_MAH_PARAMS["mah_k"],
+    **kwargs
+):
+    raise NotImplementedError()
