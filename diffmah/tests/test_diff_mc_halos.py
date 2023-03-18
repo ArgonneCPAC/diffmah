@@ -15,7 +15,6 @@ from ..rockstar_pdf_model import DEFAULT_MAH_PDF_PARAMS
 SEED = 43
 
 
-@pytest.mark.skip
 def test_diff_nondiff_mc_halopop_early_agree():
     n_halos, n_times = 500, 50
     tarr = np.linspace(1, 13.8, n_times)
@@ -44,7 +43,6 @@ def test_diff_nondiff_mc_halopop_early_agree():
         assert np.allclose(mc_halopop.dmhdt, mc_halopop2.dmhdt, rtol=1e-4)
 
 
-@pytest.mark.skip
 def test_diff_nondiff_mc_halopop_late_agree():
     n_halos, n_times = 500, 50
     tarr = np.linspace(1, 13.8, n_times)
@@ -73,8 +71,7 @@ def test_diff_nondiff_mc_halopop_late_agree():
         assert np.allclose(mc_halopop.dmhdt, mc_halopop2.dmhdt, rtol=1e-4)
 
 
-@pytest.mark.skip
-def test_mc_halopop_is_differentiable():
+def test_mc_halopop_late_is_differentiable():
     n_halos, n_times = 500, 50
     tarr = np.linspace(1, 13.8, n_times)
     t0 = tarr[-1]
@@ -112,7 +109,7 @@ def test_mc_halopop_is_differentiable():
     assert not np.all(grads == 0)
 
 
-def test_diff_nondiff_mc_halopop_agrees():
+def test_diff_nondiff_mc_halopop_agree():
     n_halos, n_times = 500, 60
     tarr = np.linspace(1, 13.8, n_times)
     t0 = tarr[-1]
@@ -130,6 +127,44 @@ def test_diff_nondiff_mc_halopop_agrees():
         assert np.allclose(mc_halopop.log_mah[:, -1], lgm)
 
         ran_key = jran.PRNGKey(SEED)
-        log_mah2 = _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params)
+        mc_halopop2 = _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params)
 
-        assert np.allclose(mc_halopop.log_mah, log_mah2, rtol=1e-4)
+        assert np.allclose(mc_halopop.log_mah, mc_halopop2.log_mah, rtol=1e-4)
+
+
+def test_mc_halopop_is_differentiable():
+    n_halos, n_times = 500, 50
+    tarr = np.linspace(1, 13.8, n_times)
+    t0 = tarr[-1]
+
+    lgm0 = np.zeros(n_halos) + 12.0
+    mc_halopop_target = mc_halo_population(
+        tarr, t0, lgm0, mah_type="early", seed=SEED + 1
+    )
+    mean_log_mah_target = np.mean(mc_halopop_target.log_mah, axis=0)
+
+    @jjit
+    def _mse(pred, target):
+        diff = pred - target
+        return jnp.mean(diff**2)
+
+    @jjit
+    def _loss(params, data):
+        key, t, lgm, lgt0, log_mah_target = data
+        mc_halopop = _mc_halo_mahs(key, t, lgm, lgt0, params)
+        mse = _mse(mc_halopop.log_mah, log_mah_target)
+        return mse
+
+    _loss_and_grad = value_and_grad(_loss, argnums=0)
+
+    mah_pdf_pdict = DEFAULT_MAH_PDF_PARAMS.copy()
+    mah_pdf_pdict["frac_late_ylo"] = 0.25
+    mah_pdf_pdict["frac_late_yhi"] = 0.85
+    mah_pdf_params = np.array(list(mah_pdf_pdict.values()))
+
+    loss_key = jran.PRNGKey(SEED)
+    loss_data = loss_key, tarr, lgm0, np.log10(t0), mean_log_mah_target
+    loss, grads = _loss_and_grad(mah_pdf_params, loss_data)
+    assert loss > 0
+    assert np.all(np.isfinite(grads))
+    assert not np.all(grads == 0)

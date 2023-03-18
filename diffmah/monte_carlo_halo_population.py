@@ -204,4 +204,14 @@ def _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
     )
 
     log_mah = jnp.where(msk_is_late, halopop_late.log_mah, halopop_early.log_mah)
-    return log_mah
+    dmhdt = jnp.where(msk_is_late, halopop_late.dmhdt, halopop_early.dmhdt)
+
+    early = jnp.where(
+        msk_is_late[:, 0], halopop_late.early_index, halopop_early.early_index
+    )
+    late = jnp.where(
+        msk_is_late[:, 0], halopop_late.late_index, halopop_early.late_index
+    )
+    lgtc = jnp.where(msk_is_late[:, 0], halopop_late.lgtc, halopop_early.lgtc)
+
+    return _MCHaloPop(*(dmhdt, log_mah, early, late, lgtc, msk_is_late[:, 0]))
