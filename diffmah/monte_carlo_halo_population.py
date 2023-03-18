@@ -4,10 +4,17 @@ from collections import namedtuple
 import numpy as np
 from jax import numpy as jnp
 from jax import random as jran
+from jax import jit as jjit
+from jax import vmap
 from .rockstar_pdf_model import _get_mah_means_and_covs
 from .individual_halo_assembly import calc_halo_history, _get_early_late
-from .individual_halo_assembly import DEFAULT_MAH_PARAMS
+from .individual_halo_assembly import DEFAULT_MAH_PARAMS, _calc_halo_history
 
+
+MAH_K = DEFAULT_MAH_PARAMS["mah_k"]
+
+_A = (None, None, 0, 0, None, 0, 0)
+_calc_halo_history_vmap = jjit(vmap(_calc_halo_history, in_axes=_A))
 
 _MCHaloPop = namedtuple(
     "MCHaloPop",
@@ -140,3 +147,20 @@ def mc_halo_population2(
     **kwargs
 ):
     raise NotImplementedError()
+
+
+@jjit
+def _mc_early_type_halo_mahs(ran_key, tarr, lgm0, lgt0):
+    _res = _get_mah_means_and_covs(lgm0)
+    means_early, covs_early = _res[1:3]
+    mah_u_params = jran.multivariate_normal(ran_key, means_early, covs_early)
+    mah_ue = mah_u_params[:, 0]
+    mah_ul = mah_u_params[:, 1]
+    mah_lgtc = mah_u_params[:, 2]
+    early, late = _get_early_late(mah_ue, mah_ul)
+
+    lgtarr = jnp.log10(tarr)
+    _res = _calc_halo_history_vmap(lgtarr, lgt0, lgm0, mah_lgtc, MAH_K, early, late)
+    dmhdt, log_mah = _res
+    mah_type_arr = jnp.zeros_like(lgm0)
+    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
