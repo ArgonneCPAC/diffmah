@@ -199,7 +199,9 @@ def _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
     msk_is_late = jnp.where(umat < frac_late_mat, 1, 0)
 
     halopop_late = _mc_late_type_halo_mahs(late_key, tarr, lgm0, lgt0, mah_pdf_params)
-    halopop_early = _mc_late_type_halo_mahs(early_key, tarr, lgm0, lgt0, mah_pdf_params)
+    halopop_early = _mc_early_type_halo_mahs(
+        early_key, tarr, lgm0, lgt0, mah_pdf_params
+    )
 
     log_mah = jnp.where(msk_is_late, halopop_late.log_mah, halopop_early.log_mah)
     return log_mah

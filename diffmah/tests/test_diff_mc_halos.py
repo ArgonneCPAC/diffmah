@@ -113,12 +113,12 @@ def test_mc_halopop_is_differentiable():
 
 
 def test_diff_nondiff_mc_halopop_agrees():
-    n_halos, n_times = 5, 6
+    n_halos, n_times = 500, 60
     tarr = np.linspace(1, 13.8, n_times)
     t0 = tarr[-1]
     lgt0 = np.log10(t0)
 
-    for lgm in (11, 15):
+    for lgm in (11, 13, 15):
         lgm0 = lgm + np.zeros(n_halos)
 
         mah_pdf_pdict = DEFAULT_MAH_PDF_PARAMS.copy()
@@ -132,4 +132,4 @@ def test_diff_nondiff_mc_halopop_agrees():
         ran_key = jran.PRNGKey(SEED)
         log_mah2 = _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params)
 
-        assert np.allclose(mc_halopop.log_mah[0, :], log_mah2[0, :], rtol=1e-4)
+        assert np.allclose(mc_halopop.log_mah, log_mah2, rtol=1e-4)
