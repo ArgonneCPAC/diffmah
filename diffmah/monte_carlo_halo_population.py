@@ -150,8 +150,8 @@ def mc_halo_population2(
 
 
 @jjit
-def _mc_early_type_halo_mahs(ran_key, tarr, lgm0, lgt0):
-    _res = _get_mah_means_and_covs(lgm0)
+def _mc_early_type_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
+    _res = _get_mah_means_and_covs(lgm0, *mah_pdf_params)
     means_early, covs_early = _res[1:3]
     mah_u_params = jran.multivariate_normal(ran_key, means_early, covs_early)
     mah_ue = mah_u_params[:, 0]
@@ -167,8 +167,8 @@ def _mc_early_type_halo_mahs(ran_key, tarr, lgm0, lgt0):
 
 
 @jjit
-def _mc_late_type_halo_mahs(ran_key, tarr, lgm0, lgt0):
-    _res = _get_mah_means_and_covs(lgm0)
+def _mc_late_type_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
+    _res = _get_mah_means_and_covs(lgm0, *mah_pdf_params)
     means_late, covs_late = _res[3:]
     mah_u_params = jran.multivariate_normal(ran_key, means_late, covs_late)
     mah_ue = mah_u_params[:, 0]
