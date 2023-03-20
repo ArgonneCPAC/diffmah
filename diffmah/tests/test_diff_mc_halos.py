@@ -32,7 +32,7 @@ def test_diff_nondiff_mc_halopop_agree():
         assert np.allclose(mc_halopop.log_mah[:, -1], lgm)
 
         ran_key = jran.PRNGKey(SEED)
-        mc_halopop2 = _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params)
+        mc_halopop2 = _mc_halo_mahs(ran_key, tarr, lgt0, lgm0, mah_pdf_params)
 
         assert np.allclose(mc_halopop.log_mah, mc_halopop2.log_mah, rtol=1e-4)
         assert np.allclose(mc_halopop.dmhdt, mc_halopop2.dmhdt, rtol=1e-4)
@@ -61,7 +61,7 @@ def test_mc_halopop_is_differentiable():
     @jjit
     def _loss(params, data):
         key, t, lgm, lgt0, log_mah_target = data
-        mc_halopop = _mc_halo_mahs(key, t, lgm, lgt0, params)
+        mc_halopop = _mc_halo_mahs(key, t, lgt0, lgm, params)
         mse = _mse(mc_halopop.log_mah, log_mah_target)
         return mse
 

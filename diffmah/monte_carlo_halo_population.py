@@ -137,7 +137,7 @@ def mc_halo_population(
 
 
 @jjit
-def _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
+def _mc_halo_mahs(ran_key, tarr, lgt0, lgm0, mah_pdf_params):
     early_key, late_key, frac_key, ran_key = jran.split(ran_key, 4)
 
     _res = _get_mah_means_and_covs(lgm0, *mah_pdf_params)
