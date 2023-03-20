@@ -7,7 +7,7 @@ from jax import random as jran
 from jax import jit as jjit
 from jax import vmap
 from .rockstar_pdf_model import _get_mah_means_and_covs, DEFAULT_MAH_PDF_PARAMS
-from .individual_halo_assembly import calc_halo_history, _get_early_late
+from .individual_halo_assembly import _get_early_late
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS, _calc_halo_history
 
 
