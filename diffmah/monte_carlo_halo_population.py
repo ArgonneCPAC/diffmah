@@ -1,6 +1,6 @@
 """
 """
-from collections import namedtuple
+import typing
 import numpy as np
 from jax import numpy as jnp
 from jax import random as jran
@@ -16,17 +16,14 @@ MAH_K = DEFAULT_MAH_PARAMS["mah_k"]
 _A = (None, None, 0, 0, None, 0, 0)
 _calc_halo_history_vmap = jjit(vmap(_calc_halo_history, in_axes=_A))
 
-_MCHaloPop = namedtuple(
-    "MCHaloPop",
-    [
-        "dmhdt",
-        "log_mah",
-        "early_index",
-        "late_index",
-        "lgtc",
-        "mah_type",
-    ],
-)
+
+class MCHaloPop(typing.NamedTuple):
+    dmhdt: jnp.array
+    log_mah: jnp.array
+    early_index: jnp.array
+    late_index: jnp.array
+    lgtc: jnp.array
+    mah_type: jnp.array
 
 
 def mc_halo_population(cosmic_time, t0, logmh, ran_key=None, seed=0, **kwargs):
@@ -119,4 +116,4 @@ def _mc_halo_mahs(ran_key, tarr, lgt0, lgm0, mah_pdf_params):
     _res = _calc_halo_history_vmap(lgtarr, lgt0, lgm0, mah_lgtc, MAH_K, early, late)
     dmhdt, log_mah = _res
 
-    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, msk_is_late))
+    return MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, msk_is_late))
