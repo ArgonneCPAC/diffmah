@@ -136,53 +136,6 @@ def mc_halo_population(
     return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
 
 
-def mc_halo_population2(
-    cosmic_time,
-    t0,
-    logmh,
-    mah_type=None,
-    ran_key=None,
-    seed=0,
-    mah_k=DEFAULT_MAH_PARAMS["mah_k"],
-    **kwargs
-):
-    raise NotImplementedError()
-
-
-@jjit
-def _mc_early_type_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
-    _res = _get_mah_means_and_covs(lgm0, *mah_pdf_params)
-    means_early, covs_early = _res[1:3]
-    mah_u_params = jran.multivariate_normal(ran_key, means_early, covs_early)
-    mah_ue = mah_u_params[:, 0]
-    mah_ul = mah_u_params[:, 1]
-    mah_lgtc = mah_u_params[:, 2]
-    early, late = _get_early_late(mah_ue, mah_ul)
-
-    lgtarr = jnp.log10(tarr)
-    _res = _calc_halo_history_vmap(lgtarr, lgt0, lgm0, mah_lgtc, MAH_K, early, late)
-    dmhdt, log_mah = _res
-    mah_type_arr = jnp.zeros_like(lgm0)
-    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
-
-
-@jjit
-def _mc_late_type_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
-    _res = _get_mah_means_and_covs(lgm0, *mah_pdf_params)
-    means_late, covs_late = _res[3:]
-    mah_u_params = jran.multivariate_normal(ran_key, means_late, covs_late)
-    mah_ue = mah_u_params[:, 0]
-    mah_ul = mah_u_params[:, 1]
-    mah_lgtc = mah_u_params[:, 2]
-    early, late = _get_early_late(mah_ue, mah_ul)
-
-    lgtarr = jnp.log10(tarr)
-    _res = _calc_halo_history_vmap(lgtarr, lgt0, lgm0, mah_lgtc, MAH_K, early, late)
-    dmhdt, log_mah = _res
-    mah_type_arr = jnp.ones_like(lgm0)
-    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
-
-
 @jjit
 def _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
     early_key, late_key, frac_key, ran_key = jran.split(ran_key, 4)
