@@ -185,33 +185,25 @@ def _mc_late_type_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
 
 @jjit
 def _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params):
+    early_key, late_key, frac_key, ran_key = jran.split(ran_key, 4)
+
     _res = _get_mah_means_and_covs(lgm0, *mah_pdf_params)
     frac_late, means_early, covs_early, means_late, covs_late = _res
 
-    early_key, late_key, frac_key, ran_key = jran.split(ran_key, 4)
+    mah_u_params_early = jran.multivariate_normal(early_key, means_early, covs_early)
+    mah_u_params_late = jran.multivariate_normal(late_key, means_late, covs_late)
+
     uran = jran.uniform(frac_key, shape=(lgm0.size,))
+    msk_is_late = jnp.where(uran < frac_late, 1, 0)
 
-    n_halos = lgm0.size
-    n_times = tarr.size
-    umat = jnp.repeat(uran, n_times).reshape((n_halos, n_times))
-    frac_late_mat = jnp.repeat(frac_late, n_times).reshape((n_halos, n_times))
+    mah_ue = jnp.where(msk_is_late, mah_u_params_late[:, 0], mah_u_params_early[:, 0])
+    mah_ul = jnp.where(msk_is_late, mah_u_params_late[:, 1], mah_u_params_early[:, 1])
+    mah_lgtc = jnp.where(msk_is_late, mah_u_params_late[:, 2], mah_u_params_early[:, 2])
 
-    msk_is_late = jnp.where(umat < frac_late_mat, 1, 0)
+    early, late = _get_early_late(mah_ue, mah_ul)
 
-    halopop_late = _mc_late_type_halo_mahs(late_key, tarr, lgm0, lgt0, mah_pdf_params)
-    halopop_early = _mc_early_type_halo_mahs(
-        early_key, tarr, lgm0, lgt0, mah_pdf_params
-    )
+    lgtarr = jnp.log10(tarr)
+    _res = _calc_halo_history_vmap(lgtarr, lgt0, lgm0, mah_lgtc, MAH_K, early, late)
+    dmhdt, log_mah = _res
 
-    log_mah = jnp.where(msk_is_late, halopop_late.log_mah, halopop_early.log_mah)
-    dmhdt = jnp.where(msk_is_late, halopop_late.dmhdt, halopop_early.dmhdt)
-
-    early = jnp.where(
-        msk_is_late[:, 0], halopop_late.early_index, halopop_early.early_index
-    )
-    late = jnp.where(
-        msk_is_late[:, 0], halopop_late.late_index, halopop_early.late_index
-    )
-    lgtc = jnp.where(msk_is_late[:, 0], halopop_late.lgtc, halopop_early.lgtc)
-
-    return _MCHaloPop(*(dmhdt, log_mah, early, late, lgtc, msk_is_late[:, 0]))
+    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, msk_is_late))

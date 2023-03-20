@@ -1,6 +1,5 @@
 """
 """
-import pytest
 import numpy as np
 from jax import random as jran
 from jax import jit as jjit
@@ -130,6 +129,10 @@ def test_diff_nondiff_mc_halopop_agree():
         mc_halopop2 = _mc_halo_mahs(ran_key, tarr, lgm0, lgt0, mah_pdf_params)
 
         assert np.allclose(mc_halopop.log_mah, mc_halopop2.log_mah, rtol=1e-4)
+        assert np.allclose(mc_halopop.dmhdt, mc_halopop2.dmhdt, rtol=1e-4)
+        assert np.allclose(mc_halopop.early_index, mc_halopop2.early_index, rtol=1e-4)
+        assert np.allclose(mc_halopop.late_index, mc_halopop2.late_index, rtol=1e-4)
+        assert np.allclose(mc_halopop.lgtc, mc_halopop2.lgtc, rtol=1e-4)
 
 
 def test_mc_halopop_is_differentiable():
