@@ -48,9 +48,7 @@ def test_mc_halopop_is_differentiable():
     t0 = tarr[-1]
 
     lgm0 = np.zeros(n_halos) + 12.0
-    mc_halopop_target = mc_halo_population(
-        tarr, t0, lgm0, mah_type="early", seed=SEED + 1
-    )
+    mc_halopop_target = mc_halo_population(tarr, t0, lgm0, seed=SEED + 1)
     mean_log_mah_target = np.mean(mc_halopop_target.log_mah, axis=0)
 
     @jjit

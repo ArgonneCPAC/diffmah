@@ -29,16 +29,7 @@ _MCHaloPop = namedtuple(
 )
 
 
-def mc_halo_population(
-    cosmic_time,
-    t0,
-    logmh,
-    mah_type=None,
-    ran_key=None,
-    seed=0,
-    mah_k=DEFAULT_MAH_PARAMS["mah_k"],
-    **kwargs
-):
+def mc_halo_population(cosmic_time, t0, logmh, ran_key=None, seed=0, **kwargs):
     """Generate Monte Carlo realization of the assembly of a population of halos.
 
     Parameters
@@ -52,11 +43,6 @@ def mc_halo_population(
     logmh : float or ndarray of shape (n_halos, )
         Base-10 log of present-day halo mass of the halo population
         Units are Msun assuming h=1
-
-    mah_type : string, optional
-        Use 'early' to generate early-forming halos, 'late' for late-forming.
-        Default behavior is to generate a random mixture of the two populations
-        with a fraction appropriate for the input mass.
 
     ran_key : jax random seed, optional
         If no random key is provided, jran.PRNGKey(seed) will be chosen every time
@@ -89,6 +75,11 @@ def mc_halo_population(
         Integer array storing 1 for late-type and 0 for early-type halo MAHs
 
     """
+    input_kwargs = list(kwargs.keys())
+    for key in input_kwargs:
+        msg = "Input parameter `{0}` not recognized".format(key)
+        assert key in DEFAULT_MAH_PDF_PARAMS, msg
+
     logmh = np.atleast_1d(logmh).astype("f4")
 
     cosmic_time = np.atleast_1d(cosmic_time)
