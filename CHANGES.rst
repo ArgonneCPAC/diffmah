@@ -1,3 +1,8 @@
+0.5.0 (in progress)
+------------------
+- Remove optional mah_type argument of mc_halo_population function
+- Implement differentiable kernel for mc_halo_population function
+
 0.4.1 (2022-09-17)
 ------------------
 - Fix bug in Monte Carlo generator of MAHs for halos identified at high redshift
