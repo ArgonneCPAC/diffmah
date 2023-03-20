@@ -6,7 +6,7 @@ from jax import numpy as jnp
 from jax import random as jran
 from jax import jit as jjit
 from jax import vmap
-from .rockstar_pdf_model import _get_mah_means_and_covs
+from .rockstar_pdf_model import _get_mah_means_and_covs, DEFAULT_MAH_PDF_PARAMS
 from .individual_halo_assembly import calc_halo_history, _get_early_late
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS, _calc_halo_history
 
@@ -86,54 +86,23 @@ def mc_halo_population(
         Halo MAH parameter specifying the transition time between early and late times.
 
     mah_type : ndarray of shape (n_halos, )
-        Array of strings, either 'early' or 'late'
+        Integer array storing 1 for late-type and 0 for early-type halo MAHs
 
     """
     logmh = np.atleast_1d(logmh).astype("f4")
-    n_halos = logmh.size
 
     cosmic_time = np.atleast_1d(cosmic_time)
-    _res = _get_mah_means_and_covs(logmh, **kwargs)
-    frac_late, means_early, covs_early, means_late, covs_late = _res
-    n_mah_dim = means_early.shape[1]
+    lgt0 = np.log10(t0)
+
+    mah_pdf_pdict = DEFAULT_MAH_PDF_PARAMS.copy()
+    mah_pdf_pdict.update(kwargs)
+    mah_pdf_params = np.array(list(mah_pdf_pdict.values()))
 
     if ran_key is None:
         ran_key = jran.PRNGKey(seed)
-    early_key, late_key, frac_key, ran_key = jran.split(ran_key, 4)
 
-    u_p_early = jran.multivariate_normal(early_key, means_early, covs_early)
-    u_p_late = jran.multivariate_normal(late_key, means_late, covs_late)
-    _e = np.array(["early"])
-    _l = np.array(["late"])
-
-    if mah_type is None:
-        uran = jran.uniform(frac_key, shape=(n_halos,))
-        umat = jnp.repeat(uran, n_mah_dim).reshape((n_halos, n_mah_dim))
-        frac_late_mat = jnp.repeat(frac_late, n_mah_dim).reshape((n_halos, n_mah_dim))
-        mah_u_params = jnp.where(umat < frac_late_mat, u_p_late, u_p_early)
-        mah_ue = mah_u_params[:, 0]
-        mah_ul = mah_u_params[:, 1]
-        mah_lgtc = mah_u_params[:, 2]
-        mah_type_arr = np.where(uran < frac_late, "late", "early")
-    elif mah_type == "early":
-        mah_ue = u_p_early[:, 0]
-        mah_ul = u_p_early[:, 1]
-        mah_lgtc = u_p_early[:, 2]
-        mah_type_arr = np.repeat(_e, n_halos)
-    elif mah_type == "late":
-        mah_ue = u_p_late[:, 0]
-        mah_ul = u_p_late[:, 1]
-        mah_lgtc = u_p_late[:, 2]
-        mah_type_arr = np.repeat(_l, n_halos)
-    else:
-        msg = "`mah_type` argument = {0} but accepted values are `early` or `late`"
-        raise ValueError(msg.format(mah_type))
-
-    lgt, lgt0 = np.log10(cosmic_time), np.log10(t0)
-    early, late = _get_early_late(mah_ue, mah_ul)
-    _res = calc_halo_history(10**lgt, 10**lgt0, logmh, 10**mah_lgtc, early, late)
-    dmhdt, log_mah = _res
-    return _MCHaloPop(*(dmhdt, log_mah, early, late, mah_lgtc, mah_type_arr))
+    halopop = _mc_halo_mahs(ran_key, cosmic_time, lgt0, logmh, mah_pdf_params)
+    return halopop
 
 
 @jjit
