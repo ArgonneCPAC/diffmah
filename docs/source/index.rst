@@ -8,12 +8,20 @@ Welcome to the diffmah documentation
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
 
    installation.rst
 
-.. toctree::
-    :maxdepth: 1
 
-    citation.rst
+.. toctree::
+   :maxdepth: 1
+   :caption: Demos and tutorials:
+
+   diffmah_halo_populations.ipynb
+   diffmah_fitter_demo.ipynb
+   jax_demo_diffmah.ipynb
+
+.. toctree::
+   :maxdepth: 1
+
+   citation.rst
 
