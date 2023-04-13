@@ -23,6 +23,9 @@ $ conda create -n diffit python=3.9 numpy numba flake8 pytest jax ipython jupyte
 ## Project data
 Data for this project can be found [at this URL](https://portal.nersc.gov/project/hacc/aphearin/diffmah_data/).
 
+## Documentation
+Online documentation for Diffmah is available [diffmah.readthedocs.io](https://diffmah.readthedocs.io/en/latest/).
+
 ## Scripts and demo notebooks
 The `diffmah_halo_populations.ipynb` notebook demonstrates how to calculate the MAHs as a function of the diffmah parameters using the `calc_halo_history` function. This notebook also demonstrates how to use the `mc_halo_population` function to generate Monte Carlo realizations of cosmologically representative populations of halos.
 
