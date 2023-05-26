@@ -49,6 +49,9 @@ if __name__ == "__main__":
         help="Galaxy type (only relevant for Bolshoi and MDPl2)",
         default="cens",
     )
+    parser.add_argument(
+        "-fittol", help="Tolerance parameter of the fitter", type=float, default=0.01
+    )
 
     args = parser.parse_args()
 
@@ -58,6 +61,7 @@ if __name__ == "__main__":
     rank_basepat = args.outbase + TMP_OUTPAT
     rank_outname = os.path.join(args.outdir, rank_basepat).format(rank)
     nstep = args.nstep
+    fittol = args.fittol
 
     if args.indir == "TASSO":
         indir = TASSO
@@ -105,7 +109,12 @@ if __name__ == "__main__":
                 lgm_min,
             )
             _res = jax_adam_wrapper(
-                log_mah_mse_loss_and_grads, p_init, loss_data, nstep, n_warmup=1
+                log_mah_mse_loss_and_grads,
+                p_init,
+                loss_data,
+                nstep,
+                n_warmup=1,
+                tol=fittol,
             )
             p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
 
