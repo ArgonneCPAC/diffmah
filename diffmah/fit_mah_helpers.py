@@ -29,7 +29,7 @@ def diffmah_fitter(
     loss_init = log_mah_mse_loss(p_init, loss_data)
 
     if HAS_SCIPY:
-        res = scipy_nlsq(log_mah_mse_loss, p_init, args=(loss_data,))
+        res = scipy_nlsq(log_mah_mse_loss, p_init, args=(loss_data,), ftol=5e-4)
     else:
         res = jax_bfgs(log_mah_mse_loss, p_init, args=(loss_data,), method="BFGS")
 
