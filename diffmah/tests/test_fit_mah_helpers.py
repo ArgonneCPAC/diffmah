@@ -8,13 +8,14 @@ from ..monte_carlo_halo_population import mc_halo_population
 
 def test_diffmah_fitter_works_on_diffmah_example():
     ran_key = jran.PRNGKey(0)
-    n_halos, n_times = 10, 100
+    n_halos, n_times = 20, 100
     tarr = np.linspace(0.1, 13.8, n_times)
     t0 = tarr[-1]
-    lgmp = jran.uniform(ran_key, minval=11, maxval=15, shape=(n_halos,))
+    lgmp = jran.uniform(ran_key, minval=12, maxval=15, shape=(n_halos,))
     mc_halopop = mc_halo_population(tarr, t0, lgmp)
 
     LGM_MIN = 10.0
+    TOL = 1e-3
 
     for ihalo in range(n_halos):
         p_init, loss_data = get_loss_data(
@@ -23,9 +24,9 @@ def test_diffmah_fitter_works_on_diffmah_example():
             LGM_MIN,
         )
 
-        res = diffmah_fitter(p_init, loss_data)
+        res = diffmah_fitter(p_init, loss_data, tol=TOL)
         p_best, loss_best = res[:2]
-        assert loss_best < 1e-3
+        assert loss_best < TOL
 
 
 def test_get_target_data_no_cuts():

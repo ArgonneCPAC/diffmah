@@ -1,5 +1,6 @@
 """Helper functions used by the script to fit individual halo histories."""
 import numpy as np
+from warnings import warn
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad
@@ -30,7 +31,7 @@ def diffmah_fitter(
 
     if HAS_SCIPY:
         res = scipy_nlsq(
-            log_mah_mse_loss, p_init, args=(loss_data,), ftol=1e-4, xtol=1e-4, gtol=1e-4
+            log_mah_mse_loss, p_init, args=(loss_data,), ftol=2e-4, xtol=2e-4, gtol=2e-4
         )
     else:
         res = jax_bfgs(log_mah_mse_loss, p_init, args=(loss_data,), method="BFGS")
@@ -54,6 +55,7 @@ def diffmah_fitter(
             tol=tol,
         )
         p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
+        loss_best = log_mah_mse_loss(p_best, loss_data)
 
     return p_best, loss_best, loss_arr, params_arr, fit_terminates
 
@@ -210,6 +212,11 @@ def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
     msk = log_mah_sim > (logmp_sim - dlogm_cut)
     msk &= log_mah_sim >= lgm_min
     msk &= t_sim >= t_fit_min
+
+    npts_target_data = msk.sum()
+    if npts_target_data <= 1:
+        pat = "Target data for halo only has {0} points passing cut"
+        warn(pat.format(npts_target_data))
 
     logt_target = np.log10(t_sim)[msk]
     log_mah_target = np.maximum.accumulate(log_mah_sim[msk])
