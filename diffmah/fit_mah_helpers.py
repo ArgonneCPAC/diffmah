@@ -3,18 +3,52 @@ import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad
+from jax.scipy.optimize import minimize
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
 from .individual_halo_assembly import _u_rolling_plaw_vs_logt, _get_early_late
+from .utils import jax_adam_wrapper
 
 T_FIT_MIN = 1.0
 DLOGM_CUT = 2.5
+
+
+def diffmah_fitter(
+    p_init,
+    loss_data,
+    tol=0.001,
+    n_adam_step=200,
+    n_adam_warmup=1,
+):
+    loss_init = log_mah_mse_loss(p_init, loss_data)
+    res = minimize(log_mah_mse_loss, p_init, args=(loss_data,), method="BFGS")
+    loss_best = log_mah_mse_loss(res.x, loss_data)
+    p_best = res.x
+    fit_terminates = res.success
+    params_arr = p_best.reshape((1, -1))
+    loss_arr = (loss_best,)
+
+    if loss_best < loss_init:
+        p_init = p_best
+
+    if loss_best > tol:
+        _res = jax_adam_wrapper(
+            log_mah_mse_loss_and_grads,
+            p_init,
+            loss_data,
+            n_adam_step,
+            n_warmup=n_adam_warmup,
+            tol=tol,
+        )
+        p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
+
+    return p_best, loss_best, loss_arr, params_arr, fit_terminates
 
 
 def get_outline(halo_id, loss_data, p_best, loss_best):
     """Return the string storing fitting results that will be written to disk"""
     logtc, ue, ul = p_best
     logt0, u_k, logm0 = loss_data[-3:]
-    t0 = 10 ** logt0
+    t0 = 10**logt0
     early, late = _get_early_late(ue, ul)
     fixed_k = DEFAULT_MAH_PARAMS["mah_k"]
     _d = np.array((logm0, logtc, fixed_k, early, late)).astype("f4")

@@ -50,7 +50,7 @@ if __name__ == "__main__":
         default="cens",
     )
     parser.add_argument(
-        "-fittol", help="Tolerance parameter of the fitter", type=float, default=0.01
+        "-fittol", help="Tolerance parameter of the fitter", type=float, default=0.001
     )
 
     args = parser.parse_args()
