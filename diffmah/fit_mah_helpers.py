@@ -3,10 +3,17 @@ import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad
-from jax.scipy.optimize import minimize
+from jax.scipy.optimize import minimize as jax_bfgs
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
 from .individual_halo_assembly import _u_rolling_plaw_vs_logt, _get_early_late
 from .utils import jax_adam_wrapper
+
+try:
+    from scipy.optimize import least_squares as scipy_nlsq
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
 
 T_FIT_MIN = 1.0
 DLOGM_CUT = 2.5
@@ -20,7 +27,12 @@ def diffmah_fitter(
     n_adam_warmup=1,
 ):
     loss_init = log_mah_mse_loss(p_init, loss_data)
-    res = minimize(log_mah_mse_loss, p_init, args=(loss_data,), method="BFGS")
+
+    if HAS_SCIPY:
+        res = scipy_nlsq(log_mah_mse_loss, p_init, args=(loss_data,))
+    else:
+        res = jax_bfgs(log_mah_mse_loss, p_init, args=(loss_data,), method="BFGS")
+
     loss_best = log_mah_mse_loss(res.x, loss_data)
     p_best = res.x
     fit_terminates = res.success
@@ -68,10 +80,7 @@ def log_mah_mse_loss(params, loss_data):
     return log_mah_loss
 
 
-@jjit
-def log_mah_mse_loss_and_grads(params, loss_data):
-    """MSE loss and grad function for fitting individual halo growth."""
-    return value_and_grad(log_mah_mse_loss, argnums=0)(params, loss_data)
+log_mah_mse_loss_and_grads = jjit(value_and_grad(log_mah_mse_loss, argnums=0))
 
 
 def get_loss_data(

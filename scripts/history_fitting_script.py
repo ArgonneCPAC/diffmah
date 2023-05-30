@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     # Get data for rank
     if args.test:
-        nhalos_tot = nranks * 10
+        nhalos_tot = nranks * 100
     else:
         nhalos_tot = len(halo_ids)
     _a = np.arange(0, nhalos_tot).astype("i8")
