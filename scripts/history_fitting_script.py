@@ -8,9 +8,8 @@ from diffmah.load_mah_data import load_tng_data, load_bolshoi_data, load_mdpl2_d
 from diffmah.load_mah_data import TASSO, BEBOP
 from diffmah.fit_mah_helpers import get_header, get_outline_bad_fit
 from diffmah.fit_mah_helpers import get_loss_data
-from diffmah.fit_mah_helpers import log_mah_mse_loss_and_grads
 from diffmah.fit_mah_helpers import get_outline
-from diffmah.utils import jax_adam_wrapper
+from diffmah.fit_mah_helpers import diffmah_fitter
 import subprocess
 import h5py
 
@@ -55,8 +54,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    start = time()
-
     args = parser.parse_args()
     rank_basepat = args.outbase + TMP_OUTPAT
     rank_outname = os.path.join(args.outdir, rank_basepat).format(rank)
@@ -85,7 +82,7 @@ if __name__ == "__main__":
 
     # Get data for rank
     if args.test:
-        nhalos_tot = nranks * 5
+        nhalos_tot = nranks * 10
     else:
         nhalos_tot = len(halo_ids)
     _a = np.arange(0, nhalos_tot).astype("i8")
@@ -94,6 +91,8 @@ if __name__ == "__main__":
     halo_ids_for_rank = halo_ids[indx]
     log_mahs_for_rank = log_mahs[indx]
     nhalos_for_rank = len(halo_ids_for_rank)
+
+    start = time()
 
     header = get_header()
     with open(rank_outname, "w") as fout:
@@ -108,12 +107,11 @@ if __name__ == "__main__":
                 lgmah,
                 lgm_min,
             )
-            _res = jax_adam_wrapper(
-                log_mah_mse_loss_and_grads,
+            _res = diffmah_fitter(
                 p_init,
                 loss_data,
-                nstep,
-                n_warmup=1,
+                n_adam_step=nstep,
+                n_adam_warmup=1,
                 tol=fittol,
             )
             p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
