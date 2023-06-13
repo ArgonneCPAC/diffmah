@@ -56,8 +56,9 @@ def diffmah_fitter(
         )
         p_best, loss_best, loss_arr, params_arr, fit_terminates = _res
         loss_best = log_mah_mse_loss(p_best, loss_data)
-
-    return p_best, loss_best, loss_arr, params_arr, fit_terminates
+        return p_best, loss_best, loss_arr, params_arr, fit_terminates
+    else:
+        return None, None, None, None, 0
 
 
 def get_outline(halo_id, loss_data, p_best, loss_best):
