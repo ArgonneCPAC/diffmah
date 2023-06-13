@@ -29,22 +29,22 @@ def diffmah_fitter(
 ):
     loss_init = log_mah_mse_loss(p_init, loss_data)
 
-    if HAS_SCIPY:
-        res = scipy_nlsq(
-            log_mah_mse_loss, p_init, args=(loss_data,), ftol=2e-4, xtol=2e-4, gtol=2e-4
-        )
-    else:
-        res = jax_bfgs(log_mah_mse_loss, p_init, args=(loss_data,), method="BFGS")
+    # if HAS_SCIPY:
+    #     res = scipy_nlsq(
+    #         log_mah_mse_loss, p_init, args=(loss_data,), ftol=2e-4, xtol=2e-4, gtol=2e-4
+    #     )
+    # else:
+    #     res = jax_bfgs(log_mah_mse_loss, p_init, args=(loss_data,), method="BFGS")
 
-    loss_best = log_mah_mse_loss(res.x, loss_data)
-    p_best = res.x
-    fit_terminates = res.success
-    params_arr = p_best.reshape((1, -1))
-    loss_arr = (loss_best,)
+    # loss_best = log_mah_mse_loss(res.x, loss_data)
+    # p_best = res.x
+    # fit_terminates = res.success
+    # params_arr = p_best.reshape((1, -1))
+    # loss_arr = (loss_best,)
 
-    if loss_best < loss_init:
-        p_init = p_best
-
+    # if loss_best < loss_init:
+    #     p_init = p_best
+    loss_best = loss_init
     if loss_best > tol:
         _res = jax_adam_wrapper(
             log_mah_mse_loss_and_grads,
