@@ -1,5 +1,6 @@
 """Utility functions used throughout the package."""
 import numpy as np
+from jax import jit as jjit
 from jax import numpy as jnp
 from jax.example_libraries import optimizers as jax_opt
 
@@ -285,3 +286,34 @@ def get_dt_array(t):
     thi = t[n - 1] + dt[n - 2] / 2
     dt[n - 1] = thi - tlo
     return dt
+
+
+@jjit
+def get_cholesky_from_params(params):
+    """Compute the Cholesky matrix defined by a parameter array
+
+    Parameters
+    ----------
+    params : ndarray of shape (n_params, )
+
+    Returns
+    -------
+    cholesky : ndarray of shape (ndim, ndim)
+        Lower triangular matrix with ndim = 0.5*nparams*(nparams+1)
+        The first ndim entries of params are stored along the diagonal
+        The remaining entries of params are stored as the off-diagonal entries
+        according to the following convention
+
+        params = [1, 2, 3, 4, 5, 6]
+        cholesky = Array([[1, 0, 0], [4, 2, 0], [5, 6, 3]])
+
+    """
+    ndim = ((np.sqrt(8 * params.size + 1) - 1) / 2).astype(int)
+    indx_diags = np.diag(np.arange(ndim).astype(int))
+    unity = jnp.tril(jnp.ones((ndim, ndim)))
+    lunity = jnp.abs(unity * (jnp.eye(ndim) - 1)).astype(int)
+    X = (jnp.cumsum(lunity).reshape((ndim, ndim)) * lunity + ndim) * lunity
+    indx_offdiags = (X - 1) * lunity
+    indx = indx_diags + indx_offdiags
+    cholesky = params[indx.flatten()].reshape((ndim, ndim)) * unity
+    return cholesky

@@ -1,10 +1,13 @@
 """
 """
 from collections import OrderedDict
+
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import vmap
+
 from .individual_halo_assembly import DEFAULT_MAH_PARAMS
+from .utils import get_cholesky_from_params
 
 TODAY = 13.8
 LGT0 = jnp.log10(TODAY)
@@ -68,13 +71,9 @@ def _get_cov_scalar(
     lge_lgtc,
     lgl_lgtc,
 ):
-    cho = jnp.zeros((3, 3)).astype("f4")
-    cho = cho.at[(0, 0)].set(10 ** log10_lge_lge)
-    cho = cho.at[(1, 1)].set(10 ** log10_lgl_lgl)
-    cho = cho.at[(2, 2)].set(10 ** log10_lgtc_lgtc)
-    cho = cho.at[(1, 0)].set(lge_lgl)
-    cho = cho.at[(2, 0)].set(lge_lgtc)
-    cho = cho.at[(2, 1)].set(lgl_lgtc)
+    diags = 10**log10_lge_lge, 10**log10_lgl_lgl, 10**log10_lgtc_lgtc
+    params = jnp.array((*diags, lge_lgl, lge_lgtc, lgl_lgtc))
+    cho = get_cholesky_from_params(params)
     cov = jnp.dot(cho, cho.T)
     return cov
 

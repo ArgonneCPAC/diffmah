@@ -1,10 +1,16 @@
 """
 """
 import numpy as np
-from jax import numpy as jax_np
 from jax import jit as jax_jit
+from jax import numpy as jax_np
 from jax import value_and_grad
-from ..utils import jax_inverse_sigmoid, jax_sigmoid, jax_adam_wrapper
+
+from ..utils import (
+    get_cholesky_from_params,
+    jax_adam_wrapper,
+    jax_inverse_sigmoid,
+    jax_sigmoid,
+)
 
 
 def test_inverse_sigmoid_actually_inverts():
@@ -80,3 +86,35 @@ def test_jax_adam_wrapper_loss_tol_feature_works():
     assert loss_bestfit1 <= 1e-3
     assert loss_bestfit2 <= 1e-4
     assert loss_bestfit2 < loss_bestfit1 < loss_bestfit0 < loss_init
+
+
+def test_get_cholesky_from_params1():
+    ndim = 2
+    nparams = int(0.5 * ndim * (ndim + 1))
+    params = np.random.uniform(0, 1, nparams)
+    chol = get_cholesky_from_params(params)
+    row0 = (params[0], 0)
+    row1 = (params[2], params[1])
+    correct_chol = np.array((row0, row1))
+    assert np.allclose(chol, correct_chol)
+
+    ndim = 3
+    nparams = int(0.5 * ndim * (ndim + 1))
+    params = np.random.uniform(0, 1, nparams)
+    chol = get_cholesky_from_params(params)
+    row0 = (params[0], 0, 0)
+    row1 = (params[3], params[1], 0)
+    row2 = (params[4], params[5], params[2])
+    correct_chol = np.array((row0, row1, row2))
+    assert np.allclose(chol, correct_chol)
+
+    ndim = 4
+    nparams = int(0.5 * ndim * (ndim + 1))
+    params = np.random.uniform(0, 1, nparams)
+    chol = get_cholesky_from_params(params)
+    row0 = (params[0], 0, 0, 0)
+    row1 = (params[4], params[1], 0, 0)
+    row2 = (params[5], params[6], params[2], 0)
+    row3 = (params[7], params[8], params[9], params[3])
+    correct_chol = np.array((row0, row1, row2, row3))
+    assert np.allclose(chol, correct_chol)
