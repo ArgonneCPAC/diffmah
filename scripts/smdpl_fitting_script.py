@@ -72,7 +72,7 @@ if __name__ == "__main__":
         indir = args.indir
 
     all_subvol_names = [
-        os.path.basename(drn) for drn in glob(os.path.join(TASSO, "subvol_*"))
+        os.path.basename(drn) for drn in glob(os.path.join(indir, "subvol_*"))
     ]
     all_subvolumes = [int(s.split("_")[1]) for s in all_subvol_names]
     if args.test:
