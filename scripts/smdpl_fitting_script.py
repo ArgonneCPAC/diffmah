@@ -82,7 +82,7 @@ if __name__ == "__main__":
     else:
         subvolumes = all_subvolumes
 
-    mock, tarr, lgmh_min = load_smdpl_histories(TASSO, subvolumes)
+    mock, tarr, lgmh_min = load_smdpl_histories(drn, subvolumes)
 
     # Ensure the target MAHs are cumulative peak masses
     log_mahs = np.maximum.accumulate(mock["log_mah"], axis=1)
