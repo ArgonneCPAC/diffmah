@@ -27,9 +27,10 @@ TASSO = os.path.join(
     "/Users/aphearin/work/DATA/SMDPL",
     "dr1_no_merging_upidh/sfh_binary_catalogs/a_1.000000",
 )
-BEBOP = (
-    "/lcrc/project/halotools/SMDPL/dr1_no_merging_upidh/sfh_binary_catalogs/a_1.000000"
-)
+# BEBOP = (
+#     "/lcrc/project/halotools/SMDPL/dr1_no_merging_upidh/sfh_binary_catalogs/a_1.000000"
+# )
+BEBOP = "/lcrc/project/galsampler/SMDPL/dr1_no_merging_upidh/sfh_binary_catalogs/a_1.000000/"
 
 
 def _write_collated_data(outname, data):
@@ -86,11 +87,16 @@ if __name__ == "__main__":
     else:
         subvolumes = np.arange(istart, iend)
 
+    ngals_complete_fits = 0
     for isubvol in subvolumes:
+        isubvol_start = time()
+
         subvolumes_i = [
             isubvol,
         ]
         mock, tarr, lgmh_min = load_smdpl_histories(indir, subvolumes_i)
+        if rank == 0:
+            print("Number of galaxies in mock = {}".format(len(mock)))
 
         # Ensure the target MAHs are cumulative peak masses
         log_mahs = np.maximum.accumulate(mock["log_mah"], axis=1)
@@ -137,11 +143,13 @@ if __name__ == "__main__":
                 fout.write(outline)
 
         comm.Barrier()
-        end = time()
+        isubvol_end = time()
+        ngals_complete_fits += len(mock)
 
         msg = "\n\nWallclock runtime to fit {0} galaxies with {1} ranks = {2:.1f} seconds\n\n"
         if rank == 0:
-            runtime = end - start
+            print("\nFinished with subvolume {}".format(isubvol))
+            runtime = isubvol_end - isubvol_start
             print(msg.format(nhalos_tot, nranks, runtime))
 
             #  collate data from ranks and rewrite to disk
@@ -149,10 +157,18 @@ if __name__ == "__main__":
             fit_data_fnames = [pat.format(i) for i in range(nranks)]
             data_collection = [np.loadtxt(fn) for fn in fit_data_fnames]
             all_fit_data = np.concatenate(data_collection)
-            outname = os.path.join(args.outdir, args.outbase)
+            outdrn = os.path.join(args.outdir, subvol_string)
+            os.makedirs(outdrn, exist_ok=True)
+            outname = os.path.join(outdrn, args.outbase)
             _write_collated_data(outname, all_fit_data)
 
             #  clean up temporary files
             _remove_basename = pat.replace("{0}", "*")
             command = "rm -rf " + _remove_basename
             raw_result = subprocess.check_output(command, shell=True)
+
+    end = time()
+    final_runtime = end - start
+    msg = "\nFinal runtime to fit {0} galaxies with {1} ranks = {2:.2f} hours\n\n"
+    if rank == 0:
+        print(msg.format(ngals_complete_fits, nranks, final_runtime / 3600))
