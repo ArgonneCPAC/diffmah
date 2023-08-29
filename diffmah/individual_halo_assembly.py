@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from jax import grad
 from jax import jit as jjit
+from jax import lax
 from jax import numpy as jnp
 from jax import vmap
 
@@ -102,13 +103,13 @@ def _calc_halo_history(logt, logt0, logmp, logtc, k, early, late):
 
 @jjit
 def _softplus(x):
-    return jnp.log(1 + jnp.exp(x))
+    return jnp.log(1 + lax.exp(x))
 
 
 @jjit
 def _sigmoid(x, logtc, k, ymin, ymax):
     height_diff = ymax - ymin
-    return ymin + height_diff / (1.0 + jnp.exp(-k * (x - logtc)))
+    return ymin + height_diff / (1.0 + lax.exp(-k * (x - logtc)))
 
 
 @jjit
@@ -133,7 +134,7 @@ def _power_law_index_vs_logt(logt, logtc, k, early, late):
 
 @jjit
 def _inverse_softplus(s):
-    return jnp.log(jnp.exp(s) - 1.0)
+    return jnp.log(lax.exp(s) - 1.0)
 
 
 _vmap_halo_history = jjit(vmap(_calc_halo_history, in_axes=(None, None, 0, 0, 0, 0, 0)))

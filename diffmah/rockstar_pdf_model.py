@@ -2,6 +2,7 @@
 from collections import OrderedDict
 
 from jax import jit as jjit
+from jax import lax
 from jax import numpy as jnp
 from jax import vmap
 
@@ -59,7 +60,7 @@ DEFAULT_MAH_PDF_PARAMS = OrderedDict(
 @jjit
 def _sigmoid(x, logtc, k, ymin, ymax):
     height_diff = ymax - ymin
-    return ymin + height_diff / (1.0 + jnp.exp(-k * (x - logtc)))
+    return ymin + height_diff / (1.0 + lax.exp(-k * (x - logtc)))
 
 
 def _get_cov_scalar(
