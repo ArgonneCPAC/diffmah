@@ -1,7 +1,8 @@
 """Load the diffmah data into memory."""
-import numpy as np
 import os
 import warnings
+
+import numpy as np
 
 TASSO = "/Users/aphearin/work/DATA/diffmah_data/PUBLISHED_DATA"
 BEBOP = "/lcrc/project/halotools/diffmah_data/PUBLISHED_DATA"

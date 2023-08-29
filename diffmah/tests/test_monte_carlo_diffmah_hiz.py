@@ -1,8 +1,10 @@
 """
 """
 import warnings
-from jax import random as jran
+
 import numpy as np
+from jax import random as jran
+
 from ..individual_halo_assembly import calc_halo_history
 from ..monte_carlo_diffmah_hiz import mc_diffmah_params_hiz
 

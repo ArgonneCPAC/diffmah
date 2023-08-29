@@ -1,13 +1,16 @@
 """Calculate differentiable probabilistic history of an individual halo."""
 import numpy as np
-from jax import numpy as jnp
 from jax import jit as jjit
+from jax import numpy as jnp
 from jax import vmap
 from jax.scipy.stats import multivariate_normal as jnorm
-from .individual_halo_assembly import _calc_halo_history, _get_early_late
-from .individual_halo_assembly import DEFAULT_MAH_PARAMS
-from .rockstar_pdf_model import _get_mah_means_and_covs
-from .rockstar_pdf_model import DEFAULT_MAH_PDF_PARAMS, LGT0
+
+from .individual_halo_assembly import (
+    DEFAULT_MAH_PARAMS,
+    _calc_halo_history,
+    _get_early_late,
+)
+from .rockstar_pdf_model import DEFAULT_MAH_PDF_PARAMS, LGT0, _get_mah_means_and_covs
 
 CLIP = -10.0
 
@@ -55,7 +58,7 @@ def _get_bimodal_halo_history_kern(
     dmhdts, log_mahs = _halo_history_integrand(
         logt, logtmp, logmp, lgtc_arr, k, early_arr, late_arr
     )
-    mahs = 10 ** log_mahs
+    mahs = 10**log_mahs
 
     weights_early = _get_mah_weights(ue_arr, ul_arr, lgtc_arr, mu_early, cov_early)
     weights_late = _get_mah_weights(ue_arr, ul_arr, lgtc_arr, mu_late, cov_late)

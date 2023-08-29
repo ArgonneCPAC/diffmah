@@ -1,14 +1,13 @@
 """Unit test of the new differentiable Monte Carlo generator
 """
 import numpy as np
-from jax import random as jran
 from jax import jit as jjit
 from jax import numpy as jnp
+from jax import random as jran
 from jax import value_and_grad
-from ..monte_carlo_halo_population import mc_halo_population
-from ..monte_carlo_halo_population import _mc_halo_mahs
-from ..rockstar_pdf_model import DEFAULT_MAH_PDF_PARAMS
 
+from ..monte_carlo_halo_population import _mc_halo_mahs, mc_halo_population
+from ..rockstar_pdf_model import DEFAULT_MAH_PDF_PARAMS
 
 SEED = 43
 

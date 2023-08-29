@@ -1,13 +1,18 @@
 """
 """
 import os
-from jax import numpy as jnp
-import numpy as np
-from ..individual_halo_assembly import _calc_halo_history, DEFAULT_MAH_PARAMS
-from ..individual_halo_assembly import _power_law_index_vs_logt, _get_early_late
-from ..rockstar_pdf_model import _get_mean_mah_params_early, _get_mean_mah_params_late
-from ..individual_halo_assembly import _calc_halo_history_scalar
 
+import numpy as np
+from jax import numpy as jnp
+
+from ..individual_halo_assembly import (
+    DEFAULT_MAH_PARAMS,
+    _calc_halo_history,
+    _calc_halo_history_scalar,
+    _get_early_late,
+    _power_law_index_vs_logt,
+)
+from ..rockstar_pdf_model import _get_mean_mah_params_early, _get_mean_mah_params_late
 
 _THIS_DRNAME = os.path.dirname(os.path.abspath(__file__))
 DDRN = os.path.join(_THIS_DRNAME, "testing_data")

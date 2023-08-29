@@ -1,8 +1,11 @@
 """Model for individual halo mass assembly based on a power-law with rolling index."""
 from collections import OrderedDict
-from jax import numpy as jnp
+
+from jax import grad
 from jax import jit as jjit
-from jax import vmap, grad
+from jax import numpy as jnp
+from jax import vmap
+
 from .utils import get_1d_arrays
 
 DEFAULT_MAH_PARAMS = OrderedDict(mah_logtc=0.05, mah_k=3.5, mah_ue=2.4, mah_ul=-2.0)

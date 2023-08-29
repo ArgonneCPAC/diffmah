@@ -3,6 +3,7 @@
 import os
 
 import numpy as np
+
 from ..monte_carlo_halo_population import mc_halo_population
 from ..tng_pdf_model import DEFAULT_MAH_PDF_PARAMS as TNG_PDF_PARAMS
 

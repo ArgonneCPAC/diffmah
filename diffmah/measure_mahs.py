@@ -1,6 +1,7 @@
 """Functions used to define the target data for fitting the halo population model."""
-import numpy as np
 import warnings
+
+import numpy as np
 
 
 def get_clean_sample_mask(log_mah_fit, logmp_sample, it_min, lim=0.01, z_cut=3):
@@ -64,7 +65,7 @@ def measure_target_data(mah, dmhdt, lgt, lgt_target, logmp_sample):
 
     """
     mah0 = mah[:, -1].reshape(-1, 1)
-    mp_sample = 10 ** logmp_sample
+    mp_sample = 10**logmp_sample
     scaled_mah = mp_sample * mah / mah0
     scaled_dmhdt = mp_sample * dmhdt / mah0
     with warnings.catch_warnings():
@@ -84,6 +85,6 @@ def measure_target_data(mah, dmhdt, lgt, lgt_target, logmp_sample):
         std_dmhdt = 10 ** np.interp(lgt_target, lgt, np.log10(std_dmhdt_table))
         std_log_mah = np.interp(lgt_target, lgt, std_log_mah_table)
 
-    var_dmhdt = std_dmhdt ** 2
-    var_log_mah = std_log_mah ** 2
+    var_dmhdt = std_dmhdt**2
+    var_log_mah = std_log_mah**2
     return mean_mah, mean_log_mah, var_log_mah, mean_dmhdt, var_dmhdt

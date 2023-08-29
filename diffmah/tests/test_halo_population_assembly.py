@@ -1,9 +1,15 @@
 """
 """
 import os
+
 import numpy as np
-from ..halo_population_assembly import _get_bimodal_halo_history
-from ..halo_population_assembly import UE_ARR, UL_ARR, LGTC_ARR
+
+from ..halo_population_assembly import (
+    LGTC_ARR,
+    UE_ARR,
+    UL_ARR,
+    _get_bimodal_halo_history,
+)
 from ..tng_pdf_model import DEFAULT_MAH_PDF_PARAMS as TNG_PARAMS
 
 _THIS_DRNAME = os.path.dirname(os.path.abspath(__file__))

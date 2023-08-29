@@ -1,9 +1,10 @@
 """Generate Diffmah parameters for halos identified at higher redshift
 """
 import numpy as np
-from .monte_carlo_halo_population import mc_halo_population
+
 from .halo_population_assembly import LGT0
 from .individual_halo_assembly import calc_halo_history
+from .monte_carlo_halo_population import mc_halo_population
 
 
 def mc_diffmah_params_hiz(ran_key, t_obs, logmh, lgt0=LGT0, npop=int(1e5)):
@@ -59,7 +60,6 @@ def mc_diffmah_params_hiz(ran_key, t_obs, logmh, lgt0=LGT0, npop=int(1e5)):
         late_index = np.array(halopop.late_index)
         lgtc = np.array(halopop.lgtc)
     else:
-
         lgm0_guess = _guess_logmp_z0(t_obs, logmh, lgt0, npop)
 
         tarr = np.array((t_obs, t0))
