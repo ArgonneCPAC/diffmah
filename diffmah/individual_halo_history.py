@@ -1,10 +1,10 @@
 """Model for individual halo mass assembly based on a power-law with rolling index."""
 from collections import OrderedDict
-from jax import numpy as jnp
-from jax import jit as jjit
-from jax import vmap as jvmap
-from jax import grad
 
+from jax import grad
+from jax import jit as jjit
+from jax import numpy as jnp
+from jax import vmap as jvmap
 
 _MAH_PARS = OrderedDict(mah_x0=-0.15, mah_k=3.5, mah_lge=0.5, mah_dy=0.75)
 _MAH_BOUNDS = OrderedDict(mah_x0=(-0.5, 1.0), mah_k=(1.0, 10.0), mah_lge=(0.0, 1.3))
@@ -32,7 +32,7 @@ _calc_d_log_mh_dt = jjit(
 @jjit
 def _calc_halo_history(logt, logtmp, logmp, x0, k, early, late):
     log_mah = _rolling_plaw_log_mah(logt, logtmp, logmp, x0, k, early, late)
-    d_log_mh_dt = _calc_d_log_mh_dt(10.0 ** logt, logtmp, logmp, x0, k, early, late)
+    d_log_mh_dt = _calc_d_log_mh_dt(10.0**logt, logtmp, logmp, x0, k, early, late)
     dmhdt = d_log_mh_dt * (10.0 ** (log_mah - 9.0)) / jnp.log10(jnp.e)
     return dmhdt, log_mah
 
@@ -57,7 +57,7 @@ def _rolling_plaw_log_mah_unbounded(logt, logtmp, logmp, u_x0, u_k, u_lge, u_dy)
 @jjit
 def _get_early_late_from_lge_dy(lge, dy):
     """Map the unbounded parameters to 0 < early < late."""
-    early_index = 10 ** lge
+    early_index = 10**lge
 
     # enforce 0 < late_index < early_index
     delta_index_max = early_index

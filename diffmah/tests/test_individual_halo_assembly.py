@@ -1,10 +1,14 @@
 """
 """
-from jax import random as jran
 from jax import numpy as jnp
-from ..individual_halo_assembly import _get_params_from_u_params
-from ..individual_halo_assembly import _get_u_params_from_params
-from ..individual_halo_assembly import _MAH_PARS, _MAH_BOUNDS
+from jax import random as jran
+
+from ..individual_halo_assembly import (
+    _MAH_BOUNDS,
+    _MAH_PARS,
+    _get_params_from_u_params,
+    _get_u_params_from_params,
+)
 
 
 def test_bounded_params_are_correctly_bounded():

@@ -1,20 +1,20 @@
 """
 """
+import numpy as np
 from jax import jit as jjit
-from jax import vmap
 from jax import numpy as jnp
+from jax import vmap
+
 from diffmah.halo_assembly import (
-    _individual_halo_assembly_jax_kern,
     DEFAULT_MAH_PARAMS,
     _get_dt_array,
+    _individual_halo_assembly_jax_kern,
 )
-import numpy as np
 
 
 @jjit
 def _get_dmhdt_indices(logmp, coeff_eval0, coeff_eval1):
-    """
-    """
+    """ """
     early_indx_mu_diff = (29 / 25) * coeff_eval0 - (1 / 3) * coeff_eval1
     late_indx_mu_diff = (21 / 20) * coeff_eval0 - (3 / 4) * coeff_eval1
 
@@ -44,24 +44,39 @@ def _generate_halo_history_family_indx(
 
 
 _halo_assembly_mass_family_kern = vmap(
-    _generate_halo_history_family_indx, in_axes=(None, None, 0, None, None, None, None),
+    _generate_halo_history_family_indx,
+    in_axes=(None, None, 0, None, None, None, None),
 )
 
 _halo_assembly_index_family_kern = vmap(
-    _halo_assembly_mass_family_kern, in_axes=(None, None, None, None, None, 0, None),
+    _halo_assembly_mass_family_kern,
+    in_axes=(None, None, None, None, None, 0, None),
 )
 
 _halo_assembly_tmp_family_kern = vmap(
-    _halo_assembly_index_family_kern, in_axes=(None, None, None, None, None, None, 0),
+    _halo_assembly_index_family_kern,
+    in_axes=(None, None, None, None, None, None, 0),
 )
 
 
 @jjit
 def _generate_halo_history_family(
-    logmp_family, assembly_family, indx_tmp_family, logt, dtarr, dmhdt_x0, dmhdt_k,
+    logmp_family,
+    assembly_family,
+    indx_tmp_family,
+    logt,
+    dtarr,
+    dmhdt_x0,
+    dmhdt_k,
 ):
     return _halo_assembly_tmp_family_kern(
-        logt, dtarr, logmp_family, dmhdt_x0, dmhdt_k, assembly_family, indx_tmp_family,
+        logt,
+        dtarr,
+        logmp_family,
+        dmhdt_x0,
+        dmhdt_k,
+        assembly_family,
+        indx_tmp_family,
     )
 
 
@@ -98,7 +113,13 @@ def generate_halo_history_family(
     logt = np.log10(cosmic_time)
     dtarr = _get_dt_array(cosmic_time)
     return _generate_halo_history_family(
-        logmp_family, assembly_family, indx_tmp_family, logt, dtarr, dmhdt_x0, dmhdt_k,
+        logmp_family,
+        assembly_family,
+        indx_tmp_family,
+        logt,
+        dtarr,
+        dmhdt_x0,
+        dmhdt_k,
     )
 
 

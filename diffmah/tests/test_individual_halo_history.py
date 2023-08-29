@@ -1,7 +1,8 @@
 """
 """
-from jax import random as jran
 from jax import numpy as jnp
+from jax import random as jran
+
 from ..individual_halo_history import _get_bounded_params, _get_unbounded_params
 
 

@@ -1,11 +1,12 @@
 """Model of mean and variance of Mh(t) dMh/dt(t) for Rockstar host halos."""
-import numpy as np
 from collections import OrderedDict
+
+import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
 
 LGT0 = 1.137
-TODAY = 10 ** LGT0
+TODAY = 10**LGT0
 
 PARAMS = OrderedDict(
     x0_x0=15.21,
@@ -225,8 +226,7 @@ def _frac_early_mpeak(logm0):
 
 @jjit
 def _prob_tmp_cens(tmp, logm0, t0, tmp_dt, tmp_k, tmp_indx_t0):
-    """
-    """
+    """ """
     frac_early_tmp = _frac_early_mpeak(logm0)
 
     pdf_tmpeak_early = _prob_tmp_early_forming_cens(logm0, tmp, t0, tmp_k, tmp_indx_t0)

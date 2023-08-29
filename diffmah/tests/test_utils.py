@@ -1,14 +1,14 @@
 """
 """
 import numpy as np
-from jax import numpy as jax_np
 from jax import jit as jax_jit
-from ..utils import jax_inverse_sigmoid, jax_sigmoid, jax_adam_wrapper
+from jax import numpy as jax_np
+
+from ..utils import jax_adam_wrapper, jax_inverse_sigmoid, jax_sigmoid
 
 
 def test_inverse_sigmoid_actually_inverts():
-    """
-    """
+    """ """
     x0, k, ylo, yhi = 0, 5, 1, 0
     xarr = np.linspace(-1, 1, 100)
     yarr = np.array(jax_sigmoid(xarr, x0, k, ylo, yhi))

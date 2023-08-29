@@ -8,10 +8,10 @@ The mean_halo_mass_assembly_history function implements a model for
 
 """
 from collections import OrderedDict
-import numpy as np
-from jax import numpy as jax_np
-from jax import jit as jax_jit
 
+import numpy as np
+from jax import jit as jax_jit
+from jax import numpy as jax_np
 
 __all__ = ("mean_halo_mass_assembly_history", "individual_halo_assembly_history")
 
@@ -29,7 +29,7 @@ MEAN_MAH_PARAMS = OrderedDict(
     dmhdt_yhi_c1=0.25,
 )
 LOGTODAY = 1.14
-TODAY = 10.0 ** LOGTODAY
+TODAY = 10.0**LOGTODAY
 
 
 def mean_halo_mass_assembly_history(

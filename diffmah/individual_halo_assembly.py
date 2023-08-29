@@ -1,10 +1,10 @@
 """Model for individual halo mass assembly based on a power-law with rolling index."""
 from collections import OrderedDict
-from jax import numpy as jnp
-from jax import jit as jjit
-from jax import vmap as jvmap
-from jax import grad
 
+from jax import grad
+from jax import jit as jjit
+from jax import numpy as jnp
+from jax import vmap as jvmap
 
 _MAH_PARS = OrderedDict(mah_x0=-0.15, mah_k=3.5, mah_early=3.0, mah_dy=0.75)
 _MAH_BOUNDS = OrderedDict(
@@ -38,7 +38,7 @@ _d_log_mh_dt = jjit(
 @jjit
 def _calc_halo_history(logt, logtmp, logmp, x0, k, early, late):
     log_mah = _rolling_plaw_vs_logt(logt, logtmp, logmp, x0, k, early, late)
-    d_log_mh_dt = _d_log_mh_dt(10.0 ** logt, logtmp, logmp, x0, k, early, late)
+    d_log_mh_dt = _d_log_mh_dt(10.0**logt, logtmp, logmp, x0, k, early, late)
     dmhdt = d_log_mh_dt * (10.0 ** (log_mah - 9.0)) / jnp.log10(jnp.e)
     return dmhdt, log_mah
 

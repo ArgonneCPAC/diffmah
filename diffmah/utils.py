@@ -1,9 +1,10 @@
+from collections import OrderedDict
+
 import numpy as np
+from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad
-from jax import jit as jjit
 from jax.experimental import optimizers as jax_opt
-from collections import OrderedDict
 
 
 def get_1d_arrays(*args, jax_arrays=False):
@@ -76,9 +77,9 @@ def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
 def _jax_triweight_sigmoid_kernel(y):
     val = jnp.where(
         y < 3,
-        -5 * y ** 7 / 69984
-        + 7 * y ** 5 / 2592
-        - 35 * y ** 3 / 864
+        -5 * y**7 / 69984
+        + 7 * y**5 / 2592
+        - 35 * y**3 / 864
         + 35 * y / 96
         + 1 / 2,
         1,
@@ -89,7 +90,7 @@ def _jax_triweight_sigmoid_kernel(y):
 @jjit
 def _jax_tw_cuml_kern(x, m, h):
     y = (x - m) / h
-    v = -5 * y ** 7 / 69984 + 7 * y ** 5 / 2592 - 35 * y ** 3 / 864 + 35 * y / 96 + 0.5
+    v = -5 * y**7 / 69984 + 7 * y**5 / 2592 - 35 * y**3 / 864 + 35 * y / 96 + 0.5
     res = jnp.where(y < -3, 0, v)
     res = jnp.where(y > 3, 1, res)
     return res
@@ -104,8 +105,7 @@ def _enforce_no_extraneous_keywords(defaults, **kwargs):
 
 
 def _get_param_dict(defaults, strict=False, **kwargs):
-    """
-    """
+    """ """
     param_dict = OrderedDict(
         [(key, kwargs.get(key, val)) for key, val in defaults.items()]
     )
@@ -115,8 +115,7 @@ def _get_param_dict(defaults, strict=False, **kwargs):
 
 
 def _get_param_array(defaults, strict=False, dtype="f4", jax_arrays=True, **kwargs):
-    """
-    """
+    """ """
     param_dict = _get_param_dict(defaults, strict=strict, **kwargs)
     if jax_arrays:
         param_array = jnp.array(list(param_dict.values())).astype(dtype)

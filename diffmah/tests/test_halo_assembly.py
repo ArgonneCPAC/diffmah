@@ -1,22 +1,27 @@
 """
 """
-import pytest
 import functools
+
 import numpy as np
+import pytest
+from jax import jit as jax_jit
 from jax import numpy as jax_np
 from jax import value_and_grad
-from jax import jit as jax_jit
-from ..halo_assembly import individual_halo_assembly_history
-from ..halo_assembly import mean_halo_mass_assembly_history
-from ..halo_assembly import _individual_halo_assembly_jax_kern
-from ..halo_assembly import _get_individual_mah_params, _get_dt_array
-from ..halo_assembly import DEFAULT_MAH_PARAMS, MEAN_MAH_PARAMS
+
+from ..halo_assembly import (
+    DEFAULT_MAH_PARAMS,
+    MEAN_MAH_PARAMS,
+    _get_dt_array,
+    _get_individual_mah_params,
+    _individual_halo_assembly_jax_kern,
+    individual_halo_assembly_history,
+    mean_halo_mass_assembly_history,
+)
 from ..utils import _get_param_array
 
 
 def test_halo_mah_evaluates_reasonably_with_default_args():
-    """
-    """
+    """ """
     npts = 250
     for logmp in (11, 12, 13, 14, 15):
         for tmp in (13.5, 14):
@@ -38,8 +43,7 @@ def test_halo_mah_responds_correctly_to_tmp():
 
 
 def test_avg_halo_mah_evaluates_reasonably_with_default_args():
-    """
-    """
+    """ """
     npts = 250
     for logmp in (11, 12, 13, 14, 15):
         for tmp in (13.5, 14):
@@ -53,8 +57,7 @@ def test_avg_halo_mah_evaluates_reasonably_with_default_args():
 
 @pytest.mark.xfail
 def test_individual_halo_assembly_differentiability():
-    """
-    """
+    """ """
 
     @functools.partial(jax_jit, static_argnums=(1,))
     def mse_loss(mah_params, data):
