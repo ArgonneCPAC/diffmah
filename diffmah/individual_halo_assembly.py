@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from jax import grad
 from jax import jit as jjit
+from jax import lax
 from jax import numpy as jnp
 from jax import vmap as jvmap
 
@@ -112,10 +113,10 @@ def _get_early_index(u_early):
 @jjit
 def _sigmoid(x, x0, k, ymin, ymax):
     height_diff = ymax - ymin
-    return ymin + height_diff / (1 + jnp.exp(-k * (x - x0)))
+    return ymin + height_diff / (1 + lax.exp(-k * (x - x0)))
 
 
 @jjit
 def _inverse_sigmoid(y, x0, k, ymin, ymax):
     lnarg = (ymax - ymin) / (y - ymin) - 1
-    return x0 - jnp.log(lnarg) / k
+    return x0 - lax.log(lnarg) / k

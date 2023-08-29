@@ -2,9 +2,10 @@ from collections import OrderedDict
 
 import numpy as np
 from jax import jit as jjit
+from jax import lax
 from jax import numpy as jnp
 from jax import value_and_grad
-from jax.experimental import optimizers as jax_opt
+from jax.example_libraries import optimizers as jax_opt
 
 
 def get_1d_arrays(*args, jax_arrays=False):
@@ -46,7 +47,7 @@ def jax_sigmoid(x, x0, k, ylo, yhi):
     -------
     sigmoid : scalar or array-like, same shape as input
     """
-    return ylo + (yhi - ylo) / (1 + jnp.exp(-k * (x - x0)))
+    return ylo + (yhi - ylo) / (1 + lax.exp(-k * (x - x0)))
 
 
 def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
