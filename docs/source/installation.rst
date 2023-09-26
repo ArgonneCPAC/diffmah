@@ -4,26 +4,20 @@ Installation instructions
 Dependencies
 ------------
 
-``diffmah`` requires `numpy <https://numpy.org/>`__ 
-and `jax <https://jax.readthedocs.io/en/latest/>`__. 
+diffmah requires python>=3.9, and has the following dependencies:
+
+  - `numpy <https://numpy.org/>`__ 
+  - `jax <https://jax.readthedocs.io/en/latest/>`__
 
 Installation
 ------------
 
-The latest release of ``diffmah`` is available on conda-forge:
+The latest release of diffmah is available on pip and conda-forge:
 
        conda install -c conda-forge diffmah
 
-You can also install dsps by downloading the source code or cloning the GitHub
+You can also install diffmah by downloading the source code or cloning the GitHub
 repository and running the standard::
-
-       python setup.py install
-
-command or its usual variants, such as::
-
-       python setup.py install --prefix=/PATH/TO/INSTALL/DIRECTORY
-
-or::
 
        pip install .
 
