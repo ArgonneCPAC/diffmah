@@ -1,4 +1,4 @@
-0.4.2 (in progress)
+0.4.2 (2023-09-26)
 ------------------
 - Remove optional mah_type argument of mc_halo_population function
 - Implement differentiable kernel for mc_halo_population function
