@@ -38,7 +38,8 @@ jobs:
             pytest-cov \
             pip \
             setuptools \
-            "setuptools_scm>=7"
+            "setuptools_scm>=7,<8" \
+            python-build
           python -m pip install --no-build-isolation --no-deps -e .
 
       - name: lint
