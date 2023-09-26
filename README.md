@@ -1,7 +1,7 @@
 # diffmah
 
 ## Installation
-The latest release of diffmah is 0.4.1:
+The latest release of diffmah is available for installation with pip or conda:
 ```
 $ conda install diffmah
 ```
@@ -10,14 +10,14 @@ To install diffmah into your environment from the source code:
 
 ```
 $ cd /path/to/root/diffmah
-$ python setup.py install
+$ pip install .
 ```
 
 ### Environment configuration
 For a typical development environment in conda:
 
 ```
-$ conda create -n diffit python=3.9 numpy numba flake8 pytest jax ipython jupyter matplotlib scipy h5py diffmah
+$ conda create -n diffit python=3.9 numpy jax pytest ipython jupyter matplotlib scipy h5py diffmah
 ```
 
 ## Project data
@@ -27,11 +27,7 @@ Data for this project can be found [at this URL](https://portal.nersc.gov/projec
 Online documentation for Diffmah is available [diffmah.readthedocs.io](https://diffmah.readthedocs.io/en/latest/).
 
 ## Scripts and demo notebooks
-The `diffmah_halo_populations.ipynb` notebook demonstrates how to calculate the MAHs as a function of the diffmah parameters using the `calc_halo_history` function. This notebook also demonstrates how to use the `mc_halo_population` function to generate Monte Carlo realizations of cosmologically representative populations of halos.
-
-The `diffmah_fitter_demo.ipynb` notebook demonstrates how to fit the MAH of a simulated halo with a diffmah approximation.
-
-See `history_fitting_script.py` for an example of how to fit the MAHs of a large number of simulated halos in parallel with mpi4py.
+The `diffmah_fitter_demo.ipynb` notebook demonstrates how to fit the MAH of a simulated halo with a diffmah approximation. See `history_fitting_script.py` for an example of how to fit the MAHs of a large number of simulated halos in parallel with mpi4py.
 
 ## Citing diffmah
 [The diffmah paper](https://astro.theoj.org/article/26991-a-differentiable-model-of-the-assembly-of-individual-and-populations-of-dark-matter-halos) has been published by the [Open Journal of Astrophysics](https://astro.theoj.org/). Citation information for the paper can be found at [this ADS link](https://ui.adsabs.harvard.edu/abs/2021OJAp....4E...7H/abstract), copied below for convenience:
