@@ -1,7 +1,10 @@
-0.5.0 (in progress)
+0.4.2 (in progress)
 ------------------
 - Remove optional mah_type argument of mc_halo_population function
 - Implement differentiable kernel for mc_halo_population function
+- Update requirement to python>=3.9
+- Update packaging structure to pyproject.toml
+- Remove diffmah/_version.py and switch to dynamic versioning
 
 0.4.1 (2022-09-17)
 ------------------
