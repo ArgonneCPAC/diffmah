@@ -31,12 +31,15 @@ jobs:
           conda config --set always_yes yes
           conda install --quiet \
             --file=requirements.txt
-          python -m pip install --no-deps -e .
           conda install -y -q \
             flake8 \
             pytest \
             pytest-xdist \
-            pytest-cov
+            pytest-cov \
+            pip \
+            setuptools \
+            "setuptools_scm>=7"
+          python -m pip install --no-build-isolation --no-deps -e .
 
       - name: lint
         shell: bash -l {0}
