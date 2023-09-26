@@ -5,7 +5,7 @@
 from pkg_resources import DistributionNotFound, get_distribution
 
 try:
-    __version__ = get_distribution("diffstar").version
+    __version__ = get_distribution("diffmah").version
 except DistributionNotFound:
     __version__ = "unknown version"
 
