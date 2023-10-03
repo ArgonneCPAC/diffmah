@@ -1,9 +1,9 @@
 # diffmah
 
 ## Installation
-The latest release of diffmah is available for installation with pip or conda:
+The latest release of diffmah is available for installation with pip or conda-forge:
 ```
-$ conda install diffmah
+$ conda install -c conda-forge diffmah
 ```
 
 To install diffmah into your environment from the source code:
@@ -14,10 +14,10 @@ $ pip install .
 ```
 
 ### Environment configuration
-For a typical development environment in conda:
+For a typical development environment in conda-forge:
 
 ```
-$ conda create -n diffit python=3.9 numpy jax pytest ipython jupyter matplotlib scipy h5py diffmah
+$ conda create -c conda-forge -n diffit python=3.9 numpy jax pytest ipython jupyter matplotlib scipy h5py diffmah
 ```
 
 ## Project data
