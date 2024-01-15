@@ -5,12 +5,14 @@ import os
 import numpy as np
 from jax import numpy as jnp
 
-from ..defaults import DEFAULT_MAH_PARAMS, MAH_K
+from ..defaults import DEFAULT_MAH_PARAMS, MAH_K, DiffmahParams
 from ..individual_halo_assembly import (
     _calc_halo_history,
     _calc_halo_history_scalar,
     _get_early_late,
     _power_law_index_vs_logt,
+    mah_halopop,
+    mah_singlehalo,
 )
 from ..rockstar_pdf_model import _get_mean_mah_params_early, _get_mean_mah_params_late
 
@@ -80,3 +82,25 @@ def test_calc_halo_history_scalar_agrees_with_vmap():
         dmhdt_i, log_mah_i = res
         assert np.allclose(dmhdt[i], dmhdt_i)
         assert np.allclose(log_mah[i], log_mah_i)
+
+
+def test_mah_singlehalo_evaluates():
+    nt = 100
+    tarr = np.linspace(0.1, 13.8, nt)
+    dmhdt, log_mah = mah_singlehalo(DEFAULT_MAH_PARAMS, tarr)
+    assert dmhdt.shape == tarr.shape
+    assert log_mah.shape == dmhdt.shape
+    assert log_mah[-1] == DEFAULT_MAH_PARAMS.logmp
+
+
+def test_mah_halopop_evaluates():
+    nt = 100
+    tarr = np.linspace(0.1, 13.8, nt)
+
+    ngals = 150
+    zz = np.zeros(ngals)
+    mah_params_halopop = DiffmahParams(*[zz + p for p in DEFAULT_MAH_PARAMS])
+    dmhdt, log_mah = mah_halopop(mah_params_halopop, tarr)
+    assert dmhdt.shape == (ngals, nt)
+    assert log_mah.shape == dmhdt.shape
+    assert np.allclose(log_mah[:, -1], DEFAULT_MAH_PARAMS.logmp)
