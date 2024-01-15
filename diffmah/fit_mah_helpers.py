@@ -3,8 +3,13 @@ import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad
-from .individual_halo_assembly import DEFAULT_MAH_PARAMS
-from .individual_halo_assembly import _u_rolling_plaw_vs_logt, _get_early_late
+
+from .defaults import DEFAULT_MAH_PARAMS, MAH_K
+from .individual_halo_assembly import (
+    _get_early_late,
+    _get_ue_ul,
+    _u_rolling_plaw_vs_logt,
+)
 
 T_FIT_MIN = 1.0
 DLOGM_CUT = 2.5
@@ -14,10 +19,9 @@ def get_outline(halo_id, loss_data, p_best, loss_best):
     """Return the string storing fitting results that will be written to disk"""
     logtc, ue, ul = p_best
     logt0, u_k, logm0 = loss_data[-3:]
-    t0 = 10 ** logt0
+    t0 = 10**logt0
     early, late = _get_early_late(ue, ul)
-    fixed_k = DEFAULT_MAH_PARAMS["mah_k"]
-    _d = np.array((logm0, logtc, fixed_k, early, late)).astype("f4")
+    _d = np.array((logm0, logtc, MAH_K, early, late)).astype("f4")
     data_out = (halo_id, *_d, t0, float(loss_best))
     out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
     return out + "\n"
@@ -105,12 +109,15 @@ def get_loss_data(
         t_fit_min,
     )
     logmp_init = log_mah_sim[-1]
-    lgtc_init, fixed_k, ue_init, ud_init = list(DEFAULT_MAH_PARAMS.values())
-    p_init = np.array((lgtc_init, ue_init, ud_init)).astype("f4")
+    lgtc_init = DEFAULT_MAH_PARAMS.logtc
+    ue_init, ul_init = _get_ue_ul(
+        DEFAULT_MAH_PARAMS.early_index, DEFAULT_MAH_PARAMS.late_index
+    )
+    p_init = np.array((lgtc_init, ue_init, ul_init)).astype("f4")
 
     logt0 = np.log10(t_sim[-1])
 
-    loss_data = (logt_target, log_mah_target, logt0, fixed_k, logmp_init)
+    loss_data = (logt_target, log_mah_target, logt0, MAH_K, logmp_init)
     return p_init, loss_data
 
 

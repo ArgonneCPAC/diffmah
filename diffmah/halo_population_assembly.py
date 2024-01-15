@@ -5,11 +5,8 @@ from jax import numpy as jnp
 from jax import vmap
 from jax.scipy.stats import multivariate_normal as jnorm
 
-from .individual_halo_assembly import (
-    DEFAULT_MAH_PARAMS,
-    _calc_halo_history,
-    _get_early_late,
-)
+from .defaults import MAH_K
+from .individual_halo_assembly import _calc_halo_history, _get_early_late
 from .rockstar_pdf_model import DEFAULT_MAH_PDF_PARAMS, LGT0, _get_mah_means_and_covs
 
 CLIP = -10.0
@@ -51,7 +48,7 @@ def _get_bimodal_halo_history_kern(
     mu_late,
     cov_early,
     cov_late,
-    k=DEFAULT_MAH_PARAMS["mah_k"],
+    k=MAH_K,
     logtmp=LGT0,
 ):
     early_arr, late_arr = _get_early_late(ue_arr, ul_arr)
@@ -133,7 +130,7 @@ def _get_bimodal_halo_history(
     chol_ue_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["chol_ue_lgtc_late_yhi"],
     chol_ul_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["chol_ul_lgtc_late_ylo"],
     chol_ul_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["chol_ul_lgtc_late_yhi"],
-    k=DEFAULT_MAH_PARAMS["mah_k"],
+    k=MAH_K,
     logtmp=LGT0,
 ):
     _res = _get_mah_means_and_covs(

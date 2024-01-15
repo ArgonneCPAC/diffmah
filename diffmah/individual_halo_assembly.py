@@ -1,18 +1,45 @@
 """Model for individual halo mass assembly based on a power-law with rolling index."""
-from collections import OrderedDict
-
 from jax import grad
 from jax import jit as jjit
 from jax import lax
 from jax import numpy as jnp
 from jax import vmap
 
+from .defaults import LGT0, MAH_K
 from .utils import get_1d_arrays
 
-DEFAULT_MAH_PARAMS = OrderedDict(mah_logtc=0.05, mah_k=3.5, mah_ue=2.4, mah_ul=-2.0)
+
+@jjit
+def mah_singlehalo(mah_params, tarr, lgt0=LGT0):
+    lgtarr = jnp.log10(tarr)
+    dmhdt, log_mah = _calc_halo_history(
+        lgtarr,
+        lgt0,
+        mah_params.logmp,
+        mah_params.logtc,
+        MAH_K,
+        mah_params.early_index,
+        mah_params.late_index,
+    )
+    return dmhdt, log_mah
 
 
-def calc_halo_history(t, t0, logmp, tauc, early, late, k=DEFAULT_MAH_PARAMS["mah_k"]):
+@jjit
+def mah_halopop(mah_params, tarr, lgt0=LGT0):
+    lgtarr = jnp.log10(tarr)
+    dmhdt, log_mah = _calc_halopop_history(
+        lgtarr,
+        lgt0,
+        mah_params.logmp,
+        mah_params.logtc,
+        MAH_K,
+        mah_params.early_index,
+        mah_params.late_index,
+    )
+    return dmhdt, log_mah
+
+
+def calc_halo_history(t, t0, logmp, tauc, early, late, k=MAH_K):
     """Calculate individual halo assembly histories.
 
     Parameters
@@ -99,6 +126,10 @@ def _calc_halo_history(logt, logt0, logmp, logtc, k, early, late):
     d_log_mh_dt = _d_log_mh_dt(10.0**logt, logt0, logmp, logtc, k, early, late)
     dmhdt = d_log_mh_dt * (10.0 ** (log_mah - 9.0)) / jnp.log10(jnp.e)
     return dmhdt, log_mah
+
+
+_YO = (None, None, 0, 0, None, 0, 0)
+_calc_halopop_history = jjit(vmap(_calc_halo_history, in_axes=_YO))
 
 
 @jjit

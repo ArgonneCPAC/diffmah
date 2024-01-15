@@ -7,12 +7,11 @@ from jax import lax
 from jax import numpy as jnp
 from jax import vmap
 
-from .individual_halo_assembly import DEFAULT_MAH_PARAMS
+from .defaults import MAH_K
 from .utils import get_cholesky_from_params
 
 TODAY = 13.8
 LGT0 = jnp.log10(TODAY)
-K = DEFAULT_MAH_PARAMS["mah_k"]
 
 _LGM_X0, LGM_K = 13.0, 0.5
 
@@ -353,7 +352,7 @@ def _get_mah_means_and_covs(
     chol_ue_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["chol_ue_lgtc_late_yhi"],
     chol_ul_lgtc_late_ylo=DEFAULT_MAH_PDF_PARAMS["chol_ul_lgtc_late_ylo"],
     chol_ul_lgtc_late_yhi=DEFAULT_MAH_PDF_PARAMS["chol_ul_lgtc_late_yhi"],
-    k=DEFAULT_MAH_PARAMS["mah_k"],
+    k=MAH_K,
     logtmp=LGT0,
 ):
     frac_late = frac_late_forming(logmp_arr, frac_late_ylo, frac_late_yhi)

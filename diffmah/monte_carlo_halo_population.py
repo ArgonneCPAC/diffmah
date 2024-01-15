@@ -8,14 +8,9 @@ from jax import numpy as jnp
 from jax import random as jran
 from jax import vmap
 
-from .individual_halo_assembly import (
-    DEFAULT_MAH_PARAMS,
-    _calc_halo_history,
-    _get_early_late,
-)
+from .defaults import MAH_K
+from .individual_halo_assembly import _calc_halo_history, _get_early_late
 from .rockstar_pdf_model import DEFAULT_MAH_PDF_PARAMS, _get_mah_means_and_covs
-
-MAH_K = DEFAULT_MAH_PARAMS["mah_k"]
 
 _A = (None, None, 0, 0, None, 0, 0)
 _calc_halo_history_vmap = jjit(vmap(_calc_halo_history, in_axes=_A))
