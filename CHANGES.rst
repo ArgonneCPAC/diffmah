@@ -1,3 +1,8 @@
+0.5.0 (2024-01-15)
+------------------
+- namedtuple DEFAULT_MAH_PARAMS now imported from diffmah.defaults (https://github.com/ArgonneCPAC/diffmah/pull/113)
+
+
 0.4.3 (2024-01-15)
 ------------------
 - Change DEFAULT_MAH_PARAMS to namedtuple instead of ndarray (https://github.com/ArgonneCPAC/diffmah/pull/112)
