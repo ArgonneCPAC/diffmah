@@ -1,6 +1,7 @@
 """
 """
 import numpy as np
+from jax import numpy as jnp
 
 
 def test_default_mah_params_imports_from_top_level_and_is_frozen():
@@ -24,3 +25,8 @@ def test_mah_halopop_imports_from_top_level():
     mah_params_halopop = DiffmahParams(*[x + zz for x in DEFAULT_MAH_PARAMS])
     dmhdt, log_mah = mah_halopop(mah_params_halopop, tarr)
     assert log_mah.shape == dmhdt.shape
+
+
+def test_trapz_raises_warning():
+    res = jnp.trapz(np.linspace(0, 1, 100), x=np.linspace(0, 1, 100))
+    assert np.all(np.isfinite(res))
