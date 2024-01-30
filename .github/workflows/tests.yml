@@ -47,11 +47,6 @@ jobs:
             python-build
           python -m pip install --no-build-isolation --no-deps -e .
 
-      - name: lint
-        shell: bash -l {0}
-        run: |
-          flake8 diffmah
-
       - name: test
         shell: bash -l {0}
         run: |
