@@ -1,7 +1,6 @@
 """
 """
 import numpy as np
-from jax import numpy as jnp
 
 
 def test_default_mah_params_imports_from_top_level_and_is_frozen():
