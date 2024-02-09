@@ -3,7 +3,6 @@
 from collections import OrderedDict
 
 from jax import jit as jjit
-from jax import lax
 from jax import numpy as jnp
 from jax import vmap
 
