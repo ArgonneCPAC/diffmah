@@ -1,4 +1,5 @@
 """Model for individual halo mass assembly based on a power-law with rolling index."""
+
 from jax import grad
 from jax import jit as jjit
 from jax import lax
@@ -6,7 +7,7 @@ from jax import numpy as jnp
 from jax import vmap
 
 from .defaults import LGT0, MAH_K
-from .utils import get_1d_arrays
+from .utils import _sigmoid, get_1d_arrays
 
 
 @jjit
@@ -135,12 +136,6 @@ _calc_halopop_history = jjit(vmap(_calc_halo_history, in_axes=_YO))
 @jjit
 def _softplus(x):
     return jnp.log(1 + lax.exp(x))
-
-
-@jjit
-def _sigmoid(x, logtc, k, ymin, ymax):
-    height_diff = ymax - ymin
-    return ymin + height_diff / (1.0 + lax.exp(-k * (x - logtc)))
 
 
 @jjit
