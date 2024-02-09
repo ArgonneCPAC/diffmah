@@ -1,4 +1,5 @@
 """Model of halo population assembly calibrated to Rockstar halos."""
+
 from collections import OrderedDict
 
 from jax import jit as jjit
@@ -7,7 +8,7 @@ from jax import numpy as jnp
 from jax import vmap
 
 from .defaults import MAH_K
-from .utils import get_cholesky_from_params
+from .utils import _sigmoid, get_cholesky_from_params
 
 TODAY = 13.8
 LGT0 = jnp.log10(TODAY)
@@ -54,12 +55,6 @@ DEFAULT_MAH_PDF_PARAMS = OrderedDict(
     chol_ul_lgtc_late_ylo=0.57,
     chol_ul_lgtc_late_yhi=0.39,
 )
-
-
-@jjit
-def _sigmoid(x, logtc, k, ymin, ymax):
-    height_diff = ymax - ymin
-    return ymin + height_diff / (1.0 + lax.exp(-k * (x - logtc)))
 
 
 def _get_cov_scalar(

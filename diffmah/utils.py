@@ -1,7 +1,8 @@
 """Utility functions used throughout the package."""
+
 import numpy as np
 from jax import jit as jjit
-from jax import lax
+from jax import nn
 from jax import numpy as jnp
 from jax.example_libraries import optimizers as jax_opt
 
@@ -25,7 +26,8 @@ def get_1d_arrays(*args, jax_arrays=False):
     return result
 
 
-def jax_sigmoid(x, x0, k, ylo, yhi):
+@jjit
+def _sigmoid(x, x0, k, ylo, yhi):
     """Sigmoid function implemented w/ `jax.numpy.exp`.
 
     Parameters
@@ -45,10 +47,11 @@ def jax_sigmoid(x, x0, k, ylo, yhi):
     -------
     sigmoid : scalar or array-like, same shape as input
     """
-    return ylo + (yhi - ylo) / (1 + lax.exp(-k * (x - x0)))
+    return ylo + (yhi - ylo) * nn.sigmoid(k * (x - x0))
 
 
-def jax_inverse_sigmoid(y, x0, k, ylo, yhi):
+@jjit
+def _inverse_sigmoid(y, x0, k, ylo, yhi):
     """Sigmoid function implemented w/ `jax.numpy.exp`.
 
     Parameters

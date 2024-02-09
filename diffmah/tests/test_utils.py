@@ -1,15 +1,16 @@
 """
 """
+
 import numpy as np
 from jax import jit as jax_jit
 from jax import numpy as jax_np
 from jax import value_and_grad
 
 from ..utils import (
+    _inverse_sigmoid,
+    _sigmoid,
     get_cholesky_from_params,
     jax_adam_wrapper,
-    jax_inverse_sigmoid,
-    jax_sigmoid,
 )
 
 
@@ -17,8 +18,8 @@ def test_inverse_sigmoid_actually_inverts():
     """"""
     x0, k, ylo, yhi = 0, 5, 1, 0
     xarr = np.linspace(-1, 1, 100)
-    yarr = np.array(jax_sigmoid(xarr, x0, k, ylo, yhi))
-    xarr2 = np.array(jax_inverse_sigmoid(yarr, x0, k, ylo, yhi))
+    yarr = np.array(_sigmoid(xarr, x0, k, ylo, yhi))
+    xarr2 = np.array(_inverse_sigmoid(yarr, x0, k, ylo, yhi))
     assert np.allclose(xarr, xarr2, rtol=1e-3)
 
 
