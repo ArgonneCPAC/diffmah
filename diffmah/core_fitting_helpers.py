@@ -110,7 +110,7 @@ def get_outline_bad_fit(halo_id, t_q):
 def get_outline(halo_id, loss_data, u_p_best, loss_best):
     """Return the string storing fitting results that will be written to disk"""
     t_q = loss_data[2]
-    p_best = get_bounded_mah_params(u_p_best)
+    p_best = get_bounded_mah_params(DiffmahUParams(*u_p_best))
     data_out = (halo_id, *p_best, t_q, float(loss_best))
     out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
     return out + "\n"
