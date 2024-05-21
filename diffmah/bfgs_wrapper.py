@@ -76,8 +76,11 @@ def diffmah_fitter(val_and_grads, p_init, loss_data, nstep=200, n_warmup=1):
 
     # check if LBFGS succeeds. If yes, save those results.
     # Otherwise try the Adam wrapper
-    if _res[-1] and _res[1] != 0.0:
-        code_used = "LBFGS"
+    fit_terminates = _res[-1]
+    loss_bfgs = _res[1]
+    bfgs_succeeds = fit_terminates & (np.isfinite(loss_bfgs)) & (loss_bfgs > 0)
+    if bfgs_succeeds:
+        code_used = "BFGS"
         _res.append(code_used)
         return _res
     else:

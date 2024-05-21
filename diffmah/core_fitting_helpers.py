@@ -98,19 +98,26 @@ def get_header():
     return "# halo_id logm0 logtc early_index late_index t_q loss\n"
 
 
-def get_outline_bad_fit(halo_id, t_q):
+def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
     logm0, logtc, early, late = -1.0, -1.0, -1.0, -1.0
-    _d = np.array((logm0, logtc, early, late)).astype("f4")
+    t_q = loss_data[2]
     loss_best = -1.0
-    data_out = (halo_id, *_d, t_q, float(loss_best))
-    out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
-    return out + "\n"
+    _floats = (logm0, logtc, early, late, t_q, loss_best)
+    out_list = ["{:.5e}".format(float(x)) for x in _floats]
+    out_list = [str(x) for x in out_list]
+    out_list = [str(halo_id), *out_list, str(npts_mah), algo]
+    outline = " ".join(out_list) + "\n"
+    return outline
 
 
-def get_outline(halo_id, loss_data, u_p_best, loss_best):
+def get_outline(halo_id, loss_data, u_p_best, loss_best, npts_mah, algo):
     """Return the string storing fitting results that will be written to disk"""
     t_q = loss_data[2]
     p_best = get_bounded_mah_params(DiffmahUParams(*u_p_best))
-    data_out = (halo_id, *p_best, t_q, float(loss_best))
-    out = str(halo_id) + " " + " ".join(["{:.5e}".format(x) for x in data_out[1:]])
-    return out + "\n"
+    logm0, logtc, early, late = p_best
+    _floats = (logm0, logtc, early, late, t_q, loss_best)
+    out_list = ["{:.5e}".format(float(x)) for x in _floats]
+    out_list = [str(x) for x in out_list]
+    out_list = [str(halo_id), *out_list, str(npts_mah), algo]
+    outline = " ".join(out_list) + "\n"
+    return outline
