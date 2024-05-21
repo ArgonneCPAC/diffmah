@@ -94,10 +94,6 @@ def log_mah_loss_uparams(u_params, loss_data):
 loss_and_grads_kern = jjit(value_and_grad(log_mah_loss_uparams))
 
 
-def get_header():
-    return "# halo_id logm0 logtc early_index late_index t_q loss\n"
-
-
 def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
     logm0, logtc, early, late = -1.0, -1.0, -1.0, -1.0
     t_q = loss_data[2]
@@ -105,7 +101,7 @@ def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
     _floats = (logm0, logtc, early, late, t_q, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
-    out_list = [str(halo_id), *out_list, str(npts_mah), algo]
+    out_list = [str(halo_id), *out_list, str(npts_mah), str(algo)]
     outline = " ".join(out_list) + "\n"
     return outline
 
@@ -118,6 +114,6 @@ def get_outline(halo_id, loss_data, u_p_best, loss_best, npts_mah, algo):
     _floats = (logm0, logtc, early, late, t_q, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
-    out_list = [str(halo_id), *out_list, str(npts_mah), algo]
+    out_list = [str(halo_id), *out_list, str(npts_mah), str(algo)]
     outline = " ".join(out_list) + "\n"
     return outline

@@ -80,12 +80,12 @@ def diffmah_fitter(val_and_grads, p_init, loss_data, nstep=200, n_warmup=1):
     loss_bfgs = _res[1]
     bfgs_succeeds = fit_terminates & (np.isfinite(loss_bfgs)) & (loss_bfgs > 0)
     if bfgs_succeeds:
-        code_used = "BFGS"
+        code_used = 0  # BFGS
         _res.append(code_used)
         return _res
     else:
         res = jax_adam_wrapper(val_and_grads, p_init, loss_data, nstep, n_warmup)
         p_best, loss_best, loss_arr, params_arr, fit_terminates = res
-        code_used = "Adam"
+        code_used = 1  # Adam
         _res = [p_best, loss_best, fit_terminates, code_used]
         return _res
