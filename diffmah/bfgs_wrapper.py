@@ -44,24 +44,32 @@ def scipy_lbfgs_wrapper(val_and_grads, p_init, loss_data):
     return _res
 
 
-def minimize_alternate_wrappers(
-    val_and_grads, p_init, loss_data, nstep=200, n_warmup=1
-):
+def diffmah_fitter(val_and_grads, p_init, loss_data, nstep=200, n_warmup=1):
     """
     Function that runs scipy's LBFGS minimizer.
-    If that is not successful, minimize the fit with the ADAM minimizer from JAX.
-    Args:
-        val_and_grads: function that returns the loss function along with the grads
-        For LBFGS, one does not need to use grads.
-        p_init: array of initial values for parameters
-        loss_data: Sequence of floats and arrays storing
-        whatever data is needed to compute loss_func(params_init, loss_data)
-        nstep: Number of steps that the ADAM wrapper needs to run for (default = 200)
-        n_warmup: The number of warmup steps to use (default = 1)
+    If that is not successful, minimize the fit with the ADAM minimizer from JAX
 
-    Returns:
-        _res: list of best fit parameters, best fit loss,
-        and a boolean whether the fit was successful or not, and what algo was used.
+    Parameters
+    -----------
+    val_and_grads: func
+        function returns the loss function along with the grads
+
+    u_p_init: array
+        initial values for unbounded parameters
+
+    loss_data: Sequence of floats and arrays storing
+        whatever data is needed to compute loss_func(params_init, loss_data)
+
+    nstep: int, optional
+        Number of steps that the ADAM wrapper needs to run for (default = 200)
+
+    n_warmup: int, optional
+        Number of warmup steps to use (default = 1)
+
+    Returns
+    -------
+    _res: list
+        p_best, loss_best, fit_terminates, code_used
 
     """
     _res = scipy_lbfgs_wrapper(val_and_grads, p_init, loss_data)

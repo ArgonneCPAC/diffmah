@@ -4,6 +4,7 @@
 import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
+from jax import value_and_grad
 
 from .diffmah_tq import (
     DEFAULT_MAH_PARAMS,
@@ -88,6 +89,9 @@ def log_mah_loss_uparams(u_params, loss_data):
     log_mah_pred = _log_mah_kern_u_params(u_params, t_target, t_q, logt0)
     log_mah_loss = _mse(log_mah_pred, log_mah_target)
     return log_mah_loss
+
+
+loss_and_grads_kern = jjit(value_and_grad(log_mah_loss_uparams))
 
 
 def get_header():
