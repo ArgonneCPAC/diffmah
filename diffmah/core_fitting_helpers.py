@@ -4,7 +4,7 @@
 import numpy as np
 from jax import jit as jjit
 from jax import numpy as jnp
-from jax import value_and_grad
+from jax import value_and_grad, vmap
 
 from .diffmah_tq import (
     DEFAULT_MAH_PARAMS,
@@ -19,17 +19,14 @@ DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
 
 
+@jjit
 def compute_indx_t_q_singlehalo(log_mah_table):
-    log_mah_table = np.maximum.accumulate(log_mah_table)
     logm0 = log_mah_table[-1]
-    indx_t_q = np.argmax(log_mah_table == logm0)
+    indx_t_q = jnp.argmax(log_mah_table == logm0)
     return indx_t_q
 
 
-def compute_indx_t_q_halopop(log_mah_table):
-    maxs = np.max(log_mah_table)
-    indx_t_q = np.argmax(log_mah_table == maxs.reshape((-1, 1)), axis=1)
-    return indx_t_q
+compute_indx_t_q_halopop = jjit(vmap(compute_indx_t_q_singlehalo, in_axes=(0,)))
 
 
 def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
