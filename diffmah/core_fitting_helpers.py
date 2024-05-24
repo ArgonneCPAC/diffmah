@@ -17,15 +17,13 @@ from .diffmah_tq import (
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
-HEADER = (
-    "# halo_id logmp logtc early_index late_index t_q loss n_points_per_fit fit_algo\n"
-)
+HEADER = "# root_indx logmp logtc early_index late_index t_q loss n_points_per_fit fit_algo\n"
 
 
 def write_collated_data(outname, fit_data_strings, chunk_arr=None):
     import h5py
 
-    halo_id = fit_data_strings[:, 0].astype(int)
+    root_indx = fit_data_strings[:, 0].astype(int)
     logmp = fit_data_strings[:, 1].astype(float)
     logtc = fit_data_strings[:, 2].astype(float)
     early_index = fit_data_strings[:, 3].astype(float)
@@ -36,7 +34,7 @@ def write_collated_data(outname, fit_data_strings, chunk_arr=None):
     fit_algo = fit_data_strings[:, 8].astype(int)
 
     with h5py.File(outname, "w") as hdf:
-        hdf["halo_id"] = halo_id
+        hdf["root_indx"] = root_indx
         hdf["logmp"] = logmp
         hdf["logtc"] = logtc
         hdf["early_index"] = early_index
@@ -122,7 +120,7 @@ def log_mah_loss_uparams(u_params, loss_data):
 loss_and_grads_kern = jjit(value_and_grad(log_mah_loss_uparams))
 
 
-def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
+def get_outline_bad_fit(root_indx, loss_data, npts_mah, algo):
     log_mah_target = loss_data[1]
     logm0 = log_mah_target[-1]
     logtc, early, late = -1.0, -1.0, -1.0
@@ -131,12 +129,12 @@ def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
     _floats = (logm0, logtc, early, late, t_q, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
-    out_list = [str(halo_id), *out_list, str(npts_mah), str(algo)]
+    out_list = [str(root_indx), *out_list, str(npts_mah), str(algo)]
     outline = " ".join(out_list) + "\n"
     return outline
 
 
-def get_outline(halo_id, loss_data, u_p_best, loss_best, npts_mah, algo):
+def get_outline(root_indx, loss_data, u_p_best, loss_best, npts_mah, algo):
     """Return the string storing fitting results that will be written to disk"""
     t_q = loss_data[2]
     p_best = get_bounded_mah_params(DiffmahUParams(*u_p_best))
@@ -144,6 +142,6 @@ def get_outline(halo_id, loss_data, u_p_best, loss_best, npts_mah, algo):
     _floats = (logm0, logtc, early, late, t_q, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
-    out_list = [str(halo_id), *out_list, str(npts_mah), str(algo)]
+    out_list = [str(root_indx), *out_list, str(npts_mah), str(algo)]
     outline = " ".join(out_list) + "\n"
     return outline
