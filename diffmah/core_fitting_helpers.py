@@ -17,6 +17,37 @@ from .diffmah_tq import (
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
+HEADER = (
+    "# halo_id logmp logtc early_index late_index t_q loss n_points_per_fit fit_algo\n"
+)
+
+
+def write_collated_data(outname, fit_data_strings, chunk_arr=None):
+    import h5py
+
+    halo_id = fit_data_strings[:, 0].astype(int)
+    logmp = fit_data_strings[:, 1].astype(float)
+    logtc = fit_data_strings[:, 2].astype(float)
+    early_index = fit_data_strings[:, 3].astype(float)
+    late_index = fit_data_strings[:, 4].astype(float)
+    t_q = fit_data_strings[:, 5].astype(float)
+    loss = fit_data_strings[:, 6].astype(float)
+    n_points_per_fit = fit_data_strings[:, 7].astype(int)
+    fit_algo = fit_data_strings[:, 8].astype(int)
+
+    with h5py.File(outname, "w") as hdf:
+        hdf["halo_id"] = halo_id
+        hdf["logmp"] = logmp
+        hdf["logtc"] = logtc
+        hdf["early_index"] = early_index
+        hdf["late_index"] = late_index
+        hdf["t_q"] = t_q
+        hdf["loss"] = loss
+        hdf["n_points_per_fit"] = n_points_per_fit
+        hdf["fit_algo"] = fit_algo
+
+        if chunk_arr is not None:
+            hdf["chunk"] = chunk_arr
 
 
 @jjit
