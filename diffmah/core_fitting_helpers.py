@@ -1,5 +1,9 @@
+"""Utility functions for fitting HACC core MAHs with diffmah.
+Data loading functions require h5py and/or haccytrees
+
 """
-"""
+
+import os
 
 import numpy as np
 from jax import jit as jjit
@@ -18,6 +22,10 @@ from .diffmah_tq import (
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
 HEADER = "# root_indx logmp logtc early_index late_index t_q loss n_points_per_fit fit_algo\n"
+DEFAULT_NCHUNKS = 50
+
+LJ_Om = 0.310
+LJ_h = 0.6766
 
 
 def write_collated_data(outname, fit_data_strings, chunk_arr=None):
@@ -145,3 +153,29 @@ def get_outline(root_indx, loss_data, u_p_best, loss_best, npts_mah, algo):
     out_list = [str(root_indx), *out_list, str(npts_mah), str(algo)]
     outline = " ".join(out_list) + "\n"
     return outline
+
+
+def load_lj_mahs(fdir, subvolume, chunknum, nchunks=DEFAULT_NCHUNKS, lgmh_clip=7):
+    from dsps.cosmology.flat_wcdm import age_at_z
+    from haccytrees import Simulation as HACCSim
+    from haccytrees import coretrees
+
+    simulation = HACCSim.simulations["LastJourney"]
+    zarr = simulation.step2z(np.array(simulation.cosmotools_steps))
+
+    fname = os.path.join(fdir, "m000p.coreforest.%s.hdf5" % subvolume)
+    forest_matrices = coretrees.corematrix_reader(
+        fname,
+        calculate_secondary_host_row=True,
+        nchunks=nchunks,
+        chunknum=chunknum,
+        simulation="LastJourney",
+    )
+
+    # Clip mass at LOGMH_MIN and set log_mah==0 when below the clip
+    core_mass = forest_matrices["infall_fof_halo_mass"]
+    mahs = np.maximum.accumulate(core_mass, axis=1)
+    mahs = np.where(mahs < 10**lgmh_clip, 1.0, mahs)
+    log_mahs = np.log10(mahs)  # now log-safe thanks to clip
+    tarr = age_at_z(zarr, LJ_Om, LJ_h, -1.0, 0.0)
+    return zarr, tarr, log_mahs
