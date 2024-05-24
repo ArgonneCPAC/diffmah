@@ -92,7 +92,9 @@ loss_and_grads_kern = jjit(value_and_grad(log_mah_loss_uparams))
 
 
 def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
-    logm0, logtc, early, late = -1.0, -1.0, -1.0, -1.0
+    log_mah_target = loss_data[1]
+    logm0 = log_mah_target[-1]
+    logtc, early, late = -1.0, -1.0, -1.0
     t_q = loss_data[2]
     loss_best = -1.0
     _floats = (logm0, logtc, early, late, t_q, loss_best)
