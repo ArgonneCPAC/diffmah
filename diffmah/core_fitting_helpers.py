@@ -177,5 +177,5 @@ def load_lj_mahs(fdir, subvolume, chunknum, nchunks=DEFAULT_NCHUNKS, lgmh_clip=7
     mahs = np.maximum.accumulate(core_mass, axis=1)
     mahs = np.where(mahs < 10**lgmh_clip, 1.0, mahs)
     log_mahs = np.log10(mahs)  # now log-safe thanks to clip
-    tarr = age_at_z(zarr, LJ_Om, LJ_h, -1.0, 0.0)
+    tarr = age_at_z(zarr, LJ_Om, -1.0, 0.0, LJ_h)
     return zarr, tarr, log_mahs
