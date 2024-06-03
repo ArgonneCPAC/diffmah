@@ -321,3 +321,65 @@ def get_cholesky_from_params(params):
     indx = indx_diags + indx_offdiags
     cholesky = params[indx.flatten()].reshape((ndim, ndim)) * unity
     return cholesky
+
+
+@jjit
+def trimmed_mean(x, p_trim):
+    """Mean of x after excluding points outside p_trim percentile
+    Equivalent to scipy.stats.mstats.trimmed_mean
+
+    Parameters
+    ----------
+    x : array
+
+    p_trim : float
+        0 <= p < 0.5
+
+    Returns
+    -------
+    mu : float
+
+    """
+    xlo = jnp.percentile(x, p_trim * 100.0)
+    xhi = jnp.percentile(x, (1.0 - p_trim) * 100.0)
+    xmsk = (x > xlo) & (x < xhi)
+    _weights = jnp.where(xmsk, 1.0, 0.0)
+    weights = _weights / _weights.sum()
+    trimmed_mean = jnp.sum(x * weights)
+    return trimmed_mean
+
+
+@jjit
+def trimmed_mean_and_variance(x, p_trim):
+    """Mean and variance of x after excluding points outside p_trim percentile.
+    Equivalent to scipy.stats.mstats.trimmed_mean and scipy.stats.mstats.trimmed_var
+
+    Parameters
+    ----------
+    x : array
+
+    p_trim : float
+        0 <= p < 0.5
+
+    Returns
+    -------
+    mu : float
+
+    var : float
+
+    """
+    xlo = jnp.percentile(x, p_trim * 100.0)
+    xhi = jnp.percentile(x, (1.0 - p_trim) * 100.0)
+    xmsk = (x > xlo) & (x < xhi)
+    _weights = jnp.where(xmsk, 1.0, 0.0)
+    weights = _weights / _weights.sum()
+
+    trimmed_mean = jnp.sum(x * weights)
+
+    num_nonzero_weights = jnp.sum(weights > 0.0)
+    var_integrand = weights * (x - trimmed_mean) ** 2
+    numerator = jnp.sum(var_integrand)
+    denominator = (num_nonzero_weights - 1) / num_nonzero_weights
+    trimmed_variance = numerator / denominator
+
+    return trimmed_mean, trimmed_variance

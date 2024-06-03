@@ -11,6 +11,8 @@ from ..utils import (
     _sigmoid,
     get_cholesky_from_params,
     jax_adam_wrapper,
+    trimmed_mean,
+    trimmed_mean_and_variance,
 )
 
 
@@ -119,3 +121,35 @@ def test_get_cholesky_from_params1():
     row3 = (params[7], params[8], params[9], params[3])
     correct_chol = np.array((row0, row1, row2, row3))
     assert np.allclose(chol, correct_chol)
+
+
+def test_trimmed_mean_agrees_with_scipy():
+    from scipy.stats.mstats import trimmed_mean as trimmed_mean_scipy
+
+    ptest = 0.1, 0.2, 0.3
+    for p in ptest:
+        x = np.random.normal(loc=0, scale=1, size=20_000)
+        mu_p10 = trimmed_mean(x, p)
+        mu_p10_scipy = trimmed_mean_scipy(x, p)
+        assert np.allclose(mu_p10, mu_p10_scipy, rtol=0.01)
+
+
+def test_trimmed_mean_and_variance_agrees_with_scipy():
+    from scipy.stats.mstats import trimmed_mean as trimmed_mean_scipy
+    from scipy.stats.mstats import trimmed_var as trimmed_var_scipy
+
+    ptest = 0.01, 0.1, 0.2, 0.3
+    for p in ptest:
+        x = np.random.normal(loc=0, scale=1, size=20_000)
+        mu_p10, var_p10 = trimmed_mean_and_variance(x, p)
+        mu_p10_scipy = trimmed_mean_scipy(x, p)
+        var_p10_scipy = trimmed_var_scipy(x, p)
+        assert np.allclose(mu_p10, mu_p10_scipy, rtol=0.01)
+        assert np.allclose(var_p10, var_p10_scipy, rtol=0.01)
+
+
+def test_trimmed_mean_and_variance_consistency():
+    x = np.random.normal(loc=0, scale=1, size=20_000)
+    mu, var = trimmed_mean_and_variance(x, 0.1)
+    mu2 = trimmed_mean(x, 0.1)
+    assert np.allclose(mu, mu2, rtol=1e-4)
