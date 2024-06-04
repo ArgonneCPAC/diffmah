@@ -70,7 +70,7 @@ def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
     logm0_sim = log_mah_sim[-1]
 
     msk = log_mah_sim > (logm0_sim - dlogm_cut)
-    msk &= log_mah_sim >= lgm_min
+    msk &= log_mah_sim > lgm_min
     msk &= t_sim >= t_fit_min
 
     logt_target = np.log10(t_sim)[msk]
