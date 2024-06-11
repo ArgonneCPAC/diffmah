@@ -1,4 +1,4 @@
-"""Utility functions for fitting HACC core MAHs with diffmah.
+"""Utility functions for fitting MAHs with diffmah.
 Data loading functions require h5py and/or haccytrees
 
 """
