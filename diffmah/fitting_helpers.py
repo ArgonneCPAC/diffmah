@@ -21,7 +21,7 @@ from .diffmah_kernels import (
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
-HEADER = "# root_indx logmp logtc early_index late_index t_q loss n_points_per_fit fit_algo\n"
+HEADER = "# root_indx logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"
 DEFAULT_NCHUNKS = 50
 
 LJ_Om = 0.310
@@ -32,22 +32,22 @@ def write_collated_data(outname, fit_data_strings, chunk_arr=None):
     import h5py
 
     root_indx = fit_data_strings[:, 0].astype(int)
-    logmp = fit_data_strings[:, 1].astype(float)
+    logm0 = fit_data_strings[:, 1].astype(float)
     logtc = fit_data_strings[:, 2].astype(float)
     early_index = fit_data_strings[:, 3].astype(float)
     late_index = fit_data_strings[:, 4].astype(float)
-    t_q = fit_data_strings[:, 5].astype(float)
+    t_peak = fit_data_strings[:, 5].astype(float)
     loss = fit_data_strings[:, 6].astype(float)
     n_points_per_fit = fit_data_strings[:, 7].astype(int)
     fit_algo = fit_data_strings[:, 8].astype(int)
 
     with h5py.File(outname, "w") as hdf:
         hdf["root_indx"] = root_indx
-        hdf["logmp"] = logmp
+        hdf["logm0"] = logm0
         hdf["logtc"] = logtc
         hdf["early_index"] = early_index
         hdf["late_index"] = late_index
-        hdf["t_q"] = t_q
+        hdf["t_peak"] = t_peak
         hdf["loss"] = loss
         hdf["n_points_per_fit"] = n_points_per_fit
         hdf["fit_algo"] = fit_algo
@@ -57,13 +57,13 @@ def write_collated_data(outname, fit_data_strings, chunk_arr=None):
 
 
 @jjit
-def compute_indx_t_q_singlehalo(log_mah_table):
+def compute_indx_t_peak_singlehalo(log_mah_table):
     logm0 = log_mah_table[-1]
-    indx_t_q = jnp.argmax(log_mah_table == logm0)
-    return indx_t_q
+    indx_t_peak = jnp.argmax(log_mah_table == logm0)
+    return indx_t_peak
 
 
-compute_indx_t_q_halopop = jjit(vmap(compute_indx_t_q_singlehalo, in_axes=(0,)))
+compute_indx_t_peak_halopop = jjit(vmap(compute_indx_t_peak_singlehalo, in_axes=(0,)))
 
 
 def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
@@ -95,15 +95,15 @@ def get_loss_data(
     t_target = 10**logt_target
 
     logt0 = np.log10(t_sim[-1])
-    indx_t_q = compute_indx_t_q_singlehalo(log_mah_sim)
-    t_q = t_sim[indx_t_q]
+    indx_t_peak = compute_indx_t_peak_singlehalo(log_mah_sim)
+    t_peak = t_sim[indx_t_peak]
 
     p_init = np.array(DEFAULT_MAH_PARAMS).astype("f4")
-    p_init[0] = log_mah_sim[indx_t_q]
+    p_init[0] = log_mah_sim[indx_t_peak]
     p_init = DiffmahParams(*p_init)
     u_p_init = get_unbounded_mah_params(p_init)
 
-    loss_data = (t_target, log_mah_target, t_q, logt0)
+    loss_data = (t_target, log_mah_target, t_peak, logt0)
     return u_p_init, loss_data
 
 
@@ -117,10 +117,10 @@ def _mse(pred, target):
 @jjit
 def log_mah_loss_uparams(u_params, loss_data):
     """MSE loss function for fitting individual halo growth."""
-    t_target, log_mah_target, t_q, logt0 = loss_data
+    t_target, log_mah_target, t_peak, logt0 = loss_data
 
     u_params = DiffmahUParams(*u_params)
-    log_mah_pred = _log_mah_kern_u_params(u_params, t_target, t_q, logt0)
+    log_mah_pred = _log_mah_kern_u_params(u_params, t_target, t_peak, logt0)
     log_mah_loss = _mse(log_mah_pred, log_mah_target)
     return log_mah_loss
 
@@ -132,9 +132,9 @@ def get_outline_bad_fit(root_indx, loss_data, npts_mah, algo):
     log_mah_target = loss_data[1]
     logm0 = log_mah_target[-1]
     logtc, early, late = -1.0, -1.0, -1.0
-    t_q = loss_data[2]
+    t_peak = loss_data[2]
     loss_best = -1.0
-    _floats = (logm0, logtc, early, late, t_q, loss_best)
+    _floats = (logm0, logtc, early, late, t_peak, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
     out_list = [str(root_indx), *out_list, str(npts_mah), str(algo)]
@@ -144,10 +144,10 @@ def get_outline_bad_fit(root_indx, loss_data, npts_mah, algo):
 
 def get_outline(root_indx, loss_data, u_p_best, loss_best, npts_mah, algo):
     """Return the string storing fitting results that will be written to disk"""
-    t_q = loss_data[2]
+    t_peak = loss_data[2]
     p_best = get_bounded_mah_params(DiffmahUParams(*u_p_best))
     logm0, logtc, early, late = p_best
-    _floats = (logm0, logtc, early, late, t_q, loss_best)
+    _floats = (logm0, logtc, early, late, t_peak, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
     out_list = [str(root_indx), *out_list, str(npts_mah), str(algo)]
