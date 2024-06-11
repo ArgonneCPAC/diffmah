@@ -10,7 +10,7 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad, vmap
 
-from .diffmah_tq import (
+from .diffmah_kernels import (
     DEFAULT_MAH_PARAMS,
     DiffmahParams,
     DiffmahUParams,
