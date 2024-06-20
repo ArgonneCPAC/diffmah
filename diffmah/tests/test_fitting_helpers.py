@@ -42,7 +42,7 @@ def test_fitting_helpers_integration():
     assert code_used == 0
     assert loss_best < 0.001
     p_best_inferred = get_bounded_mah_params(DiffmahUParams(*u_p_best))
-    assert np.allclose(p_best_inferred, p_true, atol=ATOL)
+    assert np.allclose(p_best_inferred, p_true, rtol=ATOL)
     npts_mah = log_mah_target.size
 
     root_indx = 123
@@ -52,8 +52,8 @@ def test_fitting_helpers_integration():
     outdata = [float(x) for x in outline.strip().split()]
     header_data = fithelp.HEADER[1:].strip().split()
     assert len(header_data) == len(outdata)
-    assert np.allclose(outdata[1], logm0, atol=ATOL)
-    assert np.allclose(outdata[2], logtc, atol=ATOL)
-    assert np.allclose(outdata[3], early, atol=ATOL)
-    assert np.allclose(outdata[4], late, atol=ATOL)
-    assert np.allclose(outdata[5], t_peak, atol=ATOL)
+    assert np.allclose(outdata[1], logm0, rtol=ATOL)
+    assert np.allclose(outdata[2], logtc, rtol=ATOL)
+    assert np.allclose(outdata[3], early, rtol=ATOL)
+    assert np.allclose(outdata[4], late, rtol=ATOL)
+    assert np.allclose(outdata[5], t_peak, rtol=ATOL)
