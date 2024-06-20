@@ -1,5 +1,6 @@
 """
 """
+
 import numpy as np
 
 
@@ -24,3 +25,7 @@ def test_mah_halopop_imports_from_top_level():
     mah_params_halopop = DiffmahParams(*[x + zz for x in DEFAULT_MAH_PARAMS])
     dmhdt, log_mah = mah_halopop(mah_params_halopop, tarr)
     assert log_mah.shape == dmhdt.shape
+
+
+def test_diffmah_fitter_imports():
+    from .. import diffmah_fitter  # noqa
