@@ -19,8 +19,8 @@ def test_fitting_helpers_integration():
     logt0 = logt[-1]
     lgm_min = 7.0
     logm0 = 13.0
-    logtc = 0.1
-    early, late = 1.0, 0.3
+    logtc = 0.4
+    early, late = 0.8, 0.15
     p_true = DiffmahParams(logm0, logtc, early, late)
     log_mah_sim = _rolling_plaw_vs_logt(logt, logt0, logm0, logtc, early, late)
 
