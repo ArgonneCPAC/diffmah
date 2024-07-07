@@ -21,7 +21,7 @@ from .diffmah_kernels import (
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
-HEADER = "# tree_root logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"
+HEADER = "# tree_root logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"  # noqa : E501
 DEFAULT_NCHUNKS = 50
 
 LJ_Om = 0.310

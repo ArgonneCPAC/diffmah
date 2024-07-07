@@ -1,18 +1,18 @@
 """
 """
 
+from collections import OrderedDict, namedtuple
+
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import vmap
 
+from ...utils import _inverse_sigmoid, _sigmoid
+from . import utp_pdf_kernels as tpk
+
 K_BOUNDING = 0.1
 K_T_OBS = 0.5
 EPS = 1e-3
-
-from collections import OrderedDict, namedtuple
-
-from ...utils import _inverse_sigmoid, _sigmoid
-from . import utp_pdf_kernels as tpk
 
 DEFAULT_UTP_SATPOP_PDICT = OrderedDict(
     utp_loc_tcrit=6.5,
