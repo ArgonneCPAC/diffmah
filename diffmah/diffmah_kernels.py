@@ -27,6 +27,18 @@ MAH_PBOUNDS = DiffmahParams(*list(MAH_PBDICT.values()))
 
 
 @jjit
+def mah_singlehalo(mah_params, tarr, t_peak, lgt0):
+    dmhdt, log_mah = _diffmah_kern(mah_params, tarr, t_peak, lgt0)
+    return dmhdt, log_mah
+
+
+@jjit
+def mah_halopop(mah_params, tarr, t_peak, lgt0):
+    dmhdt, log_mah = _diffmah_kern_vmap(mah_params, tarr, t_peak, lgt0)
+    return dmhdt, log_mah
+
+
+@jjit
 def _sigmoid(x, x0, k, ylo, yhi):
     height_diff = yhi - ylo
     return ylo + height_diff * nn.sigmoid(k * (x - x0))
@@ -117,6 +129,9 @@ def _diffmah_kern(mah_params, t, t_peak, logt0):
     log_mah = _log_mah_kern(mah_params, t, t_peak, logt0)
     return dmhdt, log_mah
 
+
+_P = (0, None, 0, None)
+_diffmah_kern_vmap = jjit(vmap(_diffmah_kern, in_axes=_P))
 
 ##############################
 # Unbounded parameter behavior
