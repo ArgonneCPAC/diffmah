@@ -4,7 +4,7 @@
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
-from jax import value_and_grad
+from jax import value_and_grad, vmap
 
 from ..diffmah_kernels import DiffmahParams, mah_halopop, mah_singlehalo
 from . import ftpt0_cens
@@ -88,6 +88,31 @@ def mc_tp_avg_mah_singlecen(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lg
 def _mse(x, y):
     d = y - x
     return jnp.mean(d * d)
+
+
+@jjit
+def _loss_scalar_kern(
+    diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+):
+    avg_log_mah_pred = mc_tp_avg_mah_singlecen(
+        diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
+    )
+    loss = _mse(avg_log_mah_pred, avg_log_mah_target)
+    return loss
+
+
+_A = (None, 0, 0, 0, 0, None, 0)
+_loss_vmap_kern = jjit(vmap(_loss_scalar_kern, in_axes=_A))
+
+
+@jjit
+def multiloss_vmap(
+    diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+):
+    losses = _loss_vmap_kern(
+        diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+    )
+    return jnp.sum(losses)
 
 
 @jjit
