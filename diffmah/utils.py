@@ -75,6 +75,12 @@ def _inverse_sigmoid(y, x0, k, ylo, yhi):
     return x0 - jnp.log(lnarg) / k
 
 
+@jjit
+def _sig_slope(x, xtp, ytp, x0, slope_k, lo, hi):
+    slope = _sigmoid(x, x0, slope_k, lo, hi)
+    return ytp + slope * (x - xtp)
+
+
 def jax_adam_wrapper(
     loss_and_grad_func,
     params_init,
