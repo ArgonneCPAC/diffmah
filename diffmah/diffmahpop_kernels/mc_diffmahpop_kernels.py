@@ -4,7 +4,7 @@
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
-from jax import value_and_grad
+from jax import value_and_grad, vmap
 
 from ..diffmah_kernels import DiffmahParams, mah_halopop, mah_singlehalo
 from . import ftpt0_cens
@@ -91,8 +91,9 @@ def _mse(x, y):
 
 
 @jjit
-def _loss_kern_singlehalo(diffmahpop_params, loss_data):
-    tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target = loss_data
+def _loss_scalar_kern(
+    diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+):
     avg_log_mah_pred = mc_tp_avg_mah_singlecen(
         diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
     )
@@ -100,48 +101,58 @@ def _loss_kern_singlehalo(diffmahpop_params, loss_data):
     return loss
 
 
-@jjit
-def _loss_kern_singlehalo_u_params(diffmahpop_u_params, loss_data):
-    diffmahpop_u_params = DEFAULT_DIFFMAHPOP_U_PARAMS._make(diffmahpop_u_params)
-    diffmahpop_params = get_diffmahpop_params_from_u_params(diffmahpop_u_params)
-    return _loss_kern_singlehalo(diffmahpop_params, loss_data)
+_A = (None, 0, 0, 0, 0, None, 0)
+_loss_vmap_kern = jjit(vmap(_loss_scalar_kern, in_axes=_A))
 
 
 @jjit
-def _loss_kern_singlehalo_subset_u_params(diffmahpop_subset_u_params, loss_data):
+def multiloss_vmap(
+    diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+):
+    losses = _loss_vmap_kern(
+        diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+    )
+    return jnp.sum(losses)
 
+
+multiloss_and_grads_vmap = jjit(value_and_grad(multiloss_vmap))
+
+
+@jjit
+def _loss_scalar_kern_subset_u_params(
+    diffmahpop_subset_u_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+):
     diffmahpop_u_params = DEFAULT_DIFFMAHPOP_U_PARAMS._replace(
         **diffmahpop_subset_u_params._asdict()
     )
     diffmahpop_params = get_diffmahpop_params_from_u_params(diffmahpop_u_params)
-    return _loss_kern_singlehalo(diffmahpop_params, loss_data)
+    args = diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target
+    return _loss_scalar_kern(*args)
+
+
+_A = (None, 0, 0, 0, 0, None, 0)
+_loss_vmap_kern_subset_u_params = jjit(
+    vmap(_loss_scalar_kern_subset_u_params, in_axes=_A)
+)
 
 
 @jjit
-def _loss_kern_multihalo_u_params(diffmahpop_u_params, loss_data_collection):
-    loss = 0.0
-    for loss_data in loss_data_collection:
-        loss = loss + _loss_kern_singlehalo_u_params(diffmahpop_u_params, loss_data)
-    return loss
+def multiloss_vmap_subset_u_params(diffmahpop_subset_u_params, loss_data):
+    tarr, lgm_obs, t_obs, ran_key, lgt0, avg_log_mah_target = loss_data
+    losses = _loss_vmap_kern_subset_u_params(
+        diffmahpop_subset_u_params,
+        tarr,
+        lgm_obs,
+        t_obs,
+        ran_key,
+        lgt0,
+        avg_log_mah_target,
+    )
+    return jnp.sum(losses)
 
 
-loss_and_grads_multihalo = jjit(value_and_grad(_loss_kern_multihalo_u_params))
-
-
-@jjit
-def _loss_kern_multihalo_subset_u_params(
-    diffmahpop_subset_u_params, loss_data_collection
-):
-    loss = 0.0
-    for loss_data in loss_data_collection:
-        loss = loss + _loss_kern_singlehalo_subset_u_params(
-            diffmahpop_subset_u_params, loss_data
-        )
-    return loss
-
-
-loss_and_grads_multihalo_subset = jjit(
-    value_and_grad(_loss_kern_multihalo_subset_u_params)
+multiloss_and_grads_vmap_subset_u_params = jjit(
+    value_and_grad(multiloss_vmap_subset_u_params)
 )
 
 

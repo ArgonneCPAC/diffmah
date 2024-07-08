@@ -14,7 +14,7 @@ T0_C0 = 10.0
 LGM0_FTPT0 = 12.0
 EPS = 1e-4
 
-DEFAULT_FTPT0_PDICT = OrderedDict(ftpt0_c0_c0=0.5, ftpt0_c0_c1=0.025, ftpt0_c1=0.05)
+DEFAULT_FTPT0_PDICT = OrderedDict(ftpt0_c0_c0=0.313, ftpt0_c0_c1=0.076, ftpt0_c1=0.101)
 
 FTPT0_BOUNDS = (0.01, 0.99)
 FTPT0_PBOUNDS_PDICT = OrderedDict(

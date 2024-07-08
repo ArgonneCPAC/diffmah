@@ -17,11 +17,11 @@ EARLY_INDEX_YLO_K = 1.0
 EARLY_INDEX_YHI_X0 = 8.0
 
 EARLY_INDEX_PDICT = OrderedDict(
-    early_index_ylo_x0=5.48,
-    early_index_ylo_ylo=1.91,
-    early_index_ylo_yhi=1.32,
-    early_index_yhi_ylo=3.27,
-    early_index_yhi_yhi=2.77,
+    early_index_ylo_x0=6.497,
+    early_index_ylo_ylo=3.109,
+    early_index_ylo_yhi=1.500,
+    early_index_yhi_ylo=3.347,
+    early_index_yhi_yhi=2.915,
 )
 EARLY_INDEX_BOUNDS_PDICT = OrderedDict(
     early_index_ylo_x0=(1.0, 7.0),

@@ -11,10 +11,10 @@ from ...bfgs_wrapper import diffmah_fitter
 from ...utils import _inverse_sigmoid, _sig_slope, _sigmoid
 
 DEFAULT_LGM0POP_C0_PDICT = OrderedDict(
-    lgm0pop_c0_ytp=0.16,
-    lgm0pop_c0_ylo=-0.094,
-    lgm0pop_c0_clip_c0=0.723,
-    lgm0pop_c0_clip_c1=-0.0541,
+    lgm0pop_c0_ytp=0.025,
+    lgm0pop_c0_ylo=-0.077,
+    lgm0pop_c0_clip_c0=0.546,
+    lgm0pop_c0_clip_c1=-0.088,
 )
 LGM0Pop_C0_Params = namedtuple("LGM0Pop_C0_Params", DEFAULT_LGM0POP_C0_PDICT.keys())
 DEFAULT_LGM0POP_C0_PARAMS = LGM0Pop_C0_Params(**DEFAULT_LGM0POP_C0_PDICT)
