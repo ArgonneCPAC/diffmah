@@ -11,9 +11,6 @@ from ...bfgs_wrapper import diffmah_fitter
 from ...utils import _inverse_sigmoid, _sigmoid
 from . import utp_pdf_kernels as tpk
 
-DEFAULT_TPEAK_CENS_PARAMS = tpk.UTP_Params(1.0, 0.2)
-
-LOC_T_OBS_HI = 1.0
 LOC_T_OBS_K = 1.0
 
 DEFAULT_TPCENS_PDICT = OrderedDict(
@@ -29,7 +26,7 @@ TPCENS_PBOUNDS_PDICT = OrderedDict(
 )
 
 TPCK_LGM0, TPCK_K = 12.5, 2.0
-DEFAULT_TRUNCNORM_LOC = 1.0
+DEFAULT_TRUNCNORM_LOC = 0.95
 
 TPCens_Params = namedtuple("TPCens_Params", DEFAULT_TPCENS_PDICT.keys())
 _TPCens_UPNAMES = ["u_" + key for key in TPCens_Params._fields]

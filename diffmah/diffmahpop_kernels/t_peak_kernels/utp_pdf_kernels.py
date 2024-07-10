@@ -15,11 +15,11 @@ from ...utils import _inverse_sigmoid, _sigmoid
 K_BOUNDING = 0.1
 X_MIN, X_MAX = 0.1, 1.0
 NPTS_CDF_TABLE = 50
-X_CDF_TABLE = jnp.linspace(0, 1, NPTS_CDF_TABLE)
+EPS = 1e-4
+X_CDF_TABLE = jnp.linspace(X_MIN + EPS, X_MAX - EPS, NPTS_CDF_TABLE)
 
 DEFAULT_UTP_PDICT = OrderedDict(utp_loc=0.5, utp_scale=0.5)
 
-EPS = 1e-4
 
 UTP_PBOUNDS_PDICT = OrderedDict(
     utp_loc=(X_MIN + EPS, X_MAX - EPS), utp_scale=(0.0 + EPS, 1.0)
