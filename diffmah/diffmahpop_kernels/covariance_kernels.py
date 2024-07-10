@@ -71,6 +71,9 @@ def _get_diffmahpop_cov(params, lgm):
     return cov_matrix
 
 
+_get_diffmahpop_cov_vmap = jjit(vmap(_get_diffmahpop_cov, in_axes=(None, 0)))
+
+
 @jjit
 def _get_cov_params(params, lgm_obs):
     std_u_logm0 = _sigmoid(

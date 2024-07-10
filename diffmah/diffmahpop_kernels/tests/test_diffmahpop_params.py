@@ -10,7 +10,7 @@ TOL = 1e-4
 
 def test_diffmahpop_default_params_u_params_consistency():
     model_params = dpp.get_component_model_params(dpp.DEFAULT_DIFFMAHPOP_PARAMS)
-    assert len(model_params) == 6
+    assert len(model_params) == 7
 
     # enforce no name collisions on model params
     pdict_sizes = [len(x) for x in dpp.COMPONENT_PDICTS]

@@ -11,7 +11,7 @@ from .diffmahpop_params import (
     DEFAULT_DIFFMAHPOP_U_PARAMS,
     get_diffmahpop_params_from_u_params,
 )
-from .mc_diffmahpop_kernels import mc_tp_avg_dmah_params_singlecen
+from .mc_diffmahpop_kernels import mc_mean_diffmah_params
 
 N_TP_PER_HALO = 40
 T_OBS_FIT_MIN = 0.5
@@ -19,7 +19,7 @@ T_OBS_FIT_MIN = 0.5
 
 @jjit
 def mc_tp_avg_mah_singlecen(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
-    dmah_tpt0, dmah_tp, t_peak, ftpt0, __ = mc_tp_avg_dmah_params_singlecen(
+    dmah_tpt0, dmah_tp, t_peak, ftpt0, __ = mc_mean_diffmah_params(
         diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0
     )
     ZZ = jnp.zeros_like(t_peak)

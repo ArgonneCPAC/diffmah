@@ -64,6 +64,15 @@ def mc_tpeak_cens(params, ran_key, lgmparr, tobsarr, t_0):
 
 
 @jjit
+def mc_tpeak_singlecen(params, ran_key, lgmparr, tobsarr, t_0):
+    utp_loc, utp_scale = _get_singlepdf_params(params, lgmparr, tobsarr, t_0)
+    kern_args = tpk.UTP_Params(utp_loc, utp_scale)
+    utp = tpk.mc_tp_pdf_singlesat(ran_key, kern_args)
+    t_peak = utp * t_0
+    return t_peak
+
+
+@jjit
 def _get_singlepdf_params(tpc_params, lgm_obs, t_obs, t_0):
     scale_t0 = _get_truncnorm_scale(tpc_params, lgm_obs)
     scale = scale_t0 + _get_truncnorm_scale_boost(tpc_params, t_obs, t_0)
