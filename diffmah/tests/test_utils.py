@@ -6,15 +6,30 @@ from jax import jit as jax_jit
 from jax import numpy as jax_np
 from jax import random as jran
 from jax import value_and_grad
+from scipy.stats import random_correlation
 
 from ..utils import (
     _inverse_sigmoid,
     _sigmoid,
+    correlation_from_covariance,
+    covariance_from_correlation,
     get_cholesky_from_params,
     jax_adam_wrapper,
     trimmed_mean,
     trimmed_mean_and_variance,
 )
+
+
+def _enforce_is_cov(matrix):
+    det = np.linalg.det(matrix)
+    assert det.shape == ()
+    assert det > 0
+    covinv = np.linalg.inv(matrix)
+    assert np.all(np.isfinite(covinv))
+    assert np.all(np.isreal(covinv))
+    assert np.allclose(matrix, matrix.T)
+    evals, evecs = np.linalg.eigh(matrix)
+    assert np.all(evals > 0)
 
 
 def test_inverse_sigmoid_actually_inverts():
@@ -159,3 +174,18 @@ def test_trimmed_mean_and_variance_consistency():
     mu, var = trimmed_mean_and_variance(x, 0.1)
     mu2 = trimmed_mean(x, 0.1)
     assert np.allclose(mu, mu2, rtol=1e-4)
+
+
+def test_correlation_from_covariance():
+    ntests = 100
+    for __ in range(ntests):
+        ndim = np.random.randint(2, 10)
+        evals = np.sort(np.random.uniform(0, 100, ndim))
+        evals = ndim * evals / evals.sum()
+        corr_matrix = random_correlation.rvs(evals)
+        cov_matrix = covariance_from_correlation(corr_matrix, evals)
+        S = np.sqrt(np.diag(cov_matrix))
+        assert np.allclose(S, evals, rtol=1e-4)
+        inferred_corr_matrix = correlation_from_covariance(cov_matrix)
+        assert np.allclose(corr_matrix, inferred_corr_matrix, rtol=1e-4)
+        _enforce_is_cov(cov_matrix)
