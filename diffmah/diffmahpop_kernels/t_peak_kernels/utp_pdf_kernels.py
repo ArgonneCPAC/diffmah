@@ -42,21 +42,25 @@ def _mse(x, y):
 
 
 @jjit
-def mc_tp_pdf_singlesat(ran_key, params, x_cdf_table=X_CDF_TABLE):
+def mc_tp_pdf_singlesat(ran_key, params):
+    loc, scale = params
+    x_min = jnp.max(jnp.array((loc - 4 * scale, X_MIN + EPS)))
+    x_max = jnp.min(jnp.array((loc + 4 * scale, X_MAX - EPS)))
+    x_cdf_table = jnp.linspace(x_min, x_max, NPTS_CDF_TABLE)
     cdf_table = _tp_cdf_kern(x_cdf_table, params)
     u_ran = jran.uniform(ran_key, minval=0.0, maxval=1.0, shape=())
     x = jnp.interp(u_ran, cdf_table, x_cdf_table)
     return x
 
 
-_mc_tp_pdf_satpop = jjit(vmap(mc_tp_pdf_singlesat, in_axes=(0, 0, None)))
+_mc_tp_pdf_satpop = jjit(vmap(mc_tp_pdf_singlesat, in_axes=(0, 0)))
 
 
 @jjit
-def mc_tp_pdf_satpop(ran_key, params, x_cdf_table=X_CDF_TABLE):
+def mc_tp_pdf_satpop(ran_key, params):
     n_sats = params.utp_loc.size
     ran_keys = jran.split(ran_key, n_sats)
-    return _mc_tp_pdf_satpop(ran_keys, params, x_cdf_table)
+    return _mc_tp_pdf_satpop(ran_keys, params)
 
 
 @jjit
