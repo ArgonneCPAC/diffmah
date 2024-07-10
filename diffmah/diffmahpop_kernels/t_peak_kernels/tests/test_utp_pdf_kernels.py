@@ -2,7 +2,10 @@
 """
 
 import numpy as np
+from jax import jit as jjit
+from jax import numpy as jnp
 from jax import random as jran
+from jax import value_and_grad
 
 from ....bfgs_wrapper import diffmah_fitter
 from .. import utp_pdf_kernels as tpk
@@ -98,7 +101,7 @@ def test_default_params_are_in_bounds():
         assert bound[0] < val < bound[1]
 
 
-def test_utp_param_fitter():
+def test_utp_param_fitter_default_params():
     tp_by_tobs_hist_binmids = np.linspace(0.01, 0.99, 1000)
     p_target = tpk.DEFAULT_UTP_PARAMS
     pdf_target = tpk._tp_pdf_kern(tp_by_tobs_hist_binmids, p_target)
@@ -122,3 +125,31 @@ def test_utp_param_fitter():
     assert fit_terminates
     assert code_used == 0
     assert loss_best < loss_init / 2
+
+
+def test_mc_tp_pdf_satpop_is_differentiable():
+    """Regression test for https://github.com/ArgonneCPAC/diffmah/pull/123"""
+    ran_key = jran.key(0)
+
+    TARGET_MEAN_TP = 0.45
+
+    @jjit
+    def _mse(x, y):
+        d = y - x
+        return jnp.mean(d * d)
+
+    @jjit
+    def _mean_tp_loss(params, ran_key):
+        t_peak_sample = tpk.mc_tp_pdf_satpop(ran_key, params)
+        pred_mean_tp = jnp.mean(t_peak_sample)
+        return _mse(pred_mean_tp, TARGET_MEAN_TP)
+
+    mean_tp_loss_and_grad = value_and_grad(_mean_tp_loss)
+
+    n_pop = int(2e4)
+    ZZ = jnp.zeros(n_pop)
+    params_satpop = [ZZ + p for p in tpk.DEFAULT_UTP_PARAMS]
+    params_satpop = tpk.DEFAULT_UTP_PARAMS._make(params_satpop)
+    loss, grads = mean_tp_loss_and_grad(params_satpop, ran_key)
+    assert np.all(np.isfinite(loss))
+    assert np.all(np.isfinite(grads))
