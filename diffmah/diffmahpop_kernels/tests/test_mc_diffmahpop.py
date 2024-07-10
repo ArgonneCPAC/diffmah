@@ -6,6 +6,7 @@ from jax import random as jran
 
 from ...diffmah_kernels import MAH_PBOUNDS
 from .. import mc_diffmahpop_kernels as mcdpk
+from .. import mean_param_fitting_kernels as mpfk
 from ..diffmahpop_params import DEFAULT_DIFFMAHPOP_PARAMS
 
 
@@ -37,14 +38,14 @@ def test_mc_tp_avg_dmah_params_singlecen():
         assert np.all(p < bound[1])
 
 
-def test_something():
+def test_mc_tp_avg_mah_singlecen_evaluates():
     lgm_obs = 12.0
     t_obs = 10.0
     t_0 = 13.8
     ran_key = jran.key(0)
     tarr = np.linspace(0.1, t_0, 50)
     args = DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, np.log10(t_0)
-    avg_log_mah = mcdpk.mc_tp_avg_mah_singlecen(*args)
+    avg_log_mah = mpfk.mc_tp_avg_mah_singlecen(*args)
     assert avg_log_mah.shape == tarr.shape
     assert np.all(np.isfinite(avg_log_mah))
     assert np.all(avg_log_mah < 15)
