@@ -4,12 +4,15 @@
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
+from jax import vmap
 
 from ..diffmah_kernels import (
     DiffmahParams,
     DiffmahUParams,
     get_bounded_mah_params,
     get_unbounded_mah_params,
+    mah_halopop,
+    mah_singlehalo,
 )
 from . import ftpt0_cens
 from .covariance_kernels import _get_diffmahpop_cov
@@ -22,6 +25,7 @@ from .t_peak_kernels.tp_pdf_cens import mc_tpeak_singlecen
 
 N_TP_PER_HALO = 40
 T_OBS_FIT_MIN = 0.5
+NH_PER_M0BIN = 200
 
 
 @jjit
@@ -87,6 +91,101 @@ def mc_diffmah_params_singlecen(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0
     ran_diffmah_u_params_tpt0 = DiffmahUParams(*ran_diffmah_u_params_tpt0)
     ran_diffmah_u_params_tp = DiffmahUParams(*ran_diffmah_u_params_tp)
 
-    ran_diffmah_params_tpt0 = get_bounded_mah_params(ran_diffmah_u_params_tpt0)
-    ran_diffmah_params_tp = get_bounded_mah_params(ran_diffmah_u_params_tp)
-    return ran_diffmah_params_tpt0, ran_diffmah_params_tp, t_peak, ftpt0, mc_tpt0
+    mah_params_tpt0 = get_bounded_mah_params(ran_diffmah_u_params_tpt0)
+    mah_params_tp = get_bounded_mah_params(ran_diffmah_u_params_tp)
+    return mah_params_tpt0, mah_params_tp, t_peak, ftpt0, mc_tpt0
+
+
+_A = (None, 0, 0, 0, None)
+_mc_diffmah_params_vmap_kern = jjit(vmap(mc_diffmah_params_singlecen, in_axes=_A))
+
+
+@jjit
+def mc_diffmah_params_cenpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
+    ran_keys = jran.split(ran_key, lgm_obs.size)
+    return _mc_diffmah_params_vmap_kern(
+        diffmahpop_params, lgm_obs, t_obs, ran_keys, lgt0
+    )
+
+
+@jjit
+def _mc_diffmah_singlecen(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
+    _res = mc_diffmah_params_singlecen(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
+    mah_params_tpt0, mah_params_tp, t_peak, ftpt0, mc_tpt0 = _res
+    dmhdt_tpt0, log_mah_tpt0 = mah_singlehalo(mah_params_tpt0, tarr, 10**lgt0, lgt0)
+    dmhdt_tp, log_mah_tp = mah_singlehalo(mah_params_tp, tarr, t_peak, lgt0)
+    _ret = (
+        mah_params_tpt0,
+        mah_params_tp,
+        t_peak,
+        ftpt0,
+        mc_tpt0,
+        dmhdt_tpt0,
+        log_mah_tpt0,
+        dmhdt_tp,
+        log_mah_tp,
+    )
+    return _ret
+
+
+_V = (None, None, 0, 0, 0, None)
+_mc_diffmah_singlecen_vmap_kern = jjit(vmap(_mc_diffmah_singlecen, in_axes=_V))
+
+
+@jjit
+def _mc_diffmah_halo_sample(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
+    zz = jnp.zeros(NH_PER_M0BIN)
+    ran_keys = jran.split(ran_key, NH_PER_M0BIN)
+    return _mc_diffmah_singlecen_vmap_kern(
+        diffmahpop_params, tarr, lgm_obs + zz, t_obs + zz, ran_keys, lgt0
+    )
+
+
+@jjit
+def _mc_diffmah_cenpop(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
+    ran_keys = jran.split(ran_key, lgm_obs.size)
+    _res = _mc_diffmah_params_vmap_kern(
+        diffmahpop_params, lgm_obs, t_obs, ran_keys, lgt0
+    )
+    mah_params_tpt0, mah_params_tp, t_peak, ftpt0, mc_tpt0 = _res
+    tpt0 = jnp.zeros_like(t_peak) + 10**lgt0
+    dmhdt_tpt0, log_mah_tpt0 = mah_halopop(mah_params_tpt0, tarr, tpt0, lgt0)
+    dmhdt_tp, log_mah_tp = mah_halopop(mah_params_tp, tarr, t_peak, lgt0)
+    _ret = (
+        mah_params_tpt0,
+        mah_params_tp,
+        t_peak,
+        ftpt0,
+        mc_tpt0,
+        dmhdt_tpt0,
+        log_mah_tpt0,
+        dmhdt_tp,
+        log_mah_tp,
+    )
+    return _ret
+
+
+@jjit
+def predict_mah_moments_singlebin(
+    diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
+):
+    _res = _mc_diffmah_halo_sample(
+        diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
+    )
+    (
+        mah_params_tpt0,
+        mah_params_tp,
+        t_peak,
+        ftpt0,
+        mc_tpt0,
+        dmhdt_tpt0,
+        log_mah_tpt0,
+        dmhdt_tp,
+        log_mah_tp,
+    ) = _res
+
+    f = ftpt0.reshape((-1, 1))
+    mean_log_mah = jnp.mean(f * log_mah_tpt0 + (1 - f) * log_mah_tp, axis=0)
+    std_log_mah = jnp.std(f * log_mah_tpt0 + (1 - f) * log_mah_tp, axis=0)
+
+    return mean_log_mah, std_log_mah
