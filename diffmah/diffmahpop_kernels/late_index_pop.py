@@ -7,8 +7,10 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import vmap
 
+from ..diffmah_kernels import MAH_PBOUNDS
 from ..utils import _inverse_sigmoid, _sigmoid
 
+EPS = 1e-3
 LATE_INDEX_X0 = 12.5
 LATE_INDEX_K = 1.0
 
@@ -32,6 +34,8 @@ def _pred_late_index_kern(late_index_params, lgm_obs):
     late_index = _sigmoid(
         lgm_obs, LATE_INDEX_X0, LATE_INDEX_K, late_index_ylo, late_index_yhi
     )
+    ylo, yhi = MAH_PBOUNDS.late_index
+    late_index = jnp.clip(late_index, ylo + EPS, yhi - EPS)
     return late_index
 
 

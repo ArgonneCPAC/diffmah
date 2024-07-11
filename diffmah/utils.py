@@ -389,3 +389,46 @@ def trimmed_mean_and_variance(x, p_trim):
     trimmed_variance = numerator / denominator
 
     return trimmed_mean, trimmed_variance
+
+
+@jjit
+def covariance_from_correlation(corr, evals):
+    """Covariance matrix from correlation matrix
+
+    Parameters
+    ----------
+    corr : array, shape (n, n)
+
+    evals : array, shape (n, )
+        Array of eigenvalues, e.g. (σ_1, σ_2, ..., σ_n)
+        Note that np.diag(cov) = evals**2
+
+    Returns
+    -------
+    cov : array, shape (n, n)
+
+    """
+    D = jnp.diag(evals)
+    cov = jnp.dot(jnp.dot(D, corr), D)
+    return cov
+
+
+@jjit
+def correlation_from_covariance(cov):
+    """Correlation matrix from covariance matrix
+
+    Parameters
+    ----------
+    cov : array, shape (n, n)
+
+    Returns
+    -------
+    corr : array, shape (n, n)
+
+    """
+    v = jnp.sqrt(jnp.diag(cov))
+    outer_v = jnp.outer(v, v)
+    corr = cov / outer_v
+    msk = cov == 0
+    corr = jnp.where(msk, 0.0, corr)
+    return corr
