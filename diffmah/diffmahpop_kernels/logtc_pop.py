@@ -7,8 +7,10 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad, vmap
 
+from ..diffmah_kernels import MAH_PBOUNDS
 from ..utils import _inverse_sigmoid, _sig_slope, _sigmoid
 
+EPS = 1e-3
 K_BOUNDING = 0.1
 LOGTC_PDICT = OrderedDict(
     lgm_c0_tp_ytp_tobs_c0=0.471,
@@ -39,6 +41,8 @@ C0_SS_K = 0.5
 def _pred_logtc_kern(params, lgm_obs, t_obs, t_peak):
     lgm_c0 = _get_c0(params, t_peak, t_obs)
     logtc = lgm_c0 + params.lgm_c1 * (lgm_obs - TAUC_LGMP)
+    ylo, yhi = MAH_PBOUNDS.logtc
+    logtc = jnp.clip(logtc, ylo + EPS, yhi - EPS)
     return logtc
 
 

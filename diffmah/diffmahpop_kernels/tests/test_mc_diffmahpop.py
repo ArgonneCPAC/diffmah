@@ -2,7 +2,6 @@
 """
 
 import numpy as np
-import pytest
 from jax import random as jran
 
 from ...diffmah_kernels import MAH_PBOUNDS
@@ -49,7 +48,6 @@ def test_mc_mean_diffmah_params():
             assert np.all(np.isfinite(_x))
 
 
-@pytest.mark.xfail
 def test_mc_diffmah_params_singlecen():
     ran_key = jran.key(0)
     t_0 = 13.0
@@ -64,7 +62,6 @@ def test_mc_diffmah_params_singlecen():
         assert np.all(np.isfinite(mah_params_tp.logtc))
 
 
-@pytest.mark.xfail
 def test_predict_mah_moments_singlebin():
     ran_key = jran.key(0)
     t_0 = 13.0
@@ -79,7 +76,6 @@ def test_predict_mah_moments_singlebin():
         assert np.all(np.isfinite(std_log_mah))
 
 
-@pytest.mark.xfail
 def test_mc_diffmah_halo_sample():
     ran_key = jran.key(0)
     t_0 = 13.0
@@ -101,8 +97,8 @@ def test_mc_diffmah_halo_sample():
             dmhdt_tp,
             log_mah_tp,
         ) = _res
-        assert np.all(np.isfinite(mah_params_tpt0.logtc))
-        assert np.all(np.isfinite(mah_params_tp.logtc))
+        assert np.all(np.isfinite(mah_params_tpt0))
+        assert np.all(np.isfinite(mah_params_tp))
 
         assert np.all(np.isfinite(t_peak))
         assert np.all(t_peak > 0.0)
