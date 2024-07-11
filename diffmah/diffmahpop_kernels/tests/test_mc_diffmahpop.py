@@ -45,3 +45,17 @@ def test_mc_diffmah_params_singlecen():
     ran_diffmah_params_tpt0, ran_diffmah_params_tp, t_peak, ftpt0, mc_tpt0 = _res
     for _x in _res:
         assert np.all(np.isfinite(_x))
+
+
+def test_predict_mah_moments_singlebin():
+    ran_key = jran.key(0)
+    t_0 = 13.0
+    lgt0 = np.log10(t_0)
+    t_obs = 10.0
+    tarr = np.linspace(0.1, t_obs, 100)
+    lgmarr = np.linspace(10, 15, 20)
+    for lgm_obs in lgmarr:
+        args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
+        mean_log_mah, std_log_mah = mcdpk.predict_mah_moments_singlebin(*args)
+        assert np.all(np.isfinite(mean_log_mah))
+        assert np.all(np.isfinite(std_log_mah))
