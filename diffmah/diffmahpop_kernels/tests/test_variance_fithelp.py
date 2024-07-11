@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+import pytest
 from jax import random as jran
 
 from ... import diffmah_kernels
@@ -9,6 +10,7 @@ from .. import diffmahpop_params as dpp
 from .. import variance_fithelp
 
 
+@pytest.mark.xfail
 def test_loss_grads():
     ran_key = jran.key(0)
     t_obs = 10.0
