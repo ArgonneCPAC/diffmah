@@ -48,7 +48,7 @@ jobs:
             python-build \
             jaxopt \
             tqdm \
-            axopt
+            optax
           pip install --no-deps git+https://github.com/AlanPearl/kdescent.git
           python -m pip install --no-build-isolation --no-deps -e .
 
