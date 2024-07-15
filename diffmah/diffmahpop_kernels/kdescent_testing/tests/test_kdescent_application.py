@@ -54,7 +54,7 @@ def test_fit_diffmah_to_itself_with_kdescent():
     model_counts, truth_counts = kcalc.compare_kde_counts(
         ran_key, log_mahs_pred, weights_pred
     )
-    diff = (model_counts - truth_counts) ** 2
-    loss = jnp.mean(diff)
+    fracdiff = jnp.abs(model_counts - truth_counts) / truth_counts
+    loss = jnp.mean(fracdiff)
     assert loss > 0
-    assert loss < 1e10
+    assert loss < 1
