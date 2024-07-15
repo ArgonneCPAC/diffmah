@@ -27,7 +27,7 @@ def test_fit_diffmah_to_itself_with_kdescent():
     # Use randomly diffmahpop parameter to generate fiducial data
     u_p_fid_key, ran_key = jran.split(ran_key, 2)
     n_params = len(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
-    uran = jran.uniform(u_p_fid_key, minval=-0.01, maxval=0.01, shape=(n_params,))
+    uran = jran.uniform(u_p_fid_key, minval=-10.0, maxval=10.0, shape=(n_params,))
     _u_p_list = [x + u for x, u in zip(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS, uran)]
     u_p_fid = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(jnp.array(_u_p_list))
 
