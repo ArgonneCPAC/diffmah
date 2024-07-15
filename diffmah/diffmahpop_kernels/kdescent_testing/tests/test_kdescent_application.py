@@ -10,7 +10,7 @@ from ... import diffmahpop_params as dpp
 from ..dmp_wrappers import mc_diffmah_preds
 
 try:
-    import kdescent
+    import kdescent  # noqa
 
     HAS_KDESCENT = True
 except ImportError:
@@ -39,4 +39,7 @@ def test_fit_diffmah_to_itself_with_kdescent():
     tarr = np.linspace(0.5, t_obs, num_target_redshifts_per_t_obs)
     pred_data = tarr, lgm_obs, t_obs, ran_key, lgt0
     _res = mc_diffmah_preds(u_p_init, pred_data)
-    log_mah_tpt0, log_mah_tp, ftpt0 = _res
+    for x in _res:
+        assert np.all(np.isfinite(x))
+    _res = mc_diffmah_preds(u_p_fid, pred_data)
+    # log_mah_tpt0, log_mah_tp, ftpt0 = _res
