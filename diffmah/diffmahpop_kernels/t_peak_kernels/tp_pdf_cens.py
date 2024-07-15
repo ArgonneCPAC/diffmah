@@ -14,9 +14,9 @@ from . import utp_pdf_kernels as tpk
 LOC_T_OBS_K = 1.0
 
 DEFAULT_TPCENS_PDICT = OrderedDict(
-    tpck_scale_boost_early=0.2,
-    tpck_scale_mh_lo=0.27,
-    tpck_scale_mh_hi=0.15,
+    tpck_scale_boost_early=0.314,
+    tpck_scale_mh_lo=0.469,
+    tpck_scale_mh_hi=0.292,
 )
 
 TPCENS_PBOUNDS_PDICT = OrderedDict(

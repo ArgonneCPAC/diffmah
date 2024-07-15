@@ -15,8 +15,8 @@ LATE_INDEX_X0 = 12.5
 LATE_INDEX_K = 1.0
 
 LATE_INDEX_PDICT = OrderedDict(
-    late_index_ylo=0.191,
-    late_index_yhi=0.194,
+    late_index_ylo=0.181,
+    late_index_yhi=0.189,
 )
 LATE_INDEX_BOUNDS_PDICT = OrderedDict(
     late_index_ylo=(0.01, 0.2), late_index_yhi=(0.01, 0.2)
