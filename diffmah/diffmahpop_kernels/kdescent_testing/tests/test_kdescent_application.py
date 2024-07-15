@@ -43,3 +43,4 @@ def test_fit_diffmah_to_itself_with_kdescent():
         assert np.all(np.isfinite(x))
     _res = mc_diffmah_preds(u_p_fid, pred_data)
     # log_mah_tpt0, log_mah_tp, ftpt0 = _res
+    assert False, "Testing that this works"
