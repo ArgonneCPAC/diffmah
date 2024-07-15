@@ -38,11 +38,23 @@ def test_fit_diffmah_to_itself_with_kdescent():
     num_target_redshifts_per_t_obs = 10
     tarr = np.linspace(0.5, t_obs, num_target_redshifts_per_t_obs)
     pred_data = tarr, lgm_obs, t_obs, ran_key, lgt0
+
     _res = mc_diffmah_preds(u_p_init, pred_data)
-    for x in _res:
-        assert np.all(np.isfinite(x))
+    log_mah_tpt0, log_mah_tp, ftpt0 = _res
+    log_mahs_pred = jnp.concatenate((log_mah_tpt0, log_mah_tp))
+    weights_pred = jnp.concatenate((ftpt0, 1 - ftpt0))
+
     _res = mc_diffmah_preds(u_p_fid, pred_data)
     log_mah_tpt0, log_mah_tp, ftpt0 = _res
-    log_mah_dataset = jnp.concatenate((log_mah_tpt0, log_mah_tp))
-    weights_dataset = jnp.concatenate((ftpt0, 1 - ftpt0))
-    kcalc = kdescent.KCalc(log_mah_dataset, weights_dataset)
+    log_mahs_target = jnp.concatenate((log_mah_tpt0, log_mah_tp))
+    weights_target = jnp.concatenate((ftpt0, 1 - ftpt0))
+
+    kcalc = kdescent.KCalc(log_mahs_target, weights_target)
+
+    model_counts, truth_counts = kcalc.compare_kde_counts(
+        ran_key, log_mahs_pred, weights_pred
+    )
+    diff = (model_counts - truth_counts) ** 2
+    loss = jnp.mean(diff)
+    assert loss > 0
+    assert loss < 1e10
