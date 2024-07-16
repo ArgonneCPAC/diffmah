@@ -28,8 +28,16 @@ def mc_diffmah_preds(diffmahpop_u_params, pred_data):
 
 
 @jjit
-def single_sample_kde_loss_self_fit(diffmahpop_u_params, loss_data):
-    tarr, lgm_obs, t_obs, ran_key, lgt0, log_mahs_target, weights_target = loss_data
+def single_sample_kde_loss_self_fit(
+    diffmahpop_u_params,
+    tarr,
+    lgm_obs,
+    t_obs,
+    ran_key,
+    lgt0,
+    log_mahs_target,
+    weights_target,
+):
     pred_data = tarr, lgm_obs, t_obs, ran_key, lgt0
     _res = mc_diffmah_preds(diffmahpop_u_params, pred_data)
     log_mah_tpt0, log_mah_tp, ftpt0 = _res
@@ -48,3 +56,15 @@ def single_sample_kde_loss_self_fit(diffmahpop_u_params, loss_data):
 single_sample_kde_loss_and_grad_self_fit = jjit(
     value_and_grad(single_sample_kde_loss_self_fit)
 )
+
+
+@jjit
+def get_single_sample_self_fit_target_data(
+    u_params, tarr, lgm_obs, t_obs, ran_key, lgt0
+):
+    pred_data = tarr, lgm_obs, t_obs, ran_key, lgt0
+    _res = mc_diffmah_preds(u_params, pred_data)
+    log_mah_tpt0, log_mah_tp, ftpt0 = _res
+    log_mahs_target = jnp.concatenate((log_mah_tpt0, log_mah_tp))
+    weights_target = jnp.concatenate((ftpt0, 1 - ftpt0))
+    return log_mahs_target, weights_target

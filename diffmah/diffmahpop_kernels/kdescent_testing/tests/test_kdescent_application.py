@@ -34,21 +34,19 @@ def test_fit_diffmah_to_itself_with_kdescent():
     t_obs = 10.0
     num_target_redshifts_per_t_obs = 10
     tarr = np.linspace(0.5, t_obs, num_target_redshifts_per_t_obs)
-    pred_data_target = tarr, lgm_obs, t_obs, ran_key, lgt0
 
-    _res = dmpw.mc_diffmah_preds(u_p_fid, pred_data_target)
-    log_mah_tpt0, log_mah_tp, ftpt0 = _res
-    log_mahs_target = jnp.concatenate((log_mah_tpt0, log_mah_tp))
-    weights_target = jnp.concatenate((ftpt0, 1 - ftpt0))
+    _res = dmpw.get_single_sample_self_fit_target_data(
+        u_p_fid, tarr, lgm_obs, t_obs, ran_key, lgt0
+    )
+    log_mahs_target, weights_target = _res
 
     # use default params as the initial guess
     u_p_init = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
 
     loss_data = tarr, lgm_obs, t_obs, ran_key, lgt0, log_mahs_target, weights_target
-    loss = dmpw.single_sample_kde_loss_self_fit(u_p_init, loss_data)
+    loss = dmpw.single_sample_kde_loss_self_fit(u_p_init, *loss_data)
     assert np.all(np.isfinite(loss))
     assert loss > 0
 
-    loss_data = tarr, lgm_obs, t_obs, ran_key, lgt0, log_mahs_target, weights_target
-    loss, grads = dmpw.single_sample_kde_loss_and_grad_self_fit(u_p_init, loss_data)
+    loss, grads = dmpw.single_sample_kde_loss_and_grad_self_fit(u_p_init, *loss_data)
     assert np.all(np.isfinite(grads))
