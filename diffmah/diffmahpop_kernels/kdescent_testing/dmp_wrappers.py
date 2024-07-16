@@ -1,7 +1,7 @@
 """
 """
 
-from jax import value_and_grad
+from jax import value_and_grad, vmap
 
 try:
     import kdescent
@@ -68,3 +68,42 @@ def get_single_sample_self_fit_target_data(
     log_mahs_target = jnp.concatenate((log_mah_tpt0, log_mah_tp))
     weights_target = jnp.concatenate((ftpt0, 1 - ftpt0))
     return log_mahs_target, weights_target
+
+
+_A = (None, 0, 0, 0, 0, None)
+get_multisample_self_fit_target_data = jjit(
+    vmap(get_single_sample_self_fit_target_data, in_axes=_A)
+)
+
+_L = (None, 0, 0, 0, 0, None, 0, 0)
+_multisample_kde_loss_self_fit = jjit(vmap(single_sample_kde_loss_self_fit, in_axes=_L))
+
+
+@jjit
+def multisample_kde_loss_self_fit(
+    diffmahpop_u_params,
+    tarr_matrix,
+    lgmobsarr,
+    tobsarr,
+    ran_keys,
+    lgt0,
+    log_mahs_targets,
+    weights_targets,
+):
+    losses = _multisample_kde_loss_self_fit(
+        diffmahpop_u_params,
+        tarr_matrix,
+        lgmobsarr,
+        tobsarr,
+        ran_keys,
+        lgt0,
+        log_mahs_targets,
+        weights_targets,
+    )
+    loss = jnp.mean(losses)
+    return loss
+
+
+multisample_kde_loss_and_grad_self_fit = jjit(
+    value_and_grad(multisample_kde_loss_self_fit)
+)
