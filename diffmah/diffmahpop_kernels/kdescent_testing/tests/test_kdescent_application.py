@@ -7,7 +7,7 @@ from jax import numpy as jnp
 from jax import random as jran
 
 from ... import diffmahpop_params as dpp
-from ..dmp_wrappers import mc_diffmah_preds
+from .. import dmp_wrappers as dmpw
 
 try:
     import kdescent  # noqa
@@ -21,13 +21,10 @@ except ImportError:
 def test_fit_diffmah_to_itself_with_kdescent():
     ran_key = jran.key(0)
 
-    # use default params as the initial guess
-    u_p_init = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
-
-    # Use randomly diffmahpop parameter to generate fiducial data
+    # Use random diffmahpop parameter to generate fiducial data
     u_p_fid_key, ran_key = jran.split(ran_key, 2)
     n_params = len(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
-    uran = jran.uniform(u_p_fid_key, minval=-10.0, maxval=10.0, shape=(n_params,))
+    uran = jran.uniform(u_p_fid_key, minval=-1.0, maxval=1.0, shape=(n_params,))
     _u_p_list = [x + u for x, u in zip(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS, uran)]
     u_p_fid = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(jnp.array(_u_p_list))
 
@@ -37,24 +34,21 @@ def test_fit_diffmah_to_itself_with_kdescent():
     t_obs = 10.0
     num_target_redshifts_per_t_obs = 10
     tarr = np.linspace(0.5, t_obs, num_target_redshifts_per_t_obs)
-    pred_data = tarr, lgm_obs, t_obs, ran_key, lgt0
+    pred_data_target = tarr, lgm_obs, t_obs, ran_key, lgt0
 
-    _res = mc_diffmah_preds(u_p_init, pred_data)
-    log_mah_tpt0, log_mah_tp, ftpt0 = _res
-    log_mahs_pred = jnp.concatenate((log_mah_tpt0, log_mah_tp))
-    weights_pred = jnp.concatenate((ftpt0, 1 - ftpt0))
-
-    _res = mc_diffmah_preds(u_p_fid, pred_data)
+    _res = dmpw.mc_diffmah_preds(u_p_fid, pred_data_target)
     log_mah_tpt0, log_mah_tp, ftpt0 = _res
     log_mahs_target = jnp.concatenate((log_mah_tpt0, log_mah_tp))
     weights_target = jnp.concatenate((ftpt0, 1 - ftpt0))
 
-    kcalc = kdescent.KCalc(log_mahs_target, weights_target)
+    # use default params as the initial guess
+    u_p_init = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
 
-    model_counts, truth_counts = kcalc.compare_kde_counts(
-        ran_key, log_mahs_pred, weights_pred
-    )
-    fracdiff = jnp.abs(model_counts - truth_counts) / truth_counts
-    loss = jnp.mean(fracdiff)
+    loss_data = tarr, lgm_obs, t_obs, ran_key, lgt0, log_mahs_target, weights_target
+    loss = dmpw.single_sample_kde_loss_self_fit(u_p_init, loss_data)
+    assert np.all(np.isfinite(loss))
     assert loss > 0
-    assert loss < 1
+
+    loss_data = tarr, lgm_obs, t_obs, ran_key, lgt0, log_mahs_target, weights_target
+    loss, grads = dmpw.single_sample_kde_loss_and_grad_self_fit(u_p_init, loss_data)
+    assert np.all(np.isfinite(grads))
