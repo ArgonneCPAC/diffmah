@@ -21,40 +21,48 @@ T_MIN_FIT = 0.5
 
 
 @pytest.mark.skipif("not HAS_KDESCENT")
-def test_fit_diffmah_to_itself_with_kdescent():
+def test_single_sample_kde_loss_self_fit():
     """Enforce that single-sample loss has finite grads"""
     ran_key = jran.key(0)
 
-    # Use random diffmahpop parameter to generate fiducial data
-    DP = 1.0
-    u_p_fid_key, ran_key = jran.split(ran_key, 2)
-    n_params = len(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
-    uran = jran.uniform(u_p_fid_key, minval=-DP, maxval=DP, shape=(n_params,))
-    _u_p_list = [x + u for x, u in zip(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS, uran)]
-    u_p_fid = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(jnp.array(_u_p_list))
-
     t_0 = 13.8
     lgt0 = np.log10(t_0)
-    lgm_obs = 12.0
-    t_obs = 10.0
-    num_target_redshifts_per_t_obs = 10
-    tarr = np.linspace(T_MIN_FIT, t_obs, num_target_redshifts_per_t_obs)
+    DP = 1.0
+    n_tests = 10
+    for __ in range(n_tests):
 
-    _res = dmpw.get_single_sample_self_fit_target_data(
-        u_p_fid, tarr, lgm_obs, t_obs, ran_key, lgt0
-    )
-    log_mahs_target, weights_target = _res
+        # Use random diffmahpop parameter to generate fiducial data
+        u_p_fid_key, ran_key = jran.split(ran_key, 2)
+        n_params = len(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
+        uran = jran.uniform(u_p_fid_key, minval=-DP, maxval=DP, shape=(n_params,))
+        _u_p_list = [x + u for x, u in zip(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS, uran)]
+        u_p_fid = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(jnp.array(_u_p_list))
 
-    # use default params as the initial guess
-    u_p_init = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
+        ran_key, lgm_key, t_obs_key = jran.split(ran_key, 3)
+        lgm_obs = jran.uniform(lgm_key, minval=10, maxval=16, shape=())
+        t_obs = jran.uniform(t_obs_key, minval=3, maxval=t_0, shape=())
+        num_target_redshifts_per_t_obs = 10
+        tarr = np.linspace(T_MIN_FIT, t_obs, num_target_redshifts_per_t_obs)
 
-    loss_data = tarr, lgm_obs, t_obs, ran_key, lgt0, log_mahs_target, weights_target
-    loss = dmpw.single_sample_kde_loss_self_fit(u_p_init, *loss_data)
-    assert np.all(np.isfinite(loss))
-    assert loss > 0
+        _res = dmpw.get_single_sample_self_fit_target_data(
+            u_p_fid, tarr, lgm_obs, t_obs, ran_key, lgt0
+        )
+        log_mahs_target, weights_target = _res
 
-    loss, grads = dmpw.single_sample_kde_loss_and_grad_self_fit(u_p_init, *loss_data)
-    assert np.all(np.isfinite(grads))
+        # use default params as the initial guess
+        u_p_init = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(
+            dpp.DEFAULT_DIFFMAHPOP_U_PARAMS
+        )
+
+        loss_data = tarr, lgm_obs, t_obs, ran_key, lgt0, log_mahs_target, weights_target
+        loss = dmpw.single_sample_kde_loss_self_fit(u_p_init, *loss_data)
+        assert np.all(np.isfinite(loss)), (lgm_obs, t_obs)
+        assert loss > 0
+
+        loss, grads = dmpw.single_sample_kde_loss_and_grad_self_fit(
+            u_p_init, *loss_data
+        )
+        assert np.all(np.isfinite(grads)), (lgm_obs, t_obs)
 
 
 @pytest.mark.skipif("not HAS_KDESCENT")
