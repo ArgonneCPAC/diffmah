@@ -28,6 +28,8 @@ def test_single_sample_kde_loss_self_fit():
     t_0 = 13.8
     lgt0 = np.log10(t_0)
     DP = 1.0
+    num_target_redshifts_per_t_obs = 3
+
     n_tests = 10
     for __ in range(n_tests):
 
@@ -41,7 +43,7 @@ def test_single_sample_kde_loss_self_fit():
         ran_key, lgm_key, t_obs_key = jran.split(ran_key, 3)
         lgm_obs = jran.uniform(lgm_key, minval=10, maxval=16, shape=())
         t_obs = jran.uniform(t_obs_key, minval=3, maxval=t_0, shape=())
-        num_target_redshifts_per_t_obs = 10
+
         tarr = np.linspace(T_MIN_FIT, t_obs, num_target_redshifts_per_t_obs)
 
         _res = dmpw.get_single_sample_self_fit_target_data(
