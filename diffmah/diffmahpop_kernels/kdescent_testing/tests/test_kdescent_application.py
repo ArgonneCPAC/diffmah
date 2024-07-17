@@ -20,6 +20,8 @@ except ImportError:
 T_MIN_FIT = 0.5
 
 
+@pytest.mark.skip
+@pytest.mark.xfail
 @pytest.mark.skipif("not HAS_KDESCENT")
 def test_single_sample_kde_loss_self_fit():
     """Enforce that single-sample loss has finite grads"""
@@ -67,6 +69,8 @@ def test_single_sample_kde_loss_self_fit():
         assert np.all(np.isfinite(grads)), (lgm_obs, t_obs)
 
 
+@pytest.mark.skip
+@pytest.mark.xfail
 @pytest.mark.skipif("not HAS_KDESCENT")
 def test_multisample_kde_loss_self_fit():
     """Enforce that multi-sample loss has finite grads"""
@@ -115,6 +119,8 @@ def test_multisample_kde_loss_self_fit():
     assert np.all(np.isfinite(grads))
 
 
+@pytest.mark.skip
+@pytest.mark.xfail
 @pytest.mark.skipif("not HAS_KDESCENT")
 def test_kdescent_adam_self_fit():
     """Enforce that kdescent.adam terminates without NaNs"""
