@@ -4,6 +4,8 @@
 from jax import random as jran
 from jax import value_and_grad, vmap
 
+from ...diffmah_kernels import mah_halopop
+
 try:
     import kdescent
 except ImportError:
@@ -30,10 +32,16 @@ def mc_diffmah_preds(diffmahpop_u_params, pred_data):
     log_mah_tpt0 = _res[6]
     dmhdt_tp = _res[7]
     log_mah_tp = _res[8]
-    dmhdt_tpt0 = jnp.clip(dmhdt_tpt0, 10**LGSMAH_MIN)
-    dmhdt_tp = jnp.clip(dmhdt_tp, 10**LGSMAH_MIN)
-    lgsmah_tpt0 = jnp.log10(dmhdt_tpt0) - log_mah_tpt0
-    lgsmah_tp = jnp.log10(dmhdt_tp) - log_mah_tpt0
+
+    dmhdt_tpt0 = jnp.clip(dmhdt_tpt0, 10**LGSMAH_MIN)  # make log-safe
+    dmhdt_tp = jnp.clip(dmhdt_tp, 10**LGSMAH_MIN)  # make log-safe
+
+    lgsmah_tpt0 = jnp.log10(dmhdt_tpt0) - log_mah_tpt0  # compute lgsmah
+    lgsmah_tpt0 = jnp.clip(lgsmah_tpt0, LGSMAH_MIN)  # impose lgsMAH clip
+
+    lgsmah_tp = jnp.log10(dmhdt_tp) - log_mah_tpt0  # compute lgsmah
+    lgsmah_tp = jnp.clip(lgsmah_tp, LGSMAH_MIN)  # impose lgsMAH clip
+
     return lgsmah_tpt0, log_mah_tpt0, lgsmah_tp, log_mah_tp, ftpt0
 
 
@@ -52,7 +60,92 @@ def get_single_sample_self_fit_target_data(
 
 
 @jjit
+def get_single_cen_sample_target_data(mah_params, t_peak, tarr, lgm_obs, t_obs, lgt0):
+    dmhdt, log_mah = mah_halopop(mah_params, tarr, t_peak, lgt0)
+
+    # compute lgm_obs for each halo
+    _t_obs_arr = jnp.zeros(1) + t_obs
+    lgm_obs_halopop = mah_halopop(mah_params, _t_obs_arr, t_peak, lgt0)[1][:, 0]
+    # renormalize MAHs to exactly agree at lgm_obs
+    delta_lgm_obs = lgm_obs_halopop - lgm_obs
+    log_mahs_target = log_mah - delta_lgm_obs.reshape((-1, 1))
+
+    frac_peaked = jnp.mean(dmhdt == 0, axis=0)
+    weights_target = jnp.where(dmhdt == 0, 0.0, 1.0)
+
+    log_dmhdt = jnp.log10(jnp.clip(dmhdt, 10**LGSMAH_MIN))
+
+    lgsmah_target = log_dmhdt - log_mah  # use log_mah since dmhdt was never rescaled
+    lgsmah_target = jnp.clip(lgsmah_target, LGSMAH_MIN)
+
+    X_target = jnp.array((lgsmah_target, log_mahs_target)).swapaxes(0, 1)
+
+    return X_target, weights_target, frac_peaked
+
+
+@jjit
 def single_sample_kde_loss_self_fit(
+    diffmahpop_u_params,
+    tarr,
+    lgm_obs,
+    t_obs,
+    ran_key,
+    lgt0,
+    X_target,
+    weights_target,
+):
+    kcalc0 = kdescent.KCalc(X_target[:, :, 0], weights_target)
+    kcalc1 = kdescent.KCalc(X_target[:, :, 1], weights_target)
+    kcalc2 = kdescent.KCalc(X_target[:, :, 2], weights_target)
+    kcalc3 = kdescent.KCalc(X_target[:, :, 3], weights_target)
+    kcalc4 = kdescent.KCalc(X_target[:, :, 4], weights_target)
+
+    ran_key, pred_key = jran.split(ran_key, 2)
+    pred_data = tarr, lgm_obs, t_obs, pred_key, lgt0
+    _res = mc_diffmah_preds(diffmahpop_u_params, pred_data)
+    dmhdt_tpt0, log_mah_tpt0, dmhdt_tp, log_mah_tp, ftpt0 = _res
+
+    weights_pred = jnp.concatenate((ftpt0, 1 - ftpt0))
+    dmhdts_pred = jnp.concatenate((dmhdt_tpt0, dmhdt_tp))
+    log_mahs_pred = jnp.concatenate((log_mah_tpt0, log_mah_tp))
+    X_preds = jnp.array((dmhdts_pred, log_mahs_pred)).swapaxes(0, 1)
+
+    kcalc_keys = jran.split(ran_key, N_T_PER_BIN)
+
+    model_counts0, truth_counts0 = kcalc0.compare_kde_counts(
+        kcalc_keys[0], X_preds[:, :, 0], weights_pred
+    )
+    model_counts1, truth_counts1 = kcalc1.compare_kde_counts(
+        kcalc_keys[1], X_preds[:, :, 1], weights_pred
+    )
+    model_counts2, truth_counts2 = kcalc2.compare_kde_counts(
+        kcalc_keys[2], X_preds[:, :, 2], weights_pred
+    )
+    model_counts3, truth_counts3 = kcalc3.compare_kde_counts(
+        kcalc_keys[3], X_preds[:, :, 3], weights_pred
+    )
+    model_counts4, truth_counts4 = kcalc4.compare_kde_counts(
+        kcalc_keys[4], X_preds[:, :, 4], weights_pred
+    )
+
+    diff0 = model_counts0 - truth_counts0
+    diff1 = model_counts1 - truth_counts1
+    diff2 = model_counts2 - truth_counts2
+    diff3 = model_counts3 - truth_counts3
+    diff4 = model_counts4 - truth_counts4
+
+    loss0 = jnp.mean(diff0**2)
+    loss1 = jnp.mean(diff1**2)
+    loss2 = jnp.mean(diff2**2)
+    loss3 = jnp.mean(diff3**2)
+    loss4 = jnp.mean(diff4**2)
+
+    loss = loss0 + loss1 + loss2 + loss3 + loss4
+    return loss
+
+
+@jjit
+def single_sample_kde_loss_kern(
     diffmahpop_u_params,
     tarr,
     lgm_obs,

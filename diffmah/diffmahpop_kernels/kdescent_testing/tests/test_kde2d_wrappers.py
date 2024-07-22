@@ -7,6 +7,7 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
 
+from ....diffmah_kernels import DEFAULT_MAH_PARAMS
 from ... import diffmahpop_params as dpp
 from .. import kde2d_wrappers as k2w
 
@@ -192,3 +193,29 @@ def test_kdescent_adam_self_fit():
     )
     u_p_best = adam_results[-1]
     assert np.all(np.isfinite(u_p_best))
+
+
+def test_get_single_cen_sample_target_data():
+    nhalos = 500
+    zz = np.zeros(nhalos)
+    mah_params = DEFAULT_MAH_PARAMS._make([zz + p for p in DEFAULT_MAH_PARAMS])
+    t_obs = 10.0
+    lgm_obs = 11.5
+    t_0 = 13.0
+    lgt0 = np.log10(t_0)
+    n_t = 5
+    tarr = np.linspace(0.5, t_obs - 0.01, n_t)
+    t_peak = np.random.uniform(2, t_0, nhalos)
+
+    _res = k2w.get_single_cen_sample_target_data(
+        mah_params, t_peak, tarr, lgm_obs, t_obs, lgt0
+    )
+    for _x in _res:
+        assert np.all(np.isfinite(_x))
+    X_target, weights_target, frac_peaked = _res
+    assert frac_peaked.shape == (n_t,)
+    assert X_target.shape == (nhalos, 2, n_t)
+    assert weights_target.shape == (nhalos, n_t)
+
+    assert np.all(frac_peaked >= 0)
+    assert np.all(frac_peaked <= 1)
