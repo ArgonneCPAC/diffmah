@@ -36,9 +36,9 @@ def test_mc_diffmah_preds():
         _preds = k2w.mc_diffmah_preds(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS, pred_data)
         for _x in _preds:
             assert np.all(np.isfinite(_x))
-        dmhdt_tpt0, log_mah_tpt0, dmhdt_tp, log_mah_tp, ftpt0 = _preds
-        assert np.all(dmhdt_tpt0 > 0)
-        assert np.all(dmhdt_tp >= 0)
+        lgsmar_tpt0, log_mah_tpt0, lgsmar_tp, log_mah_tp, ftpt0 = _preds
+        assert np.all(lgsmar_tpt0 < 20)
+        assert np.all(lgsmar_tp < 20)
         assert np.all(log_mah_tpt0 < 20)
         assert np.all(log_mah_tp < 20)
         assert np.all(ftpt0 <= 1)
