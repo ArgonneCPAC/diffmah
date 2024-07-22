@@ -15,6 +15,7 @@ from .. import diffmahpop_params as dpp
 from .. import mc_diffmahpop_kernels as mdk
 
 N_T_PER_BIN = 5
+LGSMAH_MIN = -15
 
 
 @jjit
@@ -29,7 +30,11 @@ def mc_diffmah_preds(diffmahpop_u_params, pred_data):
     log_mah_tpt0 = _res[6]
     dmhdt_tp = _res[7]
     log_mah_tp = _res[8]
-    return dmhdt_tpt0, log_mah_tpt0, dmhdt_tp, log_mah_tp, ftpt0
+    dmhdt_tpt0 = jnp.clip(dmhdt_tpt0, 10**LGSMAH_MIN)
+    dmhdt_tp = jnp.clip(dmhdt_tp, 10**LGSMAH_MIN)
+    lgsmah_tpt0 = jnp.log10(dmhdt_tpt0) - log_mah_tpt0
+    lgsmah_tp = jnp.log10(dmhdt_tp) - log_mah_tpt0
+    return lgsmah_tpt0, log_mah_tpt0, lgsmah_tp, log_mah_tp, ftpt0
 
 
 @jjit
@@ -38,11 +43,11 @@ def get_single_sample_self_fit_target_data(
 ):
     pred_data = tarr, lgm_obs, t_obs, ran_key, lgt0
     _res = mc_diffmah_preds(u_params, pred_data)
-    dmhdt_tpt0, log_mah_tpt0, dmhdt_tp, log_mah_tp, ftpt0 = _res
+    lgsmah_tpt0, log_mah_tpt0, lgsmah_tp, log_mah_tp, ftpt0 = _res
     weights_target = jnp.concatenate((ftpt0, 1 - ftpt0))
-    dmhdts_target = jnp.concatenate((dmhdt_tpt0, dmhdt_tp))
+    lgsmah_target = jnp.concatenate((lgsmah_tpt0, lgsmah_tp))
     log_mahs_target = jnp.concatenate((log_mah_tpt0, log_mah_tp))
-    X_target = jnp.array((dmhdts_target, log_mahs_target)).swapaxes(0, 1)
+    X_target = jnp.array((lgsmah_target, log_mahs_target)).swapaxes(0, 1)
     return X_target, weights_target
 
 
