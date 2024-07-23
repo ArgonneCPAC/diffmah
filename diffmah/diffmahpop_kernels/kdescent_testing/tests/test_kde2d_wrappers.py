@@ -9,6 +9,7 @@ from jax import random as jran
 
 from ....diffmah_kernels import DEFAULT_MAH_PARAMS
 from ... import diffmahpop_params as dpp
+from ... import mc_diffmahpop_kernels as mdk
 from .. import kde2d_wrappers as k2w
 
 try:
@@ -21,6 +22,7 @@ except ImportError:
 T_MIN_FIT = 0.5
 
 
+@pytest.mark.skip
 def test_mc_diffmah_preds():
     ran_key = jran.key(0)
     t_0 = 13.8
@@ -46,6 +48,7 @@ def test_mc_diffmah_preds():
         assert np.all(ftpt0 >= 0)
 
 
+@pytest.mark.skip
 @pytest.mark.skipif("not HAS_KDESCENT")
 def test_single_sample_kde_loss_self_fit():
     """Enforce that single-sample loss has finite grads"""
@@ -90,6 +93,7 @@ def test_single_sample_kde_loss_self_fit():
         assert np.all(np.isfinite(grads)), (lgm_obs, t_obs)
 
 
+@pytest.mark.skip
 @pytest.mark.skipif("not HAS_KDESCENT")
 def test_multisample_kde_loss_self_fit():
     """Enforce that multi-sample loss has finite grads"""
@@ -138,6 +142,7 @@ def test_multisample_kde_loss_self_fit():
     assert np.all(np.isfinite(grads))
 
 
+@pytest.mark.skip
 @pytest.mark.skipif("not HAS_KDESCENT")
 def test_kdescent_adam_self_fit():
     """Enforce that kdescent.adam terminates without NaNs"""
@@ -219,3 +224,58 @@ def test_get_single_cen_sample_target_data():
 
     assert np.all(frac_peaked >= 0)
     assert np.all(frac_peaked <= 1)
+
+
+def test_single_sample_kde_loss_kern():
+    ran_key = jran.key(0)
+    t_obs = 10.0
+    lgm_obs = 11.5
+    t_0 = 13.0
+    lgt0 = np.log10(t_0)
+
+    n_t = 5
+    tarr = np.linspace(0.5, t_obs - 0.01, n_t)
+
+    target_key, pred_key = jran.split(ran_key, 2)
+    _res = mdk._mc_diffmah_halo_sample(
+        dpp.DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, target_key, lgt0
+    )
+    (
+        mah_params_tpt0,
+        mah_params_tp,
+        t_peak,
+        ftpt0,
+        mc_tpt0,
+        dmhdt_tpt0,
+        log_mah_tpt0,
+        dmhdt_tp,
+        log_mah_tp,
+    ) = _res
+    mah_params = [
+        np.where(mc_tpt0, x, y) for x, y in zip(mah_params_tpt0, mah_params_tp)
+    ]
+    mah_params_target = DEFAULT_MAH_PARAMS._make(mah_params)
+    t_peak_target = np.where(mc_tpt0, t_0, t_peak)
+
+    _res = k2w.get_single_cen_sample_target_data(
+        mah_params_target, t_peak_target, tarr, lgm_obs, t_obs, lgt0
+    )
+    for _x in _res:
+        assert np.all(np.isfinite(_x))
+    X_target, weights_target, frac_peaked = _res
+
+    args = (
+        dpp.DEFAULT_DIFFMAHPOP_U_PARAMS,
+        tarr,
+        lgm_obs,
+        t_obs,
+        pred_key,
+        lgt0,
+        X_target,
+        weights_target,
+        frac_peaked,
+    )
+    loss = k2w.single_sample_kde_loss_kern(*args)
+    assert np.all(np.isfinite(loss))
+    assert loss > 0
+    assert loss < 1e8

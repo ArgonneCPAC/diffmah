@@ -70,7 +70,7 @@ def get_single_cen_sample_target_data(mah_params, t_peak, tarr, lgm_obs, t_obs, 
     delta_lgm_obs = lgm_obs_halopop - lgm_obs
     log_mahs_target = log_mah - delta_lgm_obs.reshape((-1, 1))
 
-    frac_peaked = jnp.mean(dmhdt == 0, axis=0)
+    frac_peaked_target = jnp.mean(dmhdt == 0, axis=0)
     weights_target = jnp.where(dmhdt == 0, 0.0, 1.0)
 
     log_dmhdt = jnp.log10(jnp.clip(dmhdt, 10**LGSMAH_MIN))
@@ -80,7 +80,7 @@ def get_single_cen_sample_target_data(mah_params, t_peak, tarr, lgm_obs, t_obs, 
 
     X_target = jnp.array((lgsmah_target, log_mahs_target)).swapaxes(0, 1)
 
-    return X_target, weights_target, frac_peaked
+    return X_target, weights_target, frac_peaked_target
 
 
 @jjit
@@ -154,39 +154,50 @@ def single_sample_kde_loss_kern(
     lgt0,
     X_target,
     weights_target,
+    frac_peaked_target,
 ):
-    kcalc0 = kdescent.KCalc(X_target[:, :, 0], weights_target)
-    kcalc1 = kdescent.KCalc(X_target[:, :, 1], weights_target)
-    kcalc2 = kdescent.KCalc(X_target[:, :, 2], weights_target)
-    kcalc3 = kdescent.KCalc(X_target[:, :, 3], weights_target)
-    kcalc4 = kdescent.KCalc(X_target[:, :, 4], weights_target)
+    kcalc0 = kdescent.KCalc(X_target[:, :, 0], weights_target[:, 0])
+    kcalc1 = kdescent.KCalc(X_target[:, :, 1], weights_target[:, 1])
+    kcalc2 = kdescent.KCalc(X_target[:, :, 2], weights_target[:, 2])
+    kcalc3 = kdescent.KCalc(X_target[:, :, 3], weights_target[:, 3])
+    kcalc4 = kdescent.KCalc(X_target[:, :, 4], weights_target[:, 4])
 
     ran_key, pred_key = jran.split(ran_key, 2)
     pred_data = tarr, lgm_obs, t_obs, pred_key, lgt0
     _res = mc_diffmah_preds(diffmahpop_u_params, pred_data)
     dmhdt_tpt0, log_mah_tpt0, dmhdt_tp, log_mah_tp, ftpt0 = _res
 
-    weights_pred = jnp.concatenate((ftpt0, 1 - ftpt0))
+    weights_ftpt0 = jnp.concatenate((ftpt0, 1 - ftpt0))
     dmhdts_pred = jnp.concatenate((dmhdt_tpt0, dmhdt_tp))
     log_mahs_pred = jnp.concatenate((log_mah_tpt0, log_mah_tp))
+
+    frac_peaked_tp = jnp.mean(dmhdt_tp == 0, axis=0)
+
+    frac_peaked_pred = (1 - ftpt0.reshape((-1, 1))) * frac_peaked_tp
+
+    weights_tp = jnp.where(dmhdt_tp == 0, 0.0, 1.0)
+    weights_tpt0 = jnp.ones_like(weights_tp)
+    weights = jnp.concatenate((weights_tpt0, weights_tpt0))
+    weights = weights * weights_ftpt0.reshape((-1, 1))
+
     X_preds = jnp.array((dmhdts_pred, log_mahs_pred)).swapaxes(0, 1)
 
     kcalc_keys = jran.split(ran_key, N_T_PER_BIN)
 
     model_counts0, truth_counts0 = kcalc0.compare_kde_counts(
-        kcalc_keys[0], X_preds[:, :, 0], weights_pred
+        kcalc_keys[0], X_preds[:, :, 0], weights[:, 0]
     )
     model_counts1, truth_counts1 = kcalc1.compare_kde_counts(
-        kcalc_keys[1], X_preds[:, :, 1], weights_pred
+        kcalc_keys[1], X_preds[:, :, 1], weights[:, 1]
     )
     model_counts2, truth_counts2 = kcalc2.compare_kde_counts(
-        kcalc_keys[2], X_preds[:, :, 2], weights_pred
+        kcalc_keys[2], X_preds[:, :, 2], weights[:, 2]
     )
     model_counts3, truth_counts3 = kcalc3.compare_kde_counts(
-        kcalc_keys[3], X_preds[:, :, 3], weights_pred
+        kcalc_keys[3], X_preds[:, :, 3], weights[:, 3]
     )
     model_counts4, truth_counts4 = kcalc4.compare_kde_counts(
-        kcalc_keys[4], X_preds[:, :, 4], weights_pred
+        kcalc_keys[4], X_preds[:, :, 4], weights[:, 4]
     )
 
     diff0 = model_counts0 - truth_counts0
@@ -201,7 +212,10 @@ def single_sample_kde_loss_kern(
     loss3 = jnp.mean(diff3**2)
     loss4 = jnp.mean(diff4**2)
 
-    loss = loss0 + loss1 + loss2 + loss3 + loss4
+    frac_peaked_diff = frac_peaked_pred - frac_peaked_target
+    loss_frac_peaked = jnp.mean(frac_peaked_diff**2)
+
+    loss = loss0 + loss1 + loss2 + loss3 + loss4 + loss_frac_peaked
     return loss
 
 
