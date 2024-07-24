@@ -275,8 +275,6 @@ def test_single_sample_kde_loss_kern():
         weights_target,
         frac_peaked,
     )
-    losses = k2w.single_sample_kde_loss_kern(*args)
-    assert False, losses
+    loss = k2w.single_sample_kde_loss_kern(*args)
     assert np.all(np.isfinite(loss))
     assert loss > 0
-    assert False, loss

@@ -200,30 +200,40 @@ def single_sample_kde_loss_kern(
         kcalc_keys[4], lgsmah_pred_t_obs, weights[:, 4]
     )
 
+    delta_lgm_obs = delta_log_mahs_pred[:, -1]
+
     diff0 = model_counts0 - truth_counts0
     diff1 = model_counts1 - truth_counts1
     diff2 = model_counts2 - truth_counts2
     diff3 = model_counts3 - truth_counts3
     diff4 = model_counts4 - truth_counts4
 
-    loss0 = jnp.mean(diff0**2)
-    loss1 = jnp.mean(diff1**2)
-    loss2 = jnp.mean(diff2**2)
-    loss3 = jnp.mean(diff3**2)
-    loss4 = jnp.mean(diff4**2)
+    fracdiff0 = diff0 / truth_counts0
+    fracdiff1 = diff1 / truth_counts1
+    fracdiff2 = diff2 / truth_counts2
+    fracdiff3 = diff3 / truth_counts3
+    fracdiff4 = diff4 / truth_counts4
+
+    loss0 = jnp.mean(jnp.abs(fracdiff0))
+    loss1 = jnp.mean(jnp.abs(fracdiff1))
+    loss2 = jnp.mean(jnp.abs(fracdiff2))
+    loss3 = jnp.mean(jnp.abs(fracdiff3))
+    loss4 = jnp.mean(jnp.abs(fracdiff4))
+    # loss1 = jnp.mean(fracdiff1**2)
+    # loss2 = jnp.mean(fracdiff2**2)
+    # loss3 = jnp.mean(fracdiff3**2)
+    # loss4 = jnp.mean(fracdiff4**2)
+
+    # loss_lgm_obs = jnp.mean(delta_lgm_obs**2)
+    loss_lgm_obs = jnp.mean(jnp.abs(delta_lgm_obs))
 
     frac_peaked_diff = frac_peaked_pred - frac_peaked_target
-    loss_frac_peaked = jnp.mean(frac_peaked_diff**2)
+    # loss_frac_peaked = jnp.mean(frac_peaked_diff**2)
+    loss_frac_peaked = jnp.mean(jnp.abs(frac_peaked_diff))
 
-    loss = loss0 + loss1 + loss2 + loss3 + loss4 + loss_frac_peaked
-    return (
-        loss0,
-        loss1,
-        loss2,
-        loss3,
-        loss4,
-        loss_frac_peaked,
-    )
+    loss = loss0 + loss1 + loss2 + loss3 + loss4 + loss_frac_peaked + loss_lgm_obs
+    # return (loss0, loss1, loss2, loss3, loss4, loss_frac_peaked, loss_lgm_obs)
+    return loss
 
 
 single_sample_kde_loss_and_grad_self_fit = jjit(
