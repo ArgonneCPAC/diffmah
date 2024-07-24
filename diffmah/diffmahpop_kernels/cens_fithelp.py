@@ -9,6 +9,7 @@ from jax import value_and_grad, vmap
 from . import mc_diffmahpop_kernels as mcdk
 
 T_OBS_FIT_MIN = 0.5
+T_TARGET_VAR_MIN = 2.0
 LGSMAH_MIN = -15.0
 
 
@@ -16,6 +17,12 @@ LGSMAH_MIN = -15.0
 def _mse(x, y):
     d = y - x
     return jnp.mean(d * d)
+
+
+@jjit
+def _wmse(x, y, w):
+    d = y - x
+    return jnp.average(d * d, weights=w)
 
 
 @jjit
@@ -80,6 +87,9 @@ def _loss_mah_moments_singlebin(
     )
     mean_delta_log_mah, std_log_mah, frac_peaked = _preds
     loss = _mse(mean_delta_log_mah, target_mean_delta_log_mah)
-    loss = loss + _mse(std_log_mah, target_std_log_mah)
+
+    msk_std = tarr < T_TARGET_VAR_MIN
+    std_weights = jnp.where(msk_std, 0.0, 1.0)
+    loss = loss + _wmse(std_log_mah, target_std_log_mah, std_weights)
     loss = loss + _mse(frac_peaked, target_frac_peaked)
     return loss
