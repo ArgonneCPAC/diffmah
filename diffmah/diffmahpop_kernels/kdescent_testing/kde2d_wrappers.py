@@ -236,6 +236,8 @@ def single_sample_kde_loss_kern(
     return loss
 
 
+single_sample_kde_loss_and_grad_kern = jjit(value_and_grad(single_sample_kde_loss_kern))
+
 single_sample_kde_loss_and_grad_self_fit = jjit(
     value_and_grad(single_sample_kde_loss_self_fit)
 )

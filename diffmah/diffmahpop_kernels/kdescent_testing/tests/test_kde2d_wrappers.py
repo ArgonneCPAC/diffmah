@@ -278,3 +278,7 @@ def test_single_sample_kde_loss_kern():
     loss = k2w.single_sample_kde_loss_kern(*args)
     assert np.all(np.isfinite(loss))
     assert loss > 0
+
+    loss, grads = k2w.single_sample_kde_loss_and_grad_kern(*args)
+    for grad in grads:
+        assert np.all(np.isfinite(grad))
