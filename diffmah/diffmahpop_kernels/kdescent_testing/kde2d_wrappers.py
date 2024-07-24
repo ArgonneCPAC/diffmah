@@ -60,7 +60,7 @@ def get_single_sample_self_fit_target_data(
 
 
 @jjit
-def get_single_cen_sample_target_data(mah_params, t_peak, tarr, lgm_obs, t_obs, lgt0):
+def get_single_cen_sample_target_data(mah_params, t_peak, tarr, lgm_obs, lgt0):
     dmhdt, log_mah = mah_halopop(mah_params, tarr, t_peak, lgt0)
 
     # renormalize MAHs to zero to at lgm_obs
@@ -140,6 +140,7 @@ def single_sample_kde_loss_self_fit(
     return loss
 
 
+@jjit
 def single_sample_kde_loss_kern(
     diffmahpop_u_params,
     tarr,
@@ -249,6 +250,39 @@ get_multisample_self_fit_target_data = jjit(
 
 _L = (None, 0, 0, 0, 0, None, 0, 0)
 _multisample_kde_loss_self_fit = jjit(vmap(single_sample_kde_loss_self_fit, in_axes=_L))
+
+_L2 = (None, 0, 0, 0, 0, None, 0, 0, 0)
+_multi_sample_kde_loss_kern = jjit(vmap(single_sample_kde_loss_kern, in_axes=_L2))
+
+
+@jjit
+def multi_sample_kde_loss_kern(
+    diffmahpop_u_params,
+    tarr_matrix,
+    lgm_obs_arr,
+    t_obs_arr,
+    ran_keys,
+    lgt0,
+    X_targets,
+    weights_targets,
+    frac_peaked_targets,
+):
+    losses = _multi_sample_kde_loss_kern(
+        diffmahpop_u_params,
+        tarr_matrix,
+        lgm_obs_arr,
+        t_obs_arr,
+        ran_keys,
+        lgt0,
+        X_targets,
+        weights_targets,
+        frac_peaked_targets,
+    )
+    loss = jnp.mean(losses)
+    return loss
+
+
+multi_sample_kde_loss_and_grad_kern = jjit(value_and_grad(multi_sample_kde_loss_kern))
 
 
 @jjit
