@@ -6,8 +6,6 @@ from glob import glob
 
 import numpy as np
 import pytest
-from astropy.cosmology import Planck15
-from astropy.table import Table
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
@@ -29,9 +27,14 @@ EPS = 1e-3
 
 DATA_DRN = "/Users/aphearin/work/DATA/diffmahpop_data"
 CEN_TARGET_FNAMES = sorted(glob(os.path.join(DATA_DRN, "*cen_mah*.h5")))
-if len(CEN_TARGET_FNAMES) > 0:
+try:
+    assert len(CEN_TARGET_FNAMES) > 0
+    from astropy.table import Table
+
+    cens = Table.read(CEN_TARGET_FNAMES[-1])
+
     HAS_TARGET_DATA = True
-else:
+except (AssertionError, ImportError):
     HAS_TARGET_DATA = False
 
 

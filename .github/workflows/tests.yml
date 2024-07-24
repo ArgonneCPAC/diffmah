@@ -45,12 +45,7 @@ jobs:
             setuptools \
             "setuptools_scm>=7,<8" \
             scipy \
-            python-build \
-            jaxopt \
-            tqdm \
-            optax \ 
-            astropy
-          pip install --no-deps git+https://github.com/AlanPearl/kdescent.git
+            python-build
           python -m pip install --no-build-isolation --no-deps -e .
 
       - name: test
