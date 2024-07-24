@@ -305,77 +305,20 @@ def test_single_sample_kde_loss_kern():
 
 
 @pytest.mark.skipif("not HAS_TARGET_DATA")
-def test_multi_cen_sample_kde_loss_kern():
+def test_get_cens_target_data():
     ran_key = jran.key(0)
-    t_0 = 13.8
-    lgt0 = np.log10(t_0)
-    cen_bnames = [os.path.basename(fn) for fn in CEN_TARGET_FNAMES]
+    lgt0 = np.log10(13.8)
+    ran_key, target_key = jran.split(ran_key, 2)
+    loss_data = k2w.get_cens_target_data(DATA_DRN, target_key, lgt0)
 
-    cen_scale_factors = np.array([float(bn.split("_")[-1][:-3]) for bn in cen_bnames])
-    cen_redshifts = 1 / cen_scale_factors - 1.0
-    cen_t_obs = Planck15.age(cen_redshifts).value
-
-    t_obs_collector = []
-    lgm_obs_collector = []
-    tarr_collector = []
-    X_target_collector = []
-    weights_target_collector = []
-    frac_peaked_target_collector = []
-    for it_obs, t_obs in enumerate(cen_t_obs):
-        cens = Table.read(CEN_TARGET_FNAMES[it_obs], path="data")
-
-        lgm_obs_arr = np.sort(np.unique(cens["lgm_obs"]))
-        mah_keys = ("logm0", "logtc", "early_index", "late_index")
-        mah_params = DEFAULT_MAH_PARAMS._make([cens[key] for key in mah_keys])
-
-        for im_obs, lgm_obs in enumerate(lgm_obs_arr):
-            mmsk = cens["lgm_obs"] == lgm_obs
-            mah_params_target = DEFAULT_MAH_PARAMS._make([x[mmsk] for x in mah_params])
-            t_peak_target = cens["t_peak"][mmsk]
-
-            tarr = np.linspace(0.5, t_obs - EPS, k2w.N_T_PER_BIN)
-
-            _res = k2w.get_single_cen_sample_target_data(
-                mah_params_target, t_peak_target, tarr, lgm_obs, lgt0
-            )
-            X_target, weights_target, frac_peaked_target = _res
-            tarr_collector.append(tarr)
-            lgm_obs_collector.append(lgm_obs)
-            t_obs_collector.append(t_obs)
-            X_target_collector.append(X_target)
-            weights_target_collector.append(weights_target)
-            frac_peaked_target_collector.append(frac_peaked_target)
-
-    n_samples = len(t_obs_collector)
-
-    tarr_collector = jnp.array(tarr_collector)
-    lgm_obs_collector = jnp.array(lgm_obs_collector)
-    t_obs_collector = jnp.array(t_obs_collector)
-    X_target_collector = jnp.array(X_target_collector)
-    weights_target_collector = jnp.array(weights_target_collector)
-    frac_peaked_target_collector = jnp.array(frac_peaked_target_collector)
-
-    n_pars = len(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
     n_tests = 10
+    n_pars = len(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
     for __ in range(n_tests):
-        ran_key, param_key, test_key = jran.split(ran_key, 3)
+        ran_key, param_key = jran.split(ran_key, 2)
         uran = jran.uniform(param_key, minval=-10, maxval=10, shape=(n_pars,))
         u_p = [x + u for x, u in zip(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS, uran)]
         u_params = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(u_p)
-
-        test_keys = jran.split(test_key, n_samples)
-        args = (
-            u_params,
-            tarr_collector,
-            lgm_obs_collector,
-            t_obs_collector,
-            test_keys,
-            lgt0,
-            X_target_collector,
-            weights_target_collector,
-            frac_peaked_target_collector,
-        )
-        loss, grads = k2w.multi_sample_kde_loss_and_grad_kern(*args)
+        loss, grads = k2w.multi_sample_kde_loss_and_grad_kern(u_params, *loss_data)
         assert np.all(np.isfinite(loss))
         assert loss > 0
         assert np.all(np.isfinite(grads))

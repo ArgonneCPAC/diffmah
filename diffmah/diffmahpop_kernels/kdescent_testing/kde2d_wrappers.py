@@ -1,6 +1,12 @@
 """
 """
 
+import os
+from glob import glob
+
+import numpy as np
+from astropy.cosmology import Planck15
+from astropy.table import Table
 from jax import random as jran
 from jax import value_and_grad, vmap
 
@@ -13,11 +19,13 @@ except ImportError:
 from jax import jit as jjit
 from jax import numpy as jnp
 
+from ...diffmah_kernels import DEFAULT_MAH_PARAMS
 from .. import diffmahpop_params as dpp
 from .. import mc_diffmahpop_kernels as mdk
 
 N_T_PER_BIN = 5
 LGSMAH_MIN = -15
+EPS = 1e-3
 
 
 @jjit
@@ -313,3 +321,66 @@ def multisample_kde_loss_self_fit(
 multisample_kde_loss_and_grad_self_fit = jjit(
     value_and_grad(multisample_kde_loss_self_fit)
 )
+
+
+def get_cens_target_data(drn, ran_key, lgt0):
+    cen_target_fnames = sorted(glob(os.path.join(drn, "*cen_mah*.h5")))
+    cen_bnames = [os.path.basename(fn) for fn in cen_target_fnames]
+
+    cen_scale_factors = np.array([float(bn.split("_")[-1][:-3]) for bn in cen_bnames])
+    cen_redshifts = 1 / cen_scale_factors - 1.0
+
+    cen_t_obs = Planck15.age(cen_redshifts).value
+
+    t_obs_collector = []
+    lgm_obs_collector = []
+    tarr_collector = []
+    X_target_collector = []
+    weights_target_collector = []
+    frac_peaked_target_collector = []
+    for it_obs, t_obs in enumerate(cen_t_obs):
+        cens = Table.read(cen_target_fnames[it_obs], path="data")
+
+        lgm_obs_arr = np.sort(np.unique(cens["lgm_obs"]))
+        mah_keys = ("logm0", "logtc", "early_index", "late_index")
+        mah_params = DEFAULT_MAH_PARAMS._make([cens[key] for key in mah_keys])
+
+        for im_obs, lgm_obs in enumerate(lgm_obs_arr):
+            mmsk = cens["lgm_obs"] == lgm_obs
+            mah_params_target = DEFAULT_MAH_PARAMS._make([x[mmsk] for x in mah_params])
+            t_peak_target = cens["t_peak"][mmsk]
+
+            tarr = np.linspace(0.5, t_obs - EPS, N_T_PER_BIN)
+
+            _res = get_single_cen_sample_target_data(
+                mah_params_target, t_peak_target, tarr, lgm_obs, lgt0
+            )
+            X_target, weights_target, frac_peaked_target = _res
+            tarr_collector.append(tarr)
+            lgm_obs_collector.append(lgm_obs)
+            t_obs_collector.append(t_obs)
+            X_target_collector.append(X_target)
+            weights_target_collector.append(weights_target)
+            frac_peaked_target_collector.append(frac_peaked_target)
+
+    n_samples = len(t_obs_collector)
+
+    tarr_collector = jnp.array(tarr_collector)
+    lgm_obs_collector = jnp.array(lgm_obs_collector)
+    t_obs_collector = jnp.array(t_obs_collector)
+    ran_keys = jran.split(ran_key, n_samples)
+    X_target_collector = jnp.array(X_target_collector)
+    weights_target_collector = jnp.array(weights_target_collector)
+    frac_peaked_target_collector = jnp.array(frac_peaked_target_collector)
+
+    loss_data = (
+        tarr_collector,
+        lgm_obs_collector,
+        t_obs_collector,
+        ran_keys,
+        lgt0,
+        X_target_collector,
+        weights_target_collector,
+        frac_peaked_target_collector,
+    )
+    return loss_data

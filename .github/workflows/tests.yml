@@ -48,7 +48,8 @@ jobs:
             python-build \
             jaxopt \
             tqdm \
-            optax
+            optax \ 
+            astropy
           pip install --no-deps git+https://github.com/AlanPearl/kdescent.git
           python -m pip install --no-build-isolation --no-deps -e .
 
