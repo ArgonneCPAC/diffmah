@@ -264,21 +264,28 @@ def test_single_sample_kde_loss_kern():
         assert np.all(np.isfinite(_x))
     X_target, weights_target, frac_peaked = _res
 
-    args = (
-        dpp.DEFAULT_DIFFMAHPOP_U_PARAMS,
-        tarr,
-        lgm_obs,
-        t_obs,
-        pred_key,
-        lgt0,
-        X_target,
-        weights_target,
-        frac_peaked,
-    )
-    loss = k2w.single_sample_kde_loss_kern(*args)
-    assert np.all(np.isfinite(loss))
-    assert loss > 0
+    ntests = 100
+    n_pars = len(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS)
+    for __ in range(ntests):
+        pred_key, kde_test_key, param_key = jran.split(pred_key, 3)
+        uran = jran.uniform(param_key, minval=-10, maxval=10, shape=(n_pars,))
+        u_p = [x + u for x, u in zip(dpp.DEFAULT_DIFFMAHPOP_U_PARAMS, uran)]
+        u_params = dpp.DEFAULT_DIFFMAHPOP_U_PARAMS._make(u_p)
 
-    loss, grads = k2w.single_sample_kde_loss_and_grad_kern(*args)
-    for grad in grads:
-        assert np.all(np.isfinite(grad))
+        args = (
+            u_params,
+            tarr,
+            lgm_obs,
+            t_obs,
+            kde_test_key,
+            lgt0,
+            X_target,
+            weights_target,
+            frac_peaked,
+        )
+
+        loss, grads = k2w.single_sample_kde_loss_and_grad_kern(*args)
+        assert np.all(np.isfinite(loss))
+        assert loss > 0
+        for grad in grads:
+            assert np.all(np.isfinite(grad))
