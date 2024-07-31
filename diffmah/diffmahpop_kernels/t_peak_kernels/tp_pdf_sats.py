@@ -119,6 +119,13 @@ def mc_utp_pdf(params, ran_key, lgmparr, tobsarr):
 
 
 @jjit
+def mc_tpeak_pdf(params, ran_key, lgmparr, tobsarr):
+    utp = mc_utp_pdf(params, ran_key, lgmparr, tobsarr)
+    tpeak = utp * tobsarr
+    return tpeak
+
+
+@jjit
 def _get_bounded_utp_satpop_param(u_param, bound):
     lo, hi = bound
     mid = 0.5 * (lo + hi)

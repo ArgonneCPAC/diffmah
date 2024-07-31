@@ -5,8 +5,44 @@ import numpy as np
 from jax import random as jran
 
 from .. import tp_pdf_sats as tps
+from .. import utp_pdf_kernels
 
 TOL = 1e-3
+
+
+def test_mc_tpeak_pdf():
+    ran_key = jran.key(0)
+    ran_key, pred_key, lgm_key, tobs_key = jran.split(ran_key, 4)
+    nsats = int(1e4)
+    lgmparr = jran.uniform(lgm_key, minval=10, maxval=15, shape=(nsats,))
+    tobsarr = jran.uniform(tobs_key, minval=2, maxval=12, shape=(nsats,))
+    args = (pred_key, lgmparr, tobsarr)
+    tpeak = tps.mc_tpeak_pdf(tps.DEFAULT_UTP_SATPOP_PARAMS, *args)
+    assert tpeak.shape == (nsats,)
+    assert np.all(np.isfinite(tpeak))
+    assert np.all(tpeak > tobsarr * utp_pdf_kernels.X_MIN)
+    assert np.all(tpeak < tobsarr)
+
+    ntests = 10
+    npars = len(tps.DEFAULT_UTP_SATPOP_U_PARAMS)
+    for __ in range(ntests):
+        ran_key, test_key = jran.split(ran_key, 2)
+
+        pred_key, u_p_key, lgm_key, tobs_key = jran.split(test_key, 4)
+        nsats = int(1e5)
+        lgmparr = jran.uniform(lgm_key, minval=10, maxval=15, shape=(nsats,))
+        tobsarr = jran.uniform(tobs_key, minval=2, maxval=12, shape=(nsats,))
+
+        u_p = jran.uniform(u_p_key, minval=-100, maxval=100, shape=(npars,))
+        u_p = tps.DEFAULT_UTP_SATPOP_U_PARAMS._make(u_p)
+        params = tps.get_bounded_utp_satpop_params(u_p)
+
+        args = (pred_key, lgmparr, tobsarr)
+        tpeak = tps.mc_tpeak_pdf(params, *args)
+        assert tpeak.shape == (nsats,)
+        assert np.all(np.isfinite(tpeak))
+        assert np.all(tpeak > tobsarr * utp_pdf_kernels.X_MIN)
+        assert np.all(tpeak < tobsarr)
 
 
 def test_mc_utp_pdf():
@@ -17,8 +53,8 @@ def test_mc_utp_pdf():
     utp = tps.mc_utp_pdf(tps.DEFAULT_UTP_SATPOP_PARAMS, *args)
     assert utp.shape == (100,)
     assert np.all(np.isfinite(utp))
-    assert np.all(utp >= 0)
-    assert np.all(utp <= 1)
+    assert np.all(utp > 0)
+    assert np.all(utp < 1)
 
 
 def test_get_utp_loc_kern2():
