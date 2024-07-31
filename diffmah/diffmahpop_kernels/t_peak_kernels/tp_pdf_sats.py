@@ -126,6 +126,16 @@ def mc_tpeak_sats(params, ran_key, lgmparr, tobsarr):
 
 
 @jjit
+def mc_tpeak_singlesat(params, ran_key, lgm_obs, t_obs):
+    utp_loc = _get_utp_loc_kern(params, lgm_obs, t_obs)
+    utp_scale = _get_utp_scale_kern(params, lgm_obs, t_obs)
+    kern_args = tpk.UTP_Params(utp_loc, utp_scale)
+    utp = tpk.mc_tp_pdf_singlesat(ran_key, kern_args)
+    tpeak = utp * t_obs
+    return tpeak
+
+
+@jjit
 def _get_bounded_utp_satpop_param(u_param, bound):
     lo, hi = bound
     mid = 0.5 * (lo + hi)

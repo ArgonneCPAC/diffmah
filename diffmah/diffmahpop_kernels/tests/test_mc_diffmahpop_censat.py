@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+import pytest
 from jax import random as jran
 
 from ...diffmah_kernels import MAH_PBOUNDS
@@ -15,23 +16,38 @@ def test_mc_mean_diffmah_params_are_always_in_bounds():
     ran_key = jran.key(0)
     lgmarr = np.linspace(10, 16, 20)
     for lgm_obs in lgmarr:
-        dmah_tpt0, dmah_tp, t_peak, ftpt0, mc_tpt0 = mcdpk.mc_mean_diffmah_params(
+        _res = mcdpk.mc_mean_diffmah_params(
             DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, np.log10(t_0)
         )
-        assert np.all(t_peak > 0)
-        assert np.all(t_peak <= t_0)
-        assert np.any(t_peak < t_0)
+        (
+            dmah_tpt0_cens,
+            dmah_tp_cens,
+            t_peak_cens,
+            frac_tpt0_cens,
+            mc_tpt0_cens,
+            t_peak_sats,
+            dmah_sats,
+        ) = _res
+        assert np.all(t_peak_cens > 0)
+        assert np.all(t_peak_cens <= t_0)
+        assert np.any(t_peak_cens < t_0)
 
-        assert ftpt0.shape == ()
-        assert np.all(ftpt0 >= 0)
-        assert np.all(ftpt0 <= 1)
-        assert np.any(ftpt0 > 0)
-        assert np.any(ftpt0 < 1)
+        assert np.all(t_peak_sats > 0)
+        assert np.all(t_peak_sats < t_obs)
 
-        for p, bound in zip(dmah_tpt0, MAH_PBOUNDS):
+        assert frac_tpt0_cens.shape == ()
+        assert np.all(frac_tpt0_cens >= 0)
+        assert np.all(frac_tpt0_cens <= 1)
+        assert np.any(frac_tpt0_cens > 0)
+        assert np.any(frac_tpt0_cens < 1)
+
+        for p, bound in zip(dmah_tpt0_cens, MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
-        for p, bound in zip(dmah_tp, MAH_PBOUNDS):
+        for p, bound in zip(dmah_tp_cens, MAH_PBOUNDS):
+            assert np.all(bound[0] < p)
+            assert np.all(p < bound[1])
+        for p, bound in zip(dmah_sats, MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
 
@@ -43,12 +59,11 @@ def test_mc_mean_diffmah_params():
     for lgm_obs in np.linspace(10, 16, 20):
         args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, np.log10(t_0)
         _res = mcdpk.mc_mean_diffmah_params(*args)
-        ran_diffmah_params_tpt0, ran_diffmah_params_tp, t_peak, ftpt0, mc_tpt0 = _res
         for _x in _res:
             assert np.all(np.isfinite(_x))
 
 
-def test_mc_diffmah_params_singlecen():
+def test_mc_diffmah_params_single_censat():
     ran_key = jran.key(0)
     t_0 = 13.0
     lgt0 = np.log10(t_0)
@@ -56,13 +71,22 @@ def test_mc_diffmah_params_singlecen():
     lgmarr = np.linspace(10, 15, 20)
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0)
-        _res = mcdpk.mc_diffmah_params_singlecen(*args)
-        mah_params_tpt0, mah_params_tp, t_peak, ftpt0, mc_tpt0 = _res
-        assert np.all(np.isfinite(mah_params_tpt0.logtc))
-        assert np.all(np.isfinite(mah_params_tp.logtc))
+        _res = mcdpk.mc_diffmah_params_single_censat(*args)
+        (
+            mah_params_tpt0_cens,
+            mah_params_tp_cens,
+            t_peak_cens,
+            ftpt0_cens,
+            mc_tpt0_cens,
+            t_peak_sats,
+            mah_params_sats,
+        ) = _res
+        assert np.all(np.isfinite(mah_params_tpt0_cens.logtc))
+        assert np.all(np.isfinite(mah_params_tp_cens.logtc))
+        assert np.all(np.isfinite(mah_params_sats.logtc))
 
 
-def test_predict_mah_moments_singlebin():
+def test_predict_mah_moments_singlebin_censat():
     ran_key = jran.key(0)
     t_0 = 13.0
     lgt0 = np.log10(t_0)
@@ -71,9 +95,9 @@ def test_predict_mah_moments_singlebin():
     lgmarr = np.linspace(10, 15, 20)
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
-        mean_log_mah, std_log_mah = mcdpk.predict_mah_moments_singlebin(*args)
-        assert np.all(np.isfinite(mean_log_mah))
-        assert np.all(np.isfinite(std_log_mah))
+        _res = mcdpk.predict_mah_moments_singlebin_censat(*args)
+        for _x in _res:
+            assert np.all(np.isfinite(_x))
 
 
 def test_mc_diffmah_halo_sample():
@@ -85,28 +109,30 @@ def test_mc_diffmah_halo_sample():
     lgmarr = np.linspace(10, 16, 20)
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
-        _res = mcdpk._mc_diffmah_halo_sample(*args)
+        _res = mcdpk._mc_diffmah_halo_sample_censat(*args)
         (
-            mah_params_tpt0,
-            mah_params_tp,
-            t_peak,
-            ftpt0,
-            mc_tpt0,
-            dmhdt_tpt0,
-            log_mah_tpt0,
-            dmhdt_tp,
-            log_mah_tp,
+            mah_params_tpt0_cens,
+            mah_params_tp_cens,
+            t_peak_cens,
+            frac_tpt0_cens,
+            mc_tpt0_cens,
+            dmhdt_tpt0_cens,
+            log_mah_tpt0_cens,
+            dmhdt_tp_cens,
+            log_mah_tp_cens,
+            dmhdt_sats,
+            log_mah_sats,
         ) = _res
-        assert np.all(np.isfinite(mah_params_tpt0))
-        assert np.all(np.isfinite(mah_params_tp))
+        assert np.all(np.isfinite(mah_params_tpt0_cens))
+        assert np.all(np.isfinite(mah_params_tp_cens))
 
-        assert np.all(np.isfinite(t_peak))
-        assert np.all(t_peak > 0.0)
-        assert np.all(t_peak <= t_0)
+        assert np.all(np.isfinite(t_peak_cens))
+        assert np.all(t_peak_cens > 0.0)
+        assert np.all(t_peak_cens <= t_0)
 
-        assert np.all(np.isfinite(ftpt0))
-        assert np.all(ftpt0 > 0.0)
-        assert np.all(ftpt0 < 1.0)
+        assert np.all(np.isfinite(frac_tpt0_cens))
+        assert np.all(frac_tpt0_cens > 0.0)
+        assert np.all(frac_tpt0_cens < 1.0)
 
-        assert np.all(np.isfinite(log_mah_tpt0))
-        assert np.all(np.isfinite(log_mah_tp))
+        assert np.all(np.isfinite(log_mah_tpt0_cens))
+        assert np.all(np.isfinite(log_mah_tp_cens))
