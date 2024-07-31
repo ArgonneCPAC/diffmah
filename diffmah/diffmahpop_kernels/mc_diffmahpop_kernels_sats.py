@@ -132,5 +132,6 @@ def predict_mah_moments_singlebin(
 
     mean_log_mah = jnp.mean(log_mah, axis=0)
     std_log_mah = jnp.std(log_mah, axis=0)
+    frac_peaked = jnp.mean(dmhdt == 0, axis=0)
 
-    return mean_log_mah, std_log_mah
+    return mean_log_mah, std_log_mah, frac_peaked

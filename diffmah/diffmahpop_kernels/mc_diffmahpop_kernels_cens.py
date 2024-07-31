@@ -170,7 +170,6 @@ def _mc_diffmah_cenpop(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
     return _ret
 
 
-@jjit
 def predict_mah_moments_singlebin(
     diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
 ):
@@ -193,4 +192,8 @@ def predict_mah_moments_singlebin(
     mean_log_mah = jnp.mean(f * log_mah_tpt0 + (1 - f) * log_mah_tp, axis=0)
     std_log_mah = jnp.std(f * log_mah_tpt0 + (1 - f) * log_mah_tp, axis=0)
 
-    return mean_log_mah, std_log_mah
+    frac_peaked_tpt0 = jnp.mean(f * dmhdt_tpt0 == 0, axis=0)
+    frac_peaked_tp = jnp.mean((1 - f) * dmhdt_tp == 0, axis=0)
+    frac_peaked = frac_peaked_tpt0 + frac_peaked_tp
+
+    return mean_log_mah, std_log_mah, frac_peaked

@@ -71,9 +71,10 @@ def test_predict_mah_moments_singlebin():
     lgmarr = np.linspace(10, 15, 20)
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
-        mean_log_mah, std_log_mah = mcdpk.predict_mah_moments_singlebin(*args)
+        mean_log_mah, std_log_mah, f_peaked = mcdpk.predict_mah_moments_singlebin(*args)
         assert np.all(np.isfinite(mean_log_mah))
         assert np.all(np.isfinite(std_log_mah))
+        assert np.all(np.isfinite(f_peaked))
 
 
 def test_mc_diffmah_halo_sample():
