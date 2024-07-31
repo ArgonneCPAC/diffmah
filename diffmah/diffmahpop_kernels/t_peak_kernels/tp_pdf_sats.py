@@ -119,7 +119,7 @@ def mc_utp_pdf(params, ran_key, lgmparr, tobsarr):
 
 
 @jjit
-def mc_tpeak_pdf(params, ran_key, lgmparr, tobsarr):
+def mc_tpeak_sats(params, ran_key, lgmparr, tobsarr):
     utp = mc_utp_pdf(params, ran_key, lgmparr, tobsarr)
     tpeak = utp * tobsarr
     return tpeak

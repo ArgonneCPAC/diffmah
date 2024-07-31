@@ -17,7 +17,7 @@ def test_mc_tpeak_pdf():
     lgmparr = jran.uniform(lgm_key, minval=10, maxval=15, shape=(nsats,))
     tobsarr = jran.uniform(tobs_key, minval=2, maxval=12, shape=(nsats,))
     args = (pred_key, lgmparr, tobsarr)
-    tpeak = tps.mc_tpeak_pdf(tps.DEFAULT_UTP_SATPOP_PARAMS, *args)
+    tpeak = tps.mc_tpeak_sats(tps.DEFAULT_UTP_SATPOP_PARAMS, *args)
     assert tpeak.shape == (nsats,)
     assert np.all(np.isfinite(tpeak))
     assert np.all(tpeak > tobsarr * utp_pdf_kernels.X_MIN)
@@ -38,7 +38,7 @@ def test_mc_tpeak_pdf():
         params = tps.get_bounded_utp_satpop_params(u_p)
 
         args = (pred_key, lgmparr, tobsarr)
-        tpeak = tps.mc_tpeak_pdf(params, *args)
+        tpeak = tps.mc_tpeak_sats(params, *args)
         assert tpeak.shape == (nsats,)
         assert np.all(np.isfinite(tpeak))
         assert np.all(tpeak > tobsarr * utp_pdf_kernels.X_MIN)
