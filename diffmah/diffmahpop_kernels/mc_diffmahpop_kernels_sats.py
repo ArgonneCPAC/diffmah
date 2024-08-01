@@ -16,7 +16,6 @@ from ..diffmah_kernels import (
     mah_halopop,
     mah_singlehalo,
 )
-from . import ftpt0_cens
 from .covariance_kernels import _get_diffmahpop_cov
 from .diffmahpop_params_censat import get_component_model_params
 from .early_index_pop import _pred_early_index_kern

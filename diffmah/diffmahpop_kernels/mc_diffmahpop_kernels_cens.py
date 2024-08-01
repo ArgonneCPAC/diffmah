@@ -170,6 +170,7 @@ def _mc_diffmah_cenpop(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
     return _ret
 
 
+@jjit
 def predict_mah_moments_singlebin(
     diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
 ):
