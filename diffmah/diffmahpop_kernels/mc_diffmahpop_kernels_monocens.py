@@ -13,7 +13,6 @@ from ..diffmah_kernels import (
     DiffmahUParams,
     get_bounded_mah_params,
     get_unbounded_mah_params,
-    mah_halopop,
     mah_singlehalo,
 )
 from .covariance_kernels import _get_diffmahpop_cov

@@ -3,8 +3,6 @@
 
 from jax import jit as jjit
 from jax import numpy as jnp
-from jax import random as jran
-from jax import value_and_grad, vmap
 
 from . import mc_diffmahpop_kernels as mcdk
 

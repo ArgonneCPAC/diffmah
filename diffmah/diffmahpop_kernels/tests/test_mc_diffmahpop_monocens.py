@@ -2,7 +2,6 @@
 """
 
 import numpy as np
-import pytest
 from jax import random as jran
 
 from ...diffmah_kernels import MAH_PBOUNDS
