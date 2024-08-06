@@ -29,7 +29,7 @@ NH_PER_M0BIN = 200
 
 
 @jjit
-def mc_mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
+def mc_mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key):
     model_params = get_component_model_params(diffmahpop_params)
     (
         tp_pdf_cens_params,
@@ -64,9 +64,9 @@ def mc_mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
 
 
 @jjit
-def mc_diffmah_params_singlesat(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
+def mc_diffmah_params_singlesat(diffmahpop_params, lgm_obs, t_obs, ran_key):
     dmah_sats, t_peak_sats = mc_mean_diffmah_params(
-        diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0
+        diffmahpop_params, lgm_obs, t_obs, ran_key
     )
     u_dmah_sats = get_unbounded_mah_params(dmah_sats)
 
@@ -97,7 +97,7 @@ def mc_diffmah_params_satpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
 
 @jjit
 def _mc_diffmah_singlesat(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
-    _res = mc_diffmah_params_singlesat(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
+    _res = mc_diffmah_params_singlesat(diffmahpop_params, lgm_obs, t_obs, ran_key)
     mah_params, t_peak_sats = _res
     dmhdt_sats, log_mah_sats = mah_singlehalo(mah_params, tarr, t_peak_sats, lgt0)
     return mah_params, t_peak_sats, dmhdt_sats, log_mah_sats

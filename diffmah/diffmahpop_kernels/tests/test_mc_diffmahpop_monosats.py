@@ -11,12 +11,11 @@ from ..diffmahpop_params_monocensat import DEFAULT_DIFFMAHPOP_PARAMS
 
 def test_mc_mean_diffmah_params_are_always_in_bounds():
     t_obs = 10.0
-    t_0 = 13.8
     ran_key = jran.key(0)
     lgmarr = np.linspace(10, 16, 20)
     for lgm_obs in lgmarr:
         dmah_sats, t_peak_sats = mcdpk.mc_mean_diffmah_params(
-            DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, np.log10(t_0)
+            DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key
         )
         assert np.all(t_peak_sats > 0)
         assert np.all(t_peak_sats <= t_obs)
@@ -28,10 +27,9 @@ def test_mc_mean_diffmah_params_are_always_in_bounds():
 
 def test_mc_mean_diffmah_params():
     t_obs = 10.0
-    t_0 = 13.8
     ran_key = jran.key(0)
     for lgm_obs in np.linspace(10, 16, 20):
-        args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, np.log10(t_0)
+        args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key
         _res = mcdpk.mc_mean_diffmah_params(*args)
         dmah_sats, t_peak_sats = _res
         for _x in _res:
@@ -40,12 +38,10 @@ def test_mc_mean_diffmah_params():
 
 def test_mc_diffmah_params_singlesat():
     ran_key = jran.key(0)
-    t_0 = 13.0
-    lgt0 = np.log10(t_0)
     t_obs = 10.0
     lgmarr = np.linspace(10, 15, 20)
     for lgm_obs in lgmarr:
-        args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0)
+        args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key)
         _res = mcdpk.mc_diffmah_params_singlesat(*args)
         mah_params, t_peak_sats = _res
         assert np.all(np.isfinite(mah_params.logtc))
