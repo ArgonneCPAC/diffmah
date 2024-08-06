@@ -2,7 +2,6 @@
 """
 
 import numpy as np
-import pytest
 from jax import random as jran
 
 from .. import tp_pdf_monocens as tpc

@@ -5,14 +5,13 @@ from collections import OrderedDict, namedtuple
 
 from jax import jit as jjit
 
-from . import covariance_kernels, early_index_pop, ftpt0_cens, late_index_pop, logtc_pop
+from . import covariance_kernels, early_index_pop, late_index_pop, logtc_pop
 from .logm0_kernels import logm0_pop
-from .t_peak_kernels import tp_pdf_cens, tp_pdf_sats
+from .t_peak_kernels import tp_pdf_monocens, tp_pdf_sats
 
 DEFAULT_DIFFMAHPOP_PDICT = OrderedDict()
 COMPONENT_PDICTS = (
-    ftpt0_cens.DEFAULT_FTPT0_PDICT,
-    tp_pdf_cens.DEFAULT_TPCENS_PDICT,
+    tp_pdf_monocens.DEFAULT_TPCENS_PDICT,
     tp_pdf_sats.DEFAULT_UTP_SATPOP_PDICT,
     logm0_pop.DEFAULT_LOGM0_PDICT,
     logtc_pop.LOGTC_PDICT,
@@ -27,8 +26,7 @@ DEFAULT_DIFFMAHPOP_PARAMS = DiffmahPop_Params(**DEFAULT_DIFFMAHPOP_PDICT)
 
 
 COMPONENT_U_PDICTS = (
-    ftpt0_cens.DEFAULT_FTPT0_U_PARAMS._asdict(),
-    tp_pdf_cens.DEFAULT_TPCENS_U_PARAMS._asdict(),
+    tp_pdf_monocens.DEFAULT_TPCENS_U_PARAMS._asdict(),
     tp_pdf_sats.DEFAULT_UTP_SATPOP_U_PARAMS._asdict(),
     logm0_pop.DEFAULT_LOGM0POP_U_PARAMS._asdict(),
     logtc_pop.DEFAULT_LOGTC_U_PARAMS._asdict(),
@@ -45,11 +43,11 @@ DEFAULT_DIFFMAHPOP_U_PARAMS = DiffmahPop_UParams(**DEFAULT_DIFFMAHPOP_U_PDICT)
 
 @jjit
 def get_component_model_params(diffmahpop_params):
-    ftpt0_cens_params = ftpt0_cens.FTPT0_Params(
-        *[getattr(diffmahpop_params, key) for key in ftpt0_cens.FTPT0_Params._fields]
-    )
-    tp_pdf_cens_params = tp_pdf_cens.TPCens_Params(
-        *[getattr(diffmahpop_params, key) for key in tp_pdf_cens.TPCens_Params._fields]
+    tp_pdf_monocens_params = tp_pdf_monocens.TPCens_Params(
+        *[
+            getattr(diffmahpop_params, key)
+            for key in tp_pdf_monocens.TPCens_Params._fields
+        ]
     )
     tp_pdf_sats_params = tp_pdf_sats.UTP_SatPop_Params(
         *[
@@ -82,8 +80,7 @@ def get_component_model_params(diffmahpop_params):
         ]
     )
     return (
-        ftpt0_cens_params,
-        tp_pdf_cens_params,
+        tp_pdf_monocens_params,
         tp_pdf_sats_params,
         logm0_params,
         logtc_params,
@@ -95,13 +92,10 @@ def get_component_model_params(diffmahpop_params):
 
 @jjit
 def get_component_model_u_params(diffmahpop_u_params):
-    ftpt0_cens_u_params = ftpt0_cens.FTPT0_UParams(
-        *[getattr(diffmahpop_u_params, key) for key in ftpt0_cens.FTPT0_UParams._fields]
-    )
-    tp_pdf_cens_u_params = tp_pdf_cens.TPCens_UParams(
+    tp_pdf_monocens_u_params = tp_pdf_monocens.TPCens_UParams(
         *[
             getattr(diffmahpop_u_params, key)
-            for key in tp_pdf_cens.TPCens_UParams._fields
+            for key in tp_pdf_monocens.TPCens_UParams._fields
         ]
     )
     tp_pdf_sats_u_params = tp_pdf_sats.UTP_SatPop_UParams(
@@ -139,8 +133,7 @@ def get_component_model_u_params(diffmahpop_u_params):
     )
 
     return (
-        ftpt0_cens_u_params,
-        tp_pdf_cens_u_params,
+        tp_pdf_monocens_u_params,
         tp_pdf_sats_u_params,
         logm0_u_params,
         logtc_u_params,
@@ -153,15 +146,12 @@ def get_component_model_u_params(diffmahpop_u_params):
 @jjit
 def get_diffmahpop_params_from_u_params(diffmahpop_u_params):
     component_model_u_params = get_component_model_u_params(diffmahpop_u_params)
-    ftpt0_u_params, tpc_u_params, tps_u_params, logm0_u_params = (
-        component_model_u_params[:4]
-    )
-    logtc_u_params = component_model_u_params[4]
-    early_index_u_params, late_index_u_params = component_model_u_params[5:7]
-    cov_u_params = component_model_u_params[7]
+    tpc_u_params, tps_u_params, logm0_u_params = component_model_u_params[:3]
+    logtc_u_params = component_model_u_params[3]
+    early_index_u_params, late_index_u_params = component_model_u_params[4:6]
+    cov_u_params = component_model_u_params[6]
 
-    ftpt0_cens_params = ftpt0_cens.get_bounded_ftpt0_params(ftpt0_u_params)
-    tpc_params = tp_pdf_cens.get_bounded_tp_cens_params(tpc_u_params)
+    tpc_params = tp_pdf_monocens.get_bounded_tp_cens_params(tpc_u_params)
     tps_params = tp_pdf_sats.get_bounded_utp_satpop_params(tps_u_params)
     logm0_params = logm0_pop.get_bounded_m0pop_params(logm0_u_params)
     logtc_params = logtc_pop.get_bounded_logtc_params(logtc_u_params)
@@ -174,7 +164,6 @@ def get_diffmahpop_params_from_u_params(diffmahpop_u_params):
     cov_params = covariance_kernels.get_bounded_cov_params(cov_u_params)
 
     component_model_params = (
-        ftpt0_cens_params,
         tpc_params,
         tps_params,
         logm0_params,
@@ -193,13 +182,12 @@ def get_diffmahpop_params_from_u_params(diffmahpop_u_params):
 @jjit
 def get_diffmahpop_u_params_from_params(diffmahpop_params):
     component_model_params = get_component_model_params(diffmahpop_params)
-    ftpt0_params, tpc_params, tps_params, logm0_params = component_model_params[:4]
-    logtc_params = component_model_params[4]
-    early_index_params, late_index_params = component_model_params[5:7]
-    cov_params = component_model_params[7]
+    tpc_params, tps_params, logm0_params = component_model_params[:3]
+    logtc_params = component_model_params[3]
+    early_index_params, late_index_params = component_model_params[4:6]
+    cov_params = component_model_params[6]
 
-    ftpt0_u_params = ftpt0_cens.get_unbounded_ftpt0_params(ftpt0_params)
-    tpc_u_params = tp_pdf_cens.get_unbounded_tp_cens_params(tpc_params)
+    tpc_u_params = tp_pdf_monocens.get_unbounded_tp_cens_params(tpc_params)
     tps_u_params = tp_pdf_sats.get_unbounded_utp_satpop_params(tps_params)
     logm0_u_params = logm0_pop.get_unbounded_m0pop_params(logm0_params)
     logtc_u_params = logtc_pop.get_unbounded_logtc_params(logtc_params)
@@ -212,7 +200,6 @@ def get_diffmahpop_u_params_from_params(diffmahpop_params):
     cov_u_params = covariance_kernels.get_unbounded_cov_params(cov_params)
 
     component_model_u_params = (
-        ftpt0_u_params,
         tpc_u_params,
         tps_u_params,
         logm0_u_params,

@@ -20,9 +20,9 @@ UTP_X0_K = 0.5
 
 UTP_MIN = 0.05
 
-DEFAULT_CEN_TP_PDF_PDICT = OrderedDict(cen_tp_x0_ylo=0.817, cen_tp_x0_yhi=1.566)
-TPCens_Params = namedtuple("TPCens_Params", DEFAULT_CEN_TP_PDF_PDICT.keys())
-DEFAULT_TPCENS_PARAMS = TPCens_Params(**DEFAULT_CEN_TP_PDF_PDICT)
+DEFAULT_TPCENS_PDICT = OrderedDict(cen_tp_x0_ylo=0.817, cen_tp_x0_yhi=1.566)
+TPCens_Params = namedtuple("TPCens_Params", DEFAULT_TPCENS_PDICT.keys())
+DEFAULT_TPCENS_PARAMS = TPCens_Params(**DEFAULT_TPCENS_PDICT)
 
 CEN_TP_PDF_BOUNDS_DICT = OrderedDict(cen_tp_x0_ylo=(0.6, 1.0), cen_tp_x0_yhi=(1.0, 1.8))
 TPCENS_PBOUNDS = TPCens_Params(**CEN_TP_PDF_BOUNDS_DICT)
@@ -36,13 +36,13 @@ UTP_TABLE = jnp.linspace(0.0, 1.0, 200)
 
 
 @jjit
-def mc_t_peak_singlecen(params, lgm_obs, ran_key, t_0):
+def mc_tpeak_singlecen(params, lgm_obs, ran_key, t_0):
     utp = mc_utp_singlecen(params, lgm_obs, ran_key)
     return utp * t_0
 
 
 _CP = (None, 0, 0, None)
-mc_t_peak_cenpop_kern = jjit(vmap(mc_t_peak_singlecen, in_axes=_CP))
+mc_t_peak_cenpop_kern = jjit(vmap(mc_tpeak_singlecen, in_axes=_CP))
 
 
 @jjit
