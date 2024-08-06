@@ -115,37 +115,13 @@ def _mc_diffmah_halo_sample(
 
 
 @jjit
-def _mc_diffmah_cenpop(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
-    ran_keys = jran.split(ran_key, lgm_obs.size)
-    _res = _mc_diffmah_params_vmap_kern(
-        diffmahpop_params, lgm_obs, t_obs, ran_keys, lgt0
-    )
-    mah_params_tpt0, mah_params_tp, t_peak, ftpt0, mc_tpt0 = _res
-    tpt0 = jnp.zeros_like(t_peak) + 10**lgt0
-    dmhdt_tpt0, log_mah_tpt0 = mah_halopop(mah_params_tpt0, tarr, tpt0, lgt0)
-    dmhdt_tp, log_mah_tp = mah_halopop(mah_params_tp, tarr, t_peak, lgt0)
-    _ret = (
-        mah_params_tpt0,
-        mah_params_tp,
-        t_peak,
-        ftpt0,
-        mc_tpt0,
-        dmhdt_tpt0,
-        log_mah_tpt0,
-        dmhdt_tp,
-        log_mah_tp,
-    )
-    return _ret
-
-
-@jjit
 def predict_mah_moments_singlebin(
     diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
 ):
     _res = _mc_diffmah_halo_sample(
         diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
     )
-    (mah_params, t_peak, dmhdt, log_mah) = _res
+    mah_params, t_peak, dmhdt, log_mah = _res
 
     mean_log_mah = jnp.mean(log_mah, axis=0)
     std_log_mah = jnp.std(log_mah, axis=0)
