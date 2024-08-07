@@ -19,20 +19,20 @@ COV_LGM_K = 2.0
 
 K_BOUNDING = 0.1
 DEFAULT_COV_PDICT = OrderedDict(
-    std_u_logm0_ylo=0.290,
-    std_u_logtc_ylo=0.374,
-    std_u_early_ylo=2.610,
-    std_u_late_ylo=1.453,
-    std_u_logm0_yhi=0.798,
-    std_u_logtc_yhi=0.890,
-    std_u_early_yhi=2.956,
-    std_u_late_yhi=2.897,
-    rho_logtc_logm0=-0.114,
-    rho_early_logm0=-0.199,
-    rho_early_logtc=0.200,
-    rho_late_logm0=-0.166,
-    rho_late_logtc=0.132,
-    rho_late_early=0.232,
+    std_u_logm0_ylo=0.124,
+    std_u_logtc_ylo=0.242,
+    std_u_early_ylo=4.975,
+    std_u_late_ylo=1.752,
+    std_u_logm0_yhi=0.530,
+    std_u_logtc_yhi=1.037,
+    std_u_early_yhi=2.998,
+    std_u_late_yhi=14.612,
+    rho_logtc_logm0=-0.036,
+    rho_early_logm0=-0.043,
+    rho_early_logtc=-0.193,
+    rho_late_logm0=-0.123,
+    rho_late_logtc=-0.246,
+    rho_late_early=-0.167,
 )
 
 STD_BOUNDS = (0.01, 100.0)
