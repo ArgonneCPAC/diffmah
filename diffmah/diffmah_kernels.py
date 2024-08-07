@@ -137,6 +137,13 @@ def _diffmah_kern(mah_params, t, t_peak, logt0):
     return dmhdt, log_mah
 
 
+@jjit
+def _diffmah_kern_scalar(mah_params, t, t_peak, logt0):
+    dmhdt = _dmhdt_kern_scalar(mah_params, t, t_peak, logt0)
+    log_mah = _log_mah_kern(mah_params, t, t_peak, logt0)
+    return dmhdt, log_mah
+
+
 _P = (0, None, 0, None)
 _diffmah_kern_vmap = jjit(vmap(_diffmah_kern, in_axes=_P))
 
