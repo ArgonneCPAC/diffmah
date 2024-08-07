@@ -1,3 +1,7 @@
+0.5.1 (2024-08-07)
+------------------
+- Add new convenience kernels for diffstar (https://github.com/ArgonneCPAC/diffmah/pull/131)
+
 0.5.0 (2024-01-15)
 ------------------
 - namedtuple DEFAULT_MAH_PARAMS now imported from diffmah.defaults (https://github.com/ArgonneCPAC/diffmah/pull/113)
