@@ -6,11 +6,16 @@ from jax import random as jran
 from jax import value_and_grad
 
 from . import monocens_fithelp, monosats_fithelp
+from .diffmahpop_params_monocensat import (
+    DEFAULT_DIFFMAHPOP_PARAMS,
+    DEFAULT_DIFFMAHPOP_U_PARAMS,
+    get_diffmahpop_params_from_u_params,
+)
 
 
 @jjit
 def loss_mah_moments_multibin_censat(
-    diffmahpop_params,
+    varied_diffmahpop_params,
     tarr_matrix_cens,
     lgm_obs_arr_cens,
     t_obs_arr_cens,
@@ -26,6 +31,9 @@ def loss_mah_moments_multibin_censat(
     target_std_log_mahs_sats,
     target_frac_peaked_sats,
 ):
+    diffmahpop_params = DEFAULT_DIFFMAHPOP_PARAMS._replace(
+        **varied_diffmahpop_params._asdict()
+    )
     ran_key_cens, ran_key_sats = jran.split(ran_key, 2)
     loss_cens = monocens_fithelp.loss_mah_moments_multibin(
         diffmahpop_params,
@@ -55,4 +63,16 @@ def loss_mah_moments_multibin_censat(
 
 loss_and_grads_mah_moments_multibin_censat = jjit(
     value_and_grad(loss_mah_moments_multibin_censat)
+)
+
+
+@jjit
+def loss_mah_moments_multibin_censat_u_params(u_params, loss_data):
+    u_params = DEFAULT_DIFFMAHPOP_U_PARAMS._replace(**u_params._asdict())
+    params = get_diffmahpop_params_from_u_params(u_params)
+    return loss_mah_moments_multibin_censat(params, *loss_data)
+
+
+loss_and_grads_mah_moments_multibin_censat_u_params = jjit(
+    value_and_grad(loss_mah_moments_multibin_censat_u_params)
 )
