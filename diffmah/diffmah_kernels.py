@@ -124,6 +124,13 @@ def _dmhdt_kern(mah_params, t, t_peak, logt0):
 
 
 @jjit
+def _dmhdt_kern_scalar(mah_params, t, t_peak, logt0):
+    dmhdt_noq = _dmhdt_noq_kern_scalar(mah_params, t, logt0)
+    dmhdt = jnp.where(t > t_peak, 0.0, dmhdt_noq)
+    return dmhdt
+
+
+@jjit
 def _diffmah_kern(mah_params, t, t_peak, logt0):
     dmhdt = _dmhdt_kern(mah_params, t, t_peak, logt0)
     log_mah = _log_mah_kern(mah_params, t, t_peak, logt0)
