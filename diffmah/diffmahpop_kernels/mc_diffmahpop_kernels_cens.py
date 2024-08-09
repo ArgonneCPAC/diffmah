@@ -18,7 +18,7 @@ from ..diffmah_kernels import (
 )
 from . import ftpt0_cens
 from .covariance_kernels import _get_diffmahpop_cov
-from .diffmahpop_params import get_component_model_params
+from .diffmahpop_params_censat import get_component_model_params
 from .early_index_pop import _pred_early_index_kern
 from .late_index_pop import _pred_late_index_kern
 from .logm0_kernels.logm0_pop import _pred_logm0_kern
@@ -37,6 +37,7 @@ def mc_mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
     (
         ftpt0_cens_params,
         tp_pdf_cens_params,
+        tp_pdf_sats_params,
         logm0_params,
         logtc_params,
         early_index_params,
@@ -192,4 +193,8 @@ def predict_mah_moments_singlebin(
     mean_log_mah = jnp.mean(f * log_mah_tpt0 + (1 - f) * log_mah_tp, axis=0)
     std_log_mah = jnp.std(f * log_mah_tpt0 + (1 - f) * log_mah_tp, axis=0)
 
-    return mean_log_mah, std_log_mah
+    frac_peaked_tpt0 = jnp.mean(f * dmhdt_tpt0 == 0, axis=0)
+    frac_peaked_tp = jnp.mean((1 - f) * dmhdt_tp == 0, axis=0)
+    frac_peaked = frac_peaked_tpt0 + frac_peaked_tp
+
+    return mean_log_mah, std_log_mah, frac_peaked
