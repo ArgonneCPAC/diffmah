@@ -84,3 +84,15 @@ def test_mc_diffmah_halo_sample():
 
         assert np.all(np.isfinite(log_mah_sats))
         assert np.all(np.isfinite(dmhdt_sats))
+
+
+def test_mc_diffmah_params_satpop():
+    ran_key = jran.key(0)
+    lgm_obs, t_obs = 12.0, 10.0
+    n_sats = 2_000
+    ZZ = np.zeros(n_sats)
+    satpop = mcdpk.mc_diffmah_params_satpop(
+        DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs + ZZ, t_obs + ZZ, ran_key
+    )
+    for x in satpop:
+        assert np.all(np.isfinite(x))

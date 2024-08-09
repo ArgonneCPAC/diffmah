@@ -83,16 +83,14 @@ def mc_diffmah_params_singlesat(diffmahpop_params, lgm_obs, t_obs, ran_key):
     return mah_params, t_peak_sats
 
 
-_A = (None, 0, 0, 0, None)
+_A = (None, 0, 0, 0)
 _mc_diffmah_params_vmap_kern = jjit(vmap(mc_diffmah_params_singlesat, in_axes=_A))
 
 
 @jjit
-def mc_diffmah_params_satpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
+def mc_diffmah_params_satpop(diffmahpop_params, lgm_obs, t_obs, ran_key):
     ran_keys = jran.split(ran_key, lgm_obs.size)
-    return _mc_diffmah_params_vmap_kern(
-        diffmahpop_params, lgm_obs, t_obs, ran_keys, lgt0
-    )
+    return _mc_diffmah_params_vmap_kern(diffmahpop_params, lgm_obs, t_obs, ran_keys)
 
 
 @jjit
