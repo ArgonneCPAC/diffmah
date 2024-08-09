@@ -1,6 +1,8 @@
 """
 """
 
+from functools import partial
+
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
@@ -132,10 +134,12 @@ _V = (None, None, 0, 0, 0, None)
 _mc_diffmah_singlecen_vmap_kern = jjit(vmap(_mc_diffmah_singlecen, in_axes=_V))
 
 
-@jjit
-def _mc_diffmah_halo_sample(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
-    zz = jnp.zeros(NH_PER_M0BIN)
-    ran_keys = jran.split(ran_key, NH_PER_M0BIN)
+@partial(jjit, static_argnames=["n_mc"])
+def _mc_diffmah_halo_sample(
+    diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, n_mc=NH_PER_M0BIN
+):
+    zz = jnp.zeros(n_mc)
+    ran_keys = jran.split(ran_key, n_mc)
     return _mc_diffmah_singlecen_vmap_kern(
         diffmahpop_params, tarr, lgm_obs + zz, t_obs + zz, ran_keys, lgt0
     )
