@@ -1,3 +1,7 @@
+0.6.0 (2024-08-09)
+------------------
+- Add prototype for P(MAH | m_obs, t_obs) (https://github.com/ArgonneCPAC/diffmah/pull/132)
+
 0.5.1 (2024-08-07)
 ------------------
 - Add new convenience kernels for diffstar (https://github.com/ArgonneCPAC/diffmah/pull/131)
