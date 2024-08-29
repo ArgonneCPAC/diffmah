@@ -41,7 +41,7 @@ def _pred_c0_kern(params, t_obs, t_peak):
     c0_ytp, c0_ylo, clip_c0, clip_c1 = params
     pred_c0 = _sig_slope(t_obs, XTP, c0_ytp, GLOBAL_X0, GLOBAL_K, c0_ylo, 0.0)
     clip = clip_c0 + clip_c1 * t_peak
-    pred_c0 = jnp.clip(pred_c0, a_min=clip)
+    pred_c0 = jnp.clip(pred_c0, min=clip)
     return pred_c0
 
 

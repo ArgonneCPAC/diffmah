@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+from jax import random as jran
 
 from .. import logm0_pop as m0pop
 
@@ -66,3 +67,20 @@ def test_default_params_are_in_bounds():
         val = getattr(m0pop.DEFAULT_LOGM0POP_PARAMS, key)
         bound = getattr(m0pop.LGM0POP_BOUNDS, key)
         assert bound[0] < val < bound[1]
+
+
+def test_pred_logm0_kern():
+    ran_key = jran.key(0)
+    n_tests = 1_000
+    for __ in range(n_tests):
+        lgm_key, t_obs_key, t_peak_key, ran_key = jran.split(ran_key, 4)
+        lgm_obs = jran.uniform(lgm_key, minval=5, maxval=16, shape=())
+        t_obs = jran.uniform(t_obs_key, minval=1, maxval=20, shape=())
+        t_peak = jran.uniform(t_peak_key, minval=1.5, maxval=20, shape=())
+        lgm0 = m0pop._pred_logm0_kern(
+            m0pop.DEFAULT_LOGM0POP_PARAMS, lgm_obs, t_obs, t_peak
+        )
+        assert lgm0.shape == ()
+        assert np.isfinite(lgm0)
+        assert lgm0 > 0
+        assert lgm0 < 20
