@@ -46,7 +46,7 @@ def _pred_c1_kern(params, t_obs, t_peak):
     pred_c1 = _sig_slope(t_obs, XTP, c1_ytp, GLOBAL_X0, GLOBAL_K, c1_ylo, 0.0)
 
     clip = _sigmoid(t_peak, c1_clip_x0, CLIP_TP_K, c1_clip_ylo, c1_clip_yhi)
-    pred_c1 = jnp.clip(pred_c1, a_min=clip)
+    pred_c1 = jnp.clip(pred_c1, min=clip)
     return pred_c1
 
 
