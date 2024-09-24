@@ -1,4 +1,6 @@
-"""
+"""This module stores helper functions for tabulating target data for DiffmahPop.
+The primary function is smdpl_diffmahpop_subvolume_loop, which loops over subvolumes
+of diffmah fits to SMDPL and stores halo samples binned by (lgm_obs, t_obs).
 """
 
 NH_CUT = 100
@@ -10,9 +12,10 @@ from glob import glob
 import h5py
 import numpy as np
 from astropy.table import Table
-from diffmah.diffmah_kernels import DEFAULT_MAH_PARAMS, mah_halopop
 from jax import jit as jjit
 from umachine_pyio.load_mock import load_mock_from_binaries
+
+from diffmah.diffmah_kernels import DEFAULT_MAH_PARAMS, mah_halopop
 
 TASSO_ROOT_DRN = "/Users/aphearin/work/DATA/SMDPL/dr1_no_merging_upidh/"
 TASSO_SFHCAT_DRN = os.path.join(TASSO_ROOT_DRN, "sfh_binary_catalogs/a_1.000000")
