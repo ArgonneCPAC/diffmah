@@ -11,7 +11,6 @@ from glob import glob
 
 import h5py
 import numpy as np
-from astropy.table import Table
 from jax import jit as jjit
 from umachine_pyio.load_mock import load_mock_from_binaries
 
@@ -272,7 +271,7 @@ def collate_subvolume_samples(drn, t0, n_m, n_t, istart, iend):
 
 
 def tabulate_target_means_vars(
-    mah_params_drn, nh_min=NH_CUT, n_t_target=50, rescale=True
+    mah_params_drn, nh_min=NH_CUT, n_t_target=25, rescale=True
 ):
     """"""
     lgt0 = np.log10(T0_SMDPL)
@@ -347,4 +346,19 @@ def tabulate_target_means_vars(
     sat_targets["frac_peaked"] = np.array([x[4] for x in sats_target_collector])
     sat_targets["t_table"] = np.array([x[5] for x in sats_target_collector])
 
-    return Table(cen_targets), Table(sat_targets)
+    return cen_targets, sat_targets
+
+
+def write_mean_variance_to_disk(mah_params_drn, fnout_cens, fnout_sats):
+    """This function creates the mean and variance target data used to fit diffmahpop.
+    For example, this function created NM_12_NT_9_ISTART_0_IEND_576_mu_var_cens.h5
+    """
+    cen_targets, sat_targets = tabulate_target_means_vars(mah_params_drn)
+
+    with h5py.File(fnout_cens, "w") as hdfout:
+        for key in cen_targets.keys():
+            hdfout[key] = cen_targets[key]
+
+    with h5py.File(fnout_sats, "w") as hdfout:
+        for key in sat_targets.keys():
+            hdfout[key] = sat_targets[key]
