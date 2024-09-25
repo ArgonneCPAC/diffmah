@@ -4,7 +4,7 @@
 #PBS -j oe
 
 # account to charge
-#PBS -A galsampler
+#PBS -A halotools
 
 # # queue name (compute is the default)
 # #PBS -q compute
@@ -21,8 +21,8 @@
 source ~/.bash_profile
 conda activate diffhacc
 
-cd /home/ahearin/work/random/0923
+cd /home/ahearin/work/random/0925
 
-rm -rf /lcrc/project/halotools/random_data/0923
-mkdir /lcrc/project/halotools/random_data/0923
-python measure_smdpl_diffmahpop.py /lcrc/project/halotools/random_data/0923
+rm -rf /lcrc/project/halotools/random_data/0925
+mkdir /lcrc/project/halotools/random_data/0925
+python measure_smdpl_diffmahpop.py /lcrc/project/halotools/random_data/0925
