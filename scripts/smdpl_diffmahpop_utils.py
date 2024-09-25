@@ -180,7 +180,6 @@ def load_diffmah_subvolume(
 
     # throw out halos with a bad fit
     msk = diffmah_data["loss"] != -1
-    msk = np.ones(len(diffmah_data["loss"])).astype(bool)
     mah_params = DEFAULT_MAH_PARAMS._make(
         [diffmah_data[key][msk] for key in DEFAULT_MAH_PARAMS._fields]
     )
