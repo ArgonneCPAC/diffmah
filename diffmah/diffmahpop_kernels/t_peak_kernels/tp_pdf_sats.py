@@ -48,7 +48,7 @@ UTP_SatPop_UParams = namedtuple("UTP_SatPop_UParams", _UTP_SATPOP_UPNAMES)
 
 
 @jjit
-def _get_utp_loc_kern(params, lgmp, t_obs):
+def _get_utp_loc_c0(params, t_obs):
     c0 = _sigmoid(
         t_obs,
         params.utp_loc_tcrit,
@@ -56,6 +56,11 @@ def _get_utp_loc_kern(params, lgmp, t_obs):
         params.utp_loc_c0_ylo,
         params.utp_loc_c0_yhi,
     )
+    return c0
+
+
+@jjit
+def _get_utp_loc_c1(params, t_obs):
     c1 = _sigmoid(
         t_obs,
         params.utp_loc_tcrit,
@@ -63,6 +68,13 @@ def _get_utp_loc_kern(params, lgmp, t_obs):
         params.utp_loc_c1_ylo,
         params.utp_loc_c1_yhi,
     )
+    return c1
+
+
+@jjit
+def _get_utp_loc_kern(params, lgmp, t_obs):
+    c0 = _get_utp_loc_c0(params, t_obs)
+    c1 = _get_utp_loc_c1(params, t_obs)
     utp_loc = c0 + c1 * lgmp
     ylo, yhi = tpk.UTP_PBOUNDS.utp_loc
     utp_loc = jnp.clip(utp_loc, ylo + EPS, yhi - EPS)
@@ -70,7 +82,7 @@ def _get_utp_loc_kern(params, lgmp, t_obs):
 
 
 @jjit
-def _get_utp_scale_kern(params, lgmp, t_obs):
+def _get_utp_scale_c0(params, t_obs):
     c0 = _sigmoid(
         t_obs,
         params.utp_scale_tcrit,
@@ -78,6 +90,11 @@ def _get_utp_scale_kern(params, lgmp, t_obs):
         params.utp_scale_c0_ylo,
         params.utp_scale_c0_yhi,
     )
+    return c0
+
+
+@jjit
+def _get_utp_scale_c1(params, t_obs):
     c1 = _sigmoid(
         t_obs,
         params.utp_scale_tcrit,
@@ -85,6 +102,13 @@ def _get_utp_scale_kern(params, lgmp, t_obs):
         params.utp_scale_c1_ylo,
         params.utp_scale_c1_yhi,
     )
+    return c1
+
+
+@jjit
+def _get_utp_scale_kern(params, lgmp, t_obs):
+    c0 = _get_utp_scale_c0(params, t_obs)
+    c1 = _get_utp_scale_c1(params, t_obs)
     utp_scale = c0 + c1 * lgmp
     ylo, yhi = tpk.UTP_PBOUNDS.utp_scale
     utp_scale = jnp.clip(utp_scale, ylo + EPS, yhi - EPS)

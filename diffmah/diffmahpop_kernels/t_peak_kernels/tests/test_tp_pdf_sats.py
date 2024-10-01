@@ -56,8 +56,8 @@ def test_mc_tp_pdf_satpop_is_differentiable():
     for __ in range(n_tests):
 
         lgm_key, t_key, ran_key = jran.split(ran_key, 3)
-        lgmparr = jran.uniform(lgm_key, minval=11.0, maxval=14.0, shape=(2_000,))
-        tobsarr = jran.uniform(t_key, minval=3.0, maxval=13.0, shape=(2_000,))
+        lgmparr = jran.uniform(lgm_key, minval=11.0, maxval=14.0, shape=(200,))
+        tobsarr = jran.uniform(t_key, minval=3.0, maxval=13.0, shape=(200,))
         t_peak_target_sample = tps.mc_utp_pdf(
             tps.DEFAULT_UTP_SATPOP_PARAMS, ran_key, lgmparr, tobsarr
         )
@@ -79,7 +79,7 @@ def test_mc_tp_pdf_satpop_is_differentiable():
 
         n_params = len(tps.DEFAULT_UTP_SATPOP_PARAMS)
         u_p_key, loss_pred_key = jran.split(ran_key, 2)
-        uran = jran.uniform(u_p_key, minval=-1, maxval=1, shape=(n_params,))
+        uran = jran.uniform(u_p_key, minval=-10, maxval=10, shape=(n_params,))
         u_p_init = tps.DEFAULT_UTP_SATPOP_U_PARAMS._make(
             uran + np.array(tps.DEFAULT_UTP_SATPOP_U_PARAMS)
         )
