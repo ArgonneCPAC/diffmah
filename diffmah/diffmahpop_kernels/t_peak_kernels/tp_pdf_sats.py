@@ -10,133 +10,46 @@ from jax import vmap
 from ...utils import _inverse_sigmoid, _sigmoid
 from . import utp_pdf_kernels as tpk
 
+UTP_LOC_LGM_YHI = 0.95
+UTP_LOC_LGM_K = 1.5
+UTP_LOC_TOBS_K = 0.4
+UTP_SCALE_LGM_X0 = 12.0
+UTP_SCALE_LGM_K = 1.0
+UTP_SCALE_TOBS_K = 1.0
+UTP_SCALE_LGM_YHI = 0.16
 K_BOUNDING = 0.1
-K_T_OBS = 0.5
-EPS = 1e-3
 
-DEFAULT_UTP_SATPOP_PDICT = OrderedDict(
-    utp_loc_tcrit=6.5,
-    utp_scale_tcrit=9.5,
-    utp_loc_c0_ylo=-0.7,
-    utp_loc_c0_yhi=-2.2,
-    utp_loc_c1_ylo=0.125,
-    utp_loc_c1_yhi=0.225,
-    utp_scale_c0_ylo=0.3,
-    utp_scale_c0_yhi=0.8,
-    utp_scale_c1_ylo=-0.01,
-    utp_scale_c1_yhi=-0.04,
+DEFAULT_TP_SATS_PDICT = OrderedDict(
+    utp_loc_lgm_ylo_t0=7.0,
+    utp_loc_lgm_ylo_early=0.6,
+    utp_loc_lgm_ylo_late=0.155,
+    utp_loc_lgm_x0=12.0,
+    utp_scale_lgm_ylo_t0=9.0,
+    utp_scale_lgm_ylo_early=0.2,
+    utp_scale_lgm_ylo_late=0.4,
 )
-UTP_SatPop_Params = namedtuple("UTP_SatPop_Params", DEFAULT_UTP_SATPOP_PDICT.keys())
-DEFAULT_UTP_SATPOP_PARAMS = UTP_SatPop_Params(**DEFAULT_UTP_SATPOP_PDICT)
+TP_Sats_Params = namedtuple("TP_Sats_Params", DEFAULT_TP_SATS_PDICT.keys())
+DEFAULT_TP_SATS_PARAMS = TP_Sats_Params(**DEFAULT_TP_SATS_PDICT)
 
-DEFAULT_UTP_SATPOP_BOUNDS_DICT = OrderedDict(
-    utp_loc_tcrit=(5.0, 10.0),
-    utp_scale_tcrit=(5.0, 13.0),
-    utp_loc_c0_ylo=(-1.2, -0.4),
-    utp_loc_c0_yhi=(-3.0, -1.5),
-    utp_loc_c1_ylo=(0.05, 0.2),
-    utp_loc_c1_yhi=(0.05, 0.4),
-    utp_scale_c0_ylo=(0.1, 0.5),
-    utp_scale_c0_yhi=(0.5, 0.95),
-    utp_scale_c1_ylo=(-0.05, 0.0),
-    utp_scale_c1_yhi=(-0.1, 0.0),
+DEFAULT_TP_SATS_BOUNDS_DICT = OrderedDict(
+    utp_loc_lgm_ylo_t0=(5.0, 10.0),
+    utp_loc_lgm_ylo_early=(0.4, 0.8),
+    utp_loc_lgm_ylo_late=(0.15, 0.25),
+    utp_loc_lgm_x0=(11.0, 13.0),
+    utp_scale_lgm_ylo_t0=(6.0, 11.0),
+    utp_scale_lgm_ylo_early=(0.1, 0.5),
+    utp_scale_lgm_ylo_late=(0.1, 0.6),
 )
-UTP_SATPOP_BOUNDS = UTP_SatPop_Params(**DEFAULT_UTP_SATPOP_BOUNDS_DICT)
+TP_SATS_BOUNDS = TP_Sats_Params(**DEFAULT_TP_SATS_BOUNDS_DICT)
 
-_UTP_SATPOP_UPNAMES = ["u_" + key for key in UTP_SatPop_Params._fields]
-UTP_SatPop_UParams = namedtuple("UTP_SatPop_UParams", _UTP_SATPOP_UPNAMES)
-
-
-@jjit
-def _get_utp_loc_c0(params, t_obs):
-    c0 = _sigmoid(
-        t_obs,
-        params.utp_loc_tcrit,
-        K_T_OBS,
-        params.utp_loc_c0_ylo,
-        params.utp_loc_c0_yhi,
-    )
-    return c0
-
-
-@jjit
-def _get_utp_loc_c1(params, t_obs):
-    c1 = _sigmoid(
-        t_obs,
-        params.utp_loc_tcrit,
-        K_T_OBS,
-        params.utp_loc_c1_ylo,
-        params.utp_loc_c1_yhi,
-    )
-    return c1
-
-
-@jjit
-def _get_utp_loc_kern(params, lgmp, t_obs):
-    c0 = _get_utp_loc_c0(params, t_obs)
-    c1 = _get_utp_loc_c1(params, t_obs)
-    utp_loc = c0 + c1 * lgmp
-    ylo, yhi = tpk.UTP_PBOUNDS.utp_loc
-    utp_loc = jnp.clip(utp_loc, ylo + EPS, yhi - EPS)
-    return utp_loc
-
-
-@jjit
-def _get_utp_scale_c0(params, t_obs):
-    c0 = _sigmoid(
-        t_obs,
-        params.utp_scale_tcrit,
-        K_T_OBS,
-        params.utp_scale_c0_ylo,
-        params.utp_scale_c0_yhi,
-    )
-    return c0
-
-
-@jjit
-def _get_utp_scale_c1(params, t_obs):
-    c1 = _sigmoid(
-        t_obs,
-        params.utp_scale_tcrit,
-        K_T_OBS,
-        params.utp_scale_c1_ylo,
-        params.utp_scale_c1_yhi,
-    )
-    return c1
-
-
-@jjit
-def _get_utp_scale_kern(params, lgmp, t_obs):
-    c0 = _get_utp_scale_c0(params, t_obs)
-    c1 = _get_utp_scale_c1(params, t_obs)
-    utp_scale = c0 + c1 * lgmp
-    ylo, yhi = tpk.UTP_PBOUNDS.utp_scale
-    utp_scale = jnp.clip(utp_scale, ylo + EPS, yhi - EPS)
-    return utp_scale
-
-
-@jjit
-def _tp_cdf_kern_singlehalo(params, x, lgmp, t_obs):
-    utp_loc = _get_utp_loc_kern(params, lgmp, t_obs)
-    utp_scale = _get_utp_scale_kern(params, lgmp, t_obs)
-    kern_args = (utp_loc, utp_scale)
-    cdf = tpk._tp_cdf_kern(x, kern_args)
-    return cdf
-
-
-@jjit
-def _tp_pdf_kern_singlehalo(params, x, lgmp, t_obs):
-    utp_loc = _get_utp_loc_kern(params, lgmp, t_obs)
-    utp_scale = _get_utp_scale_kern(params, lgmp, t_obs)
-    kern_args = utp_loc, utp_scale
-    pdf = tpk._tp_pdf_kern(x, kern_args)
-    return pdf
+_TP_SATPOP_UPNAMES = ["u_" + key for key in TP_Sats_Params._fields]
+TP_Sats_UParams = namedtuple("TP_Sats_UParams", _TP_SATPOP_UPNAMES)
 
 
 @jjit
 def mc_utp_pdf(params, ran_key, lgmparr, tobsarr):
-    utp_loc = _get_utp_loc_kern(params, lgmparr, tobsarr)
-    utp_scale = _get_utp_scale_kern(params, lgmparr, tobsarr)
+    utp_loc = _get_utp_loc(params, lgmparr, tobsarr)
+    utp_scale = _get_utp_scale(params, lgmparr, tobsarr)
     kern_args = tpk.UTP_Params(utp_loc, utp_scale)
     utp = tpk.mc_tp_pdf_satpop(ran_key, kern_args)
     return utp
@@ -151,8 +64,8 @@ def mc_tpeak_sats(params, ran_key, lgmparr, tobsarr):
 
 @jjit
 def mc_tpeak_singlesat(params, ran_key, lgm_obs, t_obs):
-    utp_loc = _get_utp_loc_kern(params, lgm_obs, t_obs)
-    utp_scale = _get_utp_scale_kern(params, lgm_obs, t_obs)
+    utp_loc = _get_utp_loc(params, lgm_obs, t_obs)
+    utp_scale = _get_utp_scale(params, lgm_obs, t_obs)
     kern_args = tpk.UTP_Params(utp_loc, utp_scale)
     utp = tpk.mc_tp_pdf_singlesat(ran_key, kern_args)
     tpeak = utp * t_obs
@@ -160,52 +73,92 @@ def mc_tpeak_singlesat(params, ran_key, lgm_obs, t_obs):
 
 
 @jjit
-def _get_bounded_utp_satpop_param(u_param, bound):
+def _get_utp_loc(params, lgm_obs, t_obs):
+    utp_loc_lgm_ylo = _get_utp_loc_lgm_ylo(params, t_obs)
+    utp_loc = _sigmoid(
+        lgm_obs, params.utp_loc_lgm_x0, UTP_LOC_LGM_K, utp_loc_lgm_ylo, UTP_LOC_LGM_YHI
+    )
+    return utp_loc
+
+
+@jjit
+def _get_utp_loc_lgm_ylo(params, t_obs):
+    utp_loc_lgm_ylo = _sigmoid(
+        t_obs,
+        params.utp_loc_lgm_ylo_t0,
+        UTP_LOC_TOBS_K,
+        params.utp_loc_lgm_ylo_early,
+        params.utp_loc_lgm_ylo_late,
+    )
+    return utp_loc_lgm_ylo
+
+
+@jjit
+def _get_utp_scale(params, lgm_obs, t_obs):
+    utp_scale_lgm_ylo = _get_utp_scale_lgm_ylo(params, t_obs)
+    utp_scale = _sigmoid(
+        lgm_obs,
+        UTP_SCALE_LGM_X0,
+        UTP_SCALE_LGM_K,
+        utp_scale_lgm_ylo,
+        UTP_SCALE_LGM_YHI,
+    )
+    return utp_scale
+
+
+@jjit
+def _get_utp_scale_lgm_ylo(params, t_obs):
+    utp_scale_lgm_ylo = _sigmoid(
+        t_obs,
+        params.utp_scale_lgm_ylo_t0,
+        UTP_SCALE_TOBS_K,
+        params.utp_scale_lgm_ylo_early,
+        params.utp_scale_lgm_ylo_late,
+    )
+    return utp_scale_lgm_ylo
+
+
+@jjit
+def _get_bounded_tp_sat_param(u_param, bound):
     lo, hi = bound
     mid = 0.5 * (lo + hi)
     return _sigmoid(u_param, mid, K_BOUNDING, lo, hi)
 
 
 @jjit
-def _get_unbounded_utp_satpop_param(param, bound):
+def _get_unbounded_tp_sat_param(param, bound):
     lo, hi = bound
     mid = 0.5 * (lo + hi)
     return _inverse_sigmoid(param, mid, K_BOUNDING, lo, hi)
 
 
 _C = (0, 0)
-_get_bounded_utp_satpop_params_kern = jjit(
-    vmap(_get_bounded_utp_satpop_param, in_axes=_C)
-)
-_get_unbounded_utp_satpop_params_kern = jjit(
-    vmap(_get_unbounded_utp_satpop_param, in_axes=_C)
-)
+_get_bounded_tp_sat_param_kern = jjit(vmap(_get_bounded_tp_sat_param, in_axes=_C))
+_get_unbounded_tp_sat_param_kern = jjit(vmap(_get_unbounded_tp_sat_param, in_axes=_C))
 
 
 @jjit
-def get_bounded_utp_satpop_params(u_params):
-    u_params = jnp.array(
-        [getattr(u_params, u_pname) for u_pname in _UTP_SATPOP_UPNAMES]
+def get_bounded_tp_sat_params(u_params):
+    u_params = jnp.array([getattr(u_params, u_pname) for u_pname in _TP_SATPOP_UPNAMES])
+    params = _get_bounded_tp_sat_param_kern(
+        jnp.array(u_params), jnp.array(TP_SATS_BOUNDS)
     )
-    params = _get_bounded_utp_satpop_params_kern(
-        jnp.array(u_params), jnp.array(UTP_SATPOP_BOUNDS)
-    )
-    utp_params = UTP_SatPop_Params(*params)
+    utp_params = TP_Sats_Params(*params)
     return utp_params
 
 
 @jjit
-def get_unbounded_utp_satpop_params(params):
+def get_unbounded_tp_sat_params(params):
     params = jnp.array(
-        [getattr(params, pname) for pname in DEFAULT_UTP_SATPOP_PARAMS._fields]
+        [getattr(params, pname) for pname in DEFAULT_TP_SATS_PARAMS._fields]
     )
-    u_params = _get_unbounded_utp_satpop_params_kern(
-        jnp.array(params), jnp.array(UTP_SATPOP_BOUNDS)
+    u_params = _get_unbounded_tp_sat_param_kern(
+        jnp.array(params), jnp.array(TP_SATS_BOUNDS)
     )
-    utp_u_params = UTP_SatPop_UParams(*u_params)
+    utp_u_params = TP_Sats_UParams(*u_params)
     return utp_u_params
 
 
-DEFAULT_UTP_SATPOP_U_PARAMS = UTP_SatPop_UParams(
-    *get_unbounded_utp_satpop_params(DEFAULT_UTP_SATPOP_PARAMS)
+DEFAULT_TP_SATS_U_PARAMS = TP_Sats_UParams(
+    *get_unbounded_tp_sat_params(DEFAULT_TP_SATS_PARAMS)
 )
