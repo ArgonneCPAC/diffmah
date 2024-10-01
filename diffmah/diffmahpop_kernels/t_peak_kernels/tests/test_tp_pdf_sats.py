@@ -2,7 +2,10 @@
 """
 
 import numpy as np
+from jax import jit as jjit
+from jax import numpy as jnp
 from jax import random as jran
+from jax import value_and_grad
 
 from .. import tp_pdf_sats as tps
 from .. import utp_pdf_kernels
@@ -43,6 +46,47 @@ def test_mc_tpeak_pdf():
         assert np.all(np.isfinite(tpeak))
         assert np.all(tpeak > tobsarr * utp_pdf_kernels.X_MIN)
         assert np.all(tpeak < tobsarr)
+
+
+def test_mc_tp_pdf_satpop_is_differentiable():
+    ran_key = jran.key(0)
+
+    n_tests = 10
+
+    for __ in range(n_tests):
+
+        lgm_key, t_key, ran_key = jran.split(ran_key, 3)
+        lgmparr = jran.uniform(lgm_key, minval=11.0, maxval=14.0, shape=(2_000,))
+        tobsarr = jran.uniform(t_key, minval=3.0, maxval=13.0, shape=(2_000,))
+        t_peak_target_sample = tps.mc_utp_pdf(
+            tps.DEFAULT_UTP_SATPOP_PARAMS, ran_key, lgmparr, tobsarr
+        )
+        target_mean_tp = jnp.mean(t_peak_target_sample)
+
+        @jjit
+        def _mse(x, y):
+            d = y - x
+            return jnp.mean(d * d)
+
+        @jjit
+        def _mean_tp_loss(u_params, pred_key):
+            params = tps.get_bounded_utp_satpop_params(u_params)
+            t_peak_sample = tps.mc_utp_pdf(params, pred_key, lgmparr, tobsarr)
+            pred_mean_tp = jnp.mean(t_peak_sample)
+            return _mse(pred_mean_tp, target_mean_tp)
+
+        mean_tp_loss_and_grad = value_and_grad(_mean_tp_loss)
+
+        n_params = len(tps.DEFAULT_UTP_SATPOP_PARAMS)
+        u_p_key, loss_pred_key = jran.split(ran_key, 2)
+        uran = jran.uniform(u_p_key, minval=-1, maxval=1, shape=(n_params,))
+        u_p_init = tps.DEFAULT_UTP_SATPOP_U_PARAMS._make(
+            uran + np.array(tps.DEFAULT_UTP_SATPOP_U_PARAMS)
+        )
+
+        loss, grads = mean_tp_loss_and_grad(u_p_init, loss_pred_key)
+        assert np.all(np.isfinite(loss))
+        assert np.all(np.isfinite(grads))
 
 
 def test_mc_utp_pdf():
