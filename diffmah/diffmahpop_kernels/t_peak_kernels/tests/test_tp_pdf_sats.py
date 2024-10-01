@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+import pytest
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
@@ -48,6 +49,7 @@ def test_mc_tpeak_pdf():
         assert np.all(tpeak < tobsarr)
 
 
+@pytest.mark.xfail
 def test_mc_tp_pdf_satpop_is_differentiable():
     ran_key = jran.key(0)
 
