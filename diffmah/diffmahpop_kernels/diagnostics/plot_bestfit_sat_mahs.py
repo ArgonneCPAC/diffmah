@@ -320,8 +320,10 @@ def plot_sat_mah_4panel_residuals(satdata, diffmahpop_params, drn="FIGS"):
         xlim = ax.set_xlim(0.45, xlim[1])
         ax.plot(np.linspace(*xlim, 100), np.zeros(100), "--", color="k")
 
+    os.makedirs(drn, exist_ok=True)
+    outname = os.path.join(drn, "diffmahpop_mu_var_4panel_residuals_sats.png")
     fig.savefig(
-        "diffmahpop_mu_var_4panel_residuals_sats.png",
+        outname,
         bbox_extra_artists=[xlabel, ylabel],
         bbox_inches="tight",
         dpi=200,
