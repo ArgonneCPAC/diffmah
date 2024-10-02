@@ -7,8 +7,10 @@ import numpy as np
 from jax import random as jran
 
 from .. import mc_diffmahpop_kernels_monocens as mcc
+from .defaults import mblue, mred
 
 try:
+    from matplotlib import cm
     from matplotlib import pyplot as plt
 except ImportError:
     pass
@@ -16,7 +18,7 @@ except ImportError:
 LGT0_SMDPL = np.log10(13.79)
 
 
-def plot_singlepanel_mahs_centrals_z0(cendata, diffmahpop_params, drn=""):
+def plot_singlepanel_mahs_centrals_z0(cendata, diffmahpop_params, drn="FIGS"):
     ran_key = jran.key(0)
 
     fig, ax = plt.subplots(1, 1)
@@ -109,7 +111,7 @@ def plot_singlepanel_mahs_centrals_z0(cendata, diffmahpop_params, drn=""):
     )
 
 
-def plot_singlepanel_mahs_centrals_z2(cendata, diffmahpop_params, drn=""):
+def plot_singlepanel_mahs_centrals_z2(cendata, diffmahpop_params, drn="FIGS"):
     ran_key = jran.key(0)
 
     fig, ax = plt.subplots(1, 1)
@@ -199,4 +201,121 @@ def plot_singlepanel_mahs_centrals_z2(cendata, diffmahpop_params, drn=""):
     outname = os.path.join(drn, "diffmahpop_mu_var_single_panel_cens_z2.png")
     fig.savefig(
         outname, bbox_extra_artists=[xlabel, ylabel], bbox_inches="tight", dpi=200
+    )
+
+
+def plot_cen_mah_4panel_residuals(cendata, diffmahpop_params, drn="FIGS"):
+    ran_key = jran.key(0)
+    n_mass = 15
+    lgm_obs_arr = np.linspace(11, 14.5, n_mass)
+    mass_colors = cm.coolwarm(np.linspace(0, 1, n_mass))  # blue first
+
+    fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(10, 8), sharey=True)
+    ax0.set_ylim(-0.9, 0.9)
+    t_obs_panel_list = [4.0, 7.0, 10.0, 13.0]
+
+    ##############################################
+    t_obs_panel = t_obs_panel_list[0]
+    ax = ax0
+    ax.set_title(f"host halos: t_obs = {t_obs_panel:.1f}")
+
+    for ic, lgm_obs_plot in enumerate(lgm_obs_arr):
+        ih = np.argmin(
+            np.abs(cendata["t_obs"] - t_obs_panel)
+            + np.abs(cendata["lgm_obs"] - lgm_obs_plot)
+        )
+        tarr = cendata["t_table"][ih]
+        mean_log_mah_target = cendata["mean_log_mah"][ih, :]
+
+        lgm_obs = cendata["lgm_obs"][ih]
+        t_obs = cendata["t_obs"][ih]
+        args = (diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, LGT0_SMDPL)
+        mean_log_mah_pred, std_log_mah, frac_peaked = mcc.predict_mah_moments_singlebin(
+            *args
+        )
+        ax.plot(tarr, mean_log_mah_pred - mean_log_mah_target, color=mass_colors[ic])
+
+    ##############################################
+    t_obs_panel = t_obs_panel_list[1]
+    ax = ax1
+    ax.set_title(f"host halos: t_obs = {t_obs_panel:.1f}")
+
+    for ic, lgm_obs_plot in enumerate(lgm_obs_arr):
+        ih = np.argmin(
+            np.abs(cendata["t_obs"] - t_obs_panel)
+            + np.abs(cendata["lgm_obs"] - lgm_obs_plot)
+        )
+        tarr = cendata["t_table"][ih]
+        mean_log_mah_target = cendata["mean_log_mah"][ih, :]
+
+        lgm_obs = cendata["lgm_obs"][ih]
+        t_obs = cendata["t_obs"][ih]
+        args = (diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, LGT0_SMDPL)
+        mean_log_mah_pred, std_log_mah, frac_peaked = mcc.predict_mah_moments_singlebin(
+            *args
+        )
+        ax.plot(tarr, mean_log_mah_pred - mean_log_mah_target, color=mass_colors[ic])
+
+    ##############################################
+    t_obs_panel = t_obs_panel_list[2]
+    ax = ax2
+    ax.set_title(f"host halos: t_obs = {t_obs_panel:.1f}")
+
+    for ic, lgm_obs_plot in enumerate(lgm_obs_arr):
+        ih = np.argmin(
+            np.abs(cendata["t_obs"] - t_obs_panel)
+            + np.abs(cendata["lgm_obs"] - lgm_obs_plot)
+        )
+        tarr = cendata["t_table"][ih]
+        mean_log_mah_target = cendata["mean_log_mah"][ih, :]
+
+        lgm_obs = cendata["lgm_obs"][ih]
+        t_obs = cendata["t_obs"][ih]
+        args = (diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, LGT0_SMDPL)
+        mean_log_mah_pred, std_log_mah, frac_peaked = mcc.predict_mah_moments_singlebin(
+            *args
+        )
+        ax.plot(tarr, mean_log_mah_pred - mean_log_mah_target, color=mass_colors[ic])
+
+    ##############################################
+    t_obs_panel = t_obs_panel_list[3]
+    ax = ax3
+    ax.set_title(f"host halos: t_obs = {t_obs_panel:.1f}")
+
+    for ic, lgm_obs_plot in enumerate(lgm_obs_arr):
+        ih = np.argmin(
+            np.abs(cendata["t_obs"] - t_obs_panel)
+            + np.abs(cendata["lgm_obs"] - lgm_obs_plot)
+        )
+        tarr = cendata["t_table"][ih]
+        mean_log_mah_target = cendata["mean_log_mah"][ih, :]
+
+        lgm_obs = cendata["lgm_obs"][ih]
+        t_obs = cendata["t_obs"][ih]
+        args = (diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, LGT0_SMDPL)
+        mean_log_mah_pred, std_log_mah, frac_peaked = mcc.predict_mah_moments_singlebin(
+            *args
+        )
+        ax.plot(tarr, mean_log_mah_pred - mean_log_mah_target, color=mass_colors[ic])
+
+    from matplotlib import lines as mlines
+
+    blue_line = mlines.Line2D([], [], ls="-", c=mblue, label=r"$m_{\rm h}=11.0$")
+    red_line = mlines.Line2D([], [], ls="-", c=mred, label=r"$m_{\rm h}=14.5$")
+    ax0.legend(handles=[red_line, blue_line], loc="lower left")
+    xlabel = ax2.set_xlabel(r"${\rm cosmic\ time\ [Gyr]}$")
+    xlabel = ax3.set_xlabel(r"${\rm cosmic\ time\ [Gyr]}$")
+    ylabel = ax0.set_ylabel(r"$\Delta\langle M_{\rm h}(t)\rangle\ {\rm [dex]}$")
+    ylabel = ax2.set_ylabel(r"$\Delta\langle M_{\rm h}(t)\rangle\ {\rm [dex]}$")
+
+    for ax in ax0, ax1, ax2, ax3:
+        xlim = ax.set_xlim(*ax.get_xlim())
+        xlim = ax.set_xlim(0.45, xlim[1])
+        ax.plot(np.linspace(*xlim, 100), np.zeros(100), "--", color="k")
+
+    fig.savefig(
+        "diffmahpop_mu_var_4panel_residuals_cens.png",
+        bbox_extra_artists=[xlabel, ylabel],
+        bbox_inches="tight",
+        dpi=200,
     )
