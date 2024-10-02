@@ -17,6 +17,12 @@ except ImportError:
 
 LGT0_SMDPL = np.log10(13.79)
 
+__all__ = (
+    "plot_singlepanel_mahs_centrals_z0",
+    "plot_singlepanel_mahs_centrals_z2",
+    "plot_cen_mah_4panel_residuals",
+)
+
 
 def plot_singlepanel_mahs_centrals_z0(cendata, diffmahpop_params, drn="FIGS"):
     ran_key = jran.key(0)

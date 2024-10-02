@@ -18,6 +18,13 @@ except ImportError:
 LGT0_SMDPL = np.log10(13.79)
 
 
+__all__ = (
+    "plot_singlepanel_mahs_satellites_z0",
+    "plot_singlepanel_mahs_satellites_z2",
+    "plot_sat_mah_4panel_residuals",
+)
+
+
 def plot_singlepanel_mahs_satellites_z0(satdata, diffmahpop_params, drn="FIGS"):
     ran_key = jran.key(0)
 
