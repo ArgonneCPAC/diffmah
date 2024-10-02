@@ -5,9 +5,13 @@ import os
 
 import numpy as np
 from jax import random as jran
-from matplotlib import pyplot as plt
 
 from .. import mc_diffmahpop_kernels_monocens as mcc
+
+try:
+    from matplotlib import pyplot as plt
+except ImportError:
+    pass
 
 LGT0_SMDPL = np.log10(13.79)
 
