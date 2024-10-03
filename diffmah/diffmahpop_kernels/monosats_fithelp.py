@@ -35,7 +35,7 @@ def _loss_mah_moments_singlebin(
     mean_log_mah, std_log_mah, frac_peaked = _preds
     loss = _mse(mean_log_mah, target_mean_log_mah)
     loss = loss + _mse(std_log_mah, target_std_log_mah)
-    loss = loss + _mse(frac_peaked, target_frac_peaked)
+    # loss = loss + _mse(frac_peaked, target_frac_peaked)
     return loss
 
 
