@@ -6,7 +6,7 @@ from jax import random as jran
 
 from ... import diffmah_kernels
 from .. import diffmahpop_params_monocensat as dpp
-from .. import monocens_fithelp
+from .. import monocens_fixed_tpeak_fithelp
 
 
 def test_loss_grads():
@@ -15,7 +15,10 @@ def test_loss_grads():
     t_0 = 13.0
     lgt0 = np.log10(t_0)
     tarr = np.linspace(0.1, t_obs, 100)
+
     t_peak_target = t_0
+    n_singlebin = 175
+    t_peak_singlebin = np.linspace(3, 12, n_singlebin)
 
     lgmarr = np.linspace(10, 16, 20)
     for lgm_obs in lgmarr:
@@ -30,11 +33,12 @@ def test_loss_grads():
             tarr,
             lgm_obs,
             t_obs,
+            t_peak_singlebin,
             ran_key,
             lgt0,
             mean_log_mah,
             std_log_mah,
             target_frac_peaked,
         )
-        loss = monocens_fithelp._loss_mah_moments_singlebin(*args)
+        loss = monocens_fixed_tpeak_fithelp._loss_mah_moments_singlebin(*args)
         assert np.all(np.isfinite(loss))
