@@ -1,8 +1,6 @@
 """
 """
 
-from functools import partial
-
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
