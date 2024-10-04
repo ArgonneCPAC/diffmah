@@ -9,7 +9,7 @@ import numpy as np
 from ..diffmah_kernels import DEFAULT_MAH_PARAMS, mah_halopop
 
 TASSO_DRN = "/Users/aphearin/work/DATA/diffmahpop_data/NM_12_NT_9_ISTART_0_IEND_576"
-N_SAMPLE_MIN = 100
+N_SAMPLE_MIN = 200
 
 
 def load_diffmahpop_targets(
