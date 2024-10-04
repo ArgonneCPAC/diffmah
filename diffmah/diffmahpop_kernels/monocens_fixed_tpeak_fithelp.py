@@ -108,4 +108,9 @@ def loss_mah_moments_multibin(
     return jnp.mean(losses)
 
 
-loss_and_grads_mah_moments_multibin = value_and_grad(loss_mah_moments_multibin)
+_loss_and_grads_mah_moments_multibin = value_and_grad(loss_mah_moments_multibin)
+
+
+@jjit
+def loss_and_grads_mah_moments_multibin(params, loss_data):
+    return _loss_and_grads_mah_moments_multibin(params, *loss_data)
