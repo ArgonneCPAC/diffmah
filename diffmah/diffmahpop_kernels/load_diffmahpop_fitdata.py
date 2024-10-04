@@ -30,68 +30,17 @@ def load_diffmahpop_targets(
 ):
     """Load target mean and variance along with subset of underlying MAH samples"""
     cendata, satdata = _load_diffmahpop_mu_var_targets(drn=drn)
-    cendata, satdata, mah_samples_cens, mah_samples_sats = (
-        get_target_subset_for_fitting(
-            drn,
-            cendata,
-            satdata,
-            t_obs_min_cen,
-            t_obs_min_sat,
-            lgm_obs_max_cen,
-            lgm_obs_max_sat,
-            n_sample_min,
-        )
+    cendata, satdata = _add_n_sample_column(cendata, satdata)
+    cendata, satdata = _attach_samples(
+        drn,
+        cendata,
+        satdata,
+        t_obs_min_cen,
+        t_obs_min_sat,
+        lgm_obs_max_cen,
+        lgm_obs_max_sat,
+        n_sample_min=n_sample_min,
     )
-    X = np.array([mah_samples_cens[ih][0] for ih in range(len(mah_samples_cens))])
-    assert np.allclose(X, cendata["t_table"])
-    cendata["log_mah_samples"] = np.array(
-        [mah_samples_cens[ih][3] for ih in range(len(mah_samples_cens))]
-    )
-    cendata["log_mah_rescaled_samples"] = np.array(
-        [mah_samples_cens[ih][4] for ih in range(len(mah_samples_cens))]
-    )
-
-    cendata["logm0_samples"] = np.array(
-        [mah_samples_cens[ih][1].logm0 for ih in range(len(mah_samples_cens))]
-    )
-    cendata["logtc_samples"] = np.array(
-        [mah_samples_cens[ih][1].logtc for ih in range(len(mah_samples_cens))]
-    )
-    cendata["early_index_samples"] = np.array(
-        [mah_samples_cens[ih][1].early_index for ih in range(len(mah_samples_cens))]
-    )
-    cendata["late_index_samples"] = np.array(
-        [mah_samples_cens[ih][1].late_index for ih in range(len(mah_samples_cens))]
-    )
-
-    cendata["t_peak_samples"] = np.array(
-        [mah_samples_cens[ih][2] for ih in range(len(mah_samples_cens))]
-    )
-
-    Y = np.array([mah_samples_sats[ih][0] for ih in range(len(mah_samples_sats))])
-    assert np.allclose(Y, satdata["t_table"])
-    satdata["log_mah_samples"] = np.array(
-        [mah_samples_sats[ih][3] for ih in range(len(mah_samples_sats))]
-    )
-    satdata["log_mah_rescaled_samples"] = np.array(
-        [mah_samples_sats[ih][4] for ih in range(len(mah_samples_sats))]
-    )
-    satdata["logm0_samples"] = np.array(
-        [mah_samples_sats[ih][1].logm0 for ih in range(len(mah_samples_sats))]
-    )
-    satdata["logtc_samples"] = np.array(
-        [mah_samples_sats[ih][1].logtc for ih in range(len(mah_samples_sats))]
-    )
-    satdata["early_index_samples"] = np.array(
-        [mah_samples_sats[ih][1].early_index for ih in range(len(mah_samples_sats))]
-    )
-    satdata["late_index_samples"] = np.array(
-        [mah_samples_sats[ih][1].late_index for ih in range(len(mah_samples_sats))]
-    )
-    satdata["t_peak_samples"] = np.array(
-        [mah_samples_sats[ih][2] for ih in range(len(mah_samples_sats))]
-    )
-
     return cendata, satdata
 
 
