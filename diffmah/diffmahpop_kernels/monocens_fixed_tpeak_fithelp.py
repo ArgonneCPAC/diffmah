@@ -1,6 +1,8 @@
 """
 """
 
+from collections import namedtuple
+
 from jax import jit as jjit
 from jax import numpy as jnp
 from jax import random as jran
@@ -13,6 +15,28 @@ from .diffmahpop_params_monocensat import (
 )
 
 T_OBS_FIT_MIN = 0.5
+
+
+def get_varied_u_params():
+    fixed_u_pnames = (
+        "u_cen_tp_x0_ylo",
+        "u_cen_tp_x0_yhi",
+        "u_utp_loc_lgm_ylo_t0",
+        "u_utp_loc_lgm_ylo_early",
+        "u_utp_loc_lgm_ylo_late",
+        "u_utp_loc_lgm_x0",
+        "u_utp_scale_lgm_ylo_t0",
+        "u_utp_scale_lgm_ylo_early",
+        "u_utp_scale_lgm_ylo_late",
+    )
+    u_pdict = dict()
+    gen = zip(DEFAULT_DIFFMAHPOP_U_PARAMS._fields, DEFAULT_DIFFMAHPOP_U_PARAMS)
+    for key, val in gen:
+        if key not in fixed_u_pnames:
+            u_pdict[key] = val
+    VariedUParams = namedtuple("VariedUParams", u_pdict.keys())
+    varied_u_params = VariedUParams(**u_pdict)
+    return varied_u_params
 
 
 @jjit
