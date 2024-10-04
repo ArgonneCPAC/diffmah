@@ -12,6 +12,31 @@ TASSO_DRN = "/Users/aphearin/work/DATA/diffmahpop_data/NM_12_NT_9_ISTART_0_IEND_
 N_SAMPLE_MIN = 200
 
 
+def load_diffmahpop_targets(
+    drn=TASSO_DRN,
+    t_obs_min_cen=2.5,
+    t_obs_min_sat=2.5,
+    lgm_obs_max_cen=14.5,
+    lgm_obs_max_sat=13.5,
+    n_sample_min=N_SAMPLE_MIN,
+):
+    """Load target mean and variance along with subset of underlying MAH samples"""
+    cendata, satdata = _load_diffmahpop_mu_var_targets(drn=drn)
+    cendata, satdata, mah_samples_cens, mah_samples_sats = (
+        get_target_subset_for_fitting(
+            drn,
+            cendata,
+            satdata,
+            t_obs_min_cen,
+            t_obs_min_sat,
+            lgm_obs_max_cen,
+            lgm_obs_max_sat,
+            n_sample_min,
+        )
+    )
+    return cendata, satdata, mah_samples_cens, mah_samples_sats
+
+
 def rescale_target_log_mahs(log_mah_table, lgm_obs):
     delta_lgm_obs_table = log_mah_table[:, -1] - lgm_obs
     log_mah_sample_target = log_mah_table - delta_lgm_obs_table.reshape((-1, 1))
@@ -39,17 +64,17 @@ def _load_diffmahpop_mu_var_targets(drn):
 
 
 def get_target_subset_for_fitting(
+    drn,
     cendata,
     satdata,
-    t_obs_min_cen=2.5,
-    t_obs_min_sat=2.5,
-    lgm_obs_max_cen=14.5,
-    lgm_obs_max_sat=13.5,
-    drn=TASSO_DRN,
-    n_sample_min=N_SAMPLE_MIN,
+    t_obs_min_cen,
+    t_obs_min_sat,
+    lgm_obs_max_cen,
+    lgm_obs_max_sat,
+    n_sample_min,
 ):
     mah_samples_cens, mah_samples_sats = load_diffmahpop_target_samples(
-        cendata, satdata, drn=drn
+        drn, cendata, satdata
     )
 
     n_cens = len(cendata["lgm_obs"])
@@ -108,15 +133,7 @@ def _mask_halo_samples(mah_samples, ih_keep_arr, n_sample_min):
     return mah_samples_out
 
 
-def load_diffmahpop_target_mu_var(drn=TASSO_DRN):
-    cendata, satdata = _load_diffmahpop_mu_var_targets(drn=drn)
-    cendata, satdata, mah_samples_cens, mah_samples_sats = (
-        get_target_subset_for_fitting(cendata, satdata)
-    )
-    return cendata, satdata, mah_samples_cens, mah_samples_sats
-
-
-def load_diffmahpop_target_samples(cendata, satdata, drn=TASSO_DRN):
+def load_diffmahpop_target_samples(drn, cendata, satdata):
     pat = "lgm_{0:.2f}_t_{1:.2f}_mah_params.{2}.npy"
 
     # centrals
