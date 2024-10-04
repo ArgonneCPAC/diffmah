@@ -29,7 +29,7 @@ def test_loss_grads():
         std_log_mah = np.zeros_like(mean_log_mah) + 0.5
         target_frac_peaked = np.zeros_like(mean_log_mah) + 0.5
         args = (
-            dpp.DEFAULT_DIFFMAHPOP_PARAMS,
+            dpp.DEFAULT_DIFFMAHPOP_U_PARAMS,
             tarr,
             lgm_obs,
             t_obs,
@@ -40,5 +40,5 @@ def test_loss_grads():
             std_log_mah,
             target_frac_peaked,
         )
-        loss = monocens_fixed_tpeak_fithelp._loss_mah_moments_singlebin(*args)
+        loss = monocens_fixed_tpeak_fithelp._loss_mah_moments_singlebin_u_params(*args)
         assert np.all(np.isfinite(loss))

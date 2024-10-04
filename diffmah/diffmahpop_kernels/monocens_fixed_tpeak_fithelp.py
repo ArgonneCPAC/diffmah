@@ -7,6 +7,10 @@ from jax import random as jran
 from jax import value_and_grad, vmap
 
 from . import mc_diffmahpop_kernels_monocens_fixed_tpeak as mcdk
+from .diffmahpop_params_monocensat import (
+    DEFAULT_DIFFMAHPOP_U_PARAMS,
+    get_diffmahpop_params_from_u_params,
+)
 
 T_OBS_FIT_MIN = 0.5
 
@@ -18,8 +22,8 @@ def _mse(x, y):
 
 
 @jjit
-def _loss_mah_moments_singlebin(
-    diffmahpop_params,
+def _loss_mah_moments_singlebin_u_params(
+    varied_u_params,
     tarr,
     lgm_obs,
     t_obs,
@@ -30,6 +34,8 @@ def _loss_mah_moments_singlebin(
     target_std_log_mah,
     target_frac_peaked,
 ):
+    u_params = DEFAULT_DIFFMAHPOP_U_PARAMS._replace(**varied_u_params._asdict())
+    diffmahpop_params = get_diffmahpop_params_from_u_params(u_params)
     _preds = mcdk.predict_mah_moments_singlebin(
         diffmahpop_params, tarr, lgm_obs, t_obs, t_peak_sample, ran_key, lgt0
     )
@@ -41,7 +47,9 @@ def _loss_mah_moments_singlebin(
 
 
 _U = (None, 0, 0, 0, 0, 0, None, 0, 0, 0)
-_loss_mah_moments_multibin_vmap = jjit(vmap(_loss_mah_moments_singlebin, in_axes=_U))
+_loss_mah_moments_multibin_vmap = jjit(
+    vmap(_loss_mah_moments_singlebin_u_params, in_axes=_U)
+)
 
 
 @jjit

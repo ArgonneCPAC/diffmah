@@ -37,10 +37,10 @@ def load_diffmahpop_targets(
     X = np.array([mah_samples_cens[ih][0] for ih in range(len(mah_samples_cens))])
     assert np.allclose(X, cendata["t_table"])
     cendata["log_mah_samples"] = np.array(
-        [mah_samples_cens[ih][2] for ih in range(len(mah_samples_cens))]
+        [mah_samples_cens[ih][3] for ih in range(len(mah_samples_cens))]
     )
     cendata["log_mah_rescaled_samples"] = np.array(
-        [mah_samples_cens[ih][3] for ih in range(len(mah_samples_cens))]
+        [mah_samples_cens[ih][4] for ih in range(len(mah_samples_cens))]
     )
 
     cendata["logm0_samples"] = np.array(
@@ -56,13 +56,17 @@ def load_diffmahpop_targets(
         [mah_samples_cens[ih][1].late_index for ih in range(len(mah_samples_cens))]
     )
 
+    cendata["t_peak_samples"] = np.array(
+        [mah_samples_cens[ih][2] for ih in range(len(mah_samples_cens))]
+    )
+
     Y = np.array([mah_samples_sats[ih][0] for ih in range(len(mah_samples_sats))])
     assert np.allclose(Y, satdata["t_table"])
     satdata["log_mah_samples"] = np.array(
-        [mah_samples_sats[ih][2] for ih in range(len(mah_samples_sats))]
+        [mah_samples_sats[ih][3] for ih in range(len(mah_samples_sats))]
     )
     satdata["log_mah_rescaled_samples"] = np.array(
-        [mah_samples_sats[ih][3] for ih in range(len(mah_samples_sats))]
+        [mah_samples_sats[ih][4] for ih in range(len(mah_samples_sats))]
     )
     satdata["logm0_samples"] = np.array(
         [mah_samples_sats[ih][1].logm0 for ih in range(len(mah_samples_sats))]
@@ -75,6 +79,9 @@ def load_diffmahpop_targets(
     )
     satdata["late_index_samples"] = np.array(
         [mah_samples_sats[ih][1].late_index for ih in range(len(mah_samples_sats))]
+    )
+    satdata["t_peak_samples"] = np.array(
+        [mah_samples_sats[ih][2] for ih in range(len(mah_samples_sats))]
     )
 
     return cendata, satdata
@@ -160,13 +167,15 @@ def _mask_halo_samples(mah_samples, ih_keep_arr, n_sample_min):
         mah_params_out_ih = [x[:n_sample_min] for x in mah_samples[ih][1]]
         mah_params_out_ih = DEFAULT_MAH_PARAMS._make(mah_params_out_ih)
 
-        log_mah_out_ih = mah_samples[ih][2][:n_sample_min]
-        log_mah_rescaled_out_ih = mah_samples[ih][3][:n_sample_min]
+        t_peak_out_ih = mah_samples[ih][2][:n_sample_min]
+        log_mah_out_ih = mah_samples[ih][3][:n_sample_min]
+        log_mah_rescaled_out_ih = mah_samples[ih][4][:n_sample_min]
 
         t_table_sample = mah_samples[ih][0]
         line_out_ih = (
             t_table_sample,
             mah_params_out_ih,
+            t_peak_out_ih,
             log_mah_out_ih,
             log_mah_rescaled_out_ih,
         )
@@ -197,7 +206,13 @@ def load_diffmahpop_target_samples(drn, cendata, satdata):
             log_mah_cens, cendata["lgm_obs"][ih]
         )
         mah_samples_cens.append(
-            (t_table_sample, mah_params_cens, log_mah_cens, log_mah_cens_rescaled)
+            (
+                t_table_sample,
+                mah_params_cens,
+                t_peak_cens,
+                log_mah_cens,
+                log_mah_cens_rescaled,
+            )
         )
 
     # satellites
@@ -218,7 +233,13 @@ def load_diffmahpop_target_samples(drn, cendata, satdata):
             log_mah_sats, satdata["lgm_obs"][ih]
         )
         mah_samples_sats.append(
-            (t_table_sample, mah_params_sats, log_mah_sats, log_mah_sats_rescaled)
+            (
+                t_table_sample,
+                mah_params_sats,
+                t_peak_sats,
+                log_mah_sats,
+                log_mah_sats_rescaled,
+            )
         )
 
     return mah_samples_cens, mah_samples_sats
