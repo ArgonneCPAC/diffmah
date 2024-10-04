@@ -8,13 +8,8 @@ import numpy as np
 
 from ..diffmah_kernels import DEFAULT_MAH_PARAMS, mah_halopop
 
-try:
-    from astropy.table import Table
-except ImportError:
-    pass
-
-
 TASSO_DRN = "/Users/aphearin/work/DATA/diffmahpop_data/NM_12_NT_9_ISTART_0_IEND_576"
+N_SAMPLE_MIN = 200
 
 
 def rescale_target_log_mahs(log_mah_table, lgm_obs):
@@ -51,55 +46,54 @@ def get_target_subset_for_fitting(
     lgm_obs_max_cen=14.5,
     lgm_obs_max_sat=13.5,
     drn=TASSO_DRN,
-    n_sample_min=200,
+    n_sample_min=N_SAMPLE_MIN,
 ):
-    msk_cens = (cendata["t_obs"] > t_obs_min_cen) & (
-        cendata["lgm_obs"] < lgm_obs_max_cen
-    )
-    msk_sats = (satdata["t_obs"] > t_obs_min_sat) & (
-        satdata["lgm_obs"] < lgm_obs_max_sat
-    )
-    for key in cendata.keys():
-        cendata[key] = cendata[key][msk_cens]
-    for key in satdata.keys():
-        satdata[key] = satdata[key][msk_sats]
-
     mah_samples_cens, mah_samples_sats = load_diffmahpop_target_samples(
         cendata, satdata, drn=drn
     )
+
     n_cens = len(cendata["lgm_obs"])
     n_sample_cens = np.array(
         [mah_samples_cens[ih][1].logm0.size for ih in range(n_cens)]
     )
     msk_n_sample_cens = n_sample_cens >= n_sample_min
-    for key in cendata.keys():
-        cendata[key] = cendata[key][msk_n_sample_cens]
+    msk_t_obs_cens = cendata["t_obs"] > t_obs_min_cen
+    msk_lgm_obs_cens = cendata["lgm_obs"] < lgm_obs_max_cen
+    msk_cens = msk_t_obs_cens & msk_lgm_obs_cens & msk_n_sample_cens
 
     n_sats = len(satdata["lgm_obs"])
     n_sample_sats = np.array(
         [mah_samples_sats[ih][1].logm0.size for ih in range(n_sats)]
     )
     msk_n_sample_sats = n_sample_sats >= n_sample_min
+    msk_t_obs_sats = satdata["t_obs"] > t_obs_min_sat
+    msk_lgm_obs_sats = satdata["lgm_obs"] < lgm_obs_max_sat
+    msk_sats = msk_t_obs_sats & msk_lgm_obs_sats & msk_n_sample_sats
+
+    for key in cendata.keys():
+        cendata[key] = cendata[key][msk_cens]
+
     for key in satdata.keys():
-        satdata[key] = satdata[key][msk_n_sample_sats]
+        satdata[key] = satdata[key][msk_sats]
+
+    ih_keep_cens = np.arange(n_cens)[msk_cens].astype(int)
+    ih_keep_sats = np.arange(n_sats)[msk_sats].astype(int)
+
+    mah_samples_cens = _mask_halo_samples(mah_samples_cens, ih_keep_cens, n_sample_min)
+    mah_samples_sats = _mask_halo_samples(mah_samples_sats, ih_keep_sats, n_sample_min)
 
     return cendata, satdata, mah_samples_cens, mah_samples_sats
 
 
-def _mask_halo_samples(tdata, mah_samples, n_sample_min):
-    n_halos = len(tdata["lgm_obs"])
+def _mask_halo_samples(mah_samples, ih_keep_arr, n_sample_min):
     mah_samples_out = []
-    for ih in range(n_halos):
-        n_sample_arr = np.array(
-            [mah_samples[ih][1].logm0.size for ih in range(n_halos)]
-        )
-        msk_n_sample = n_sample_arr >= n_sample_min
+    for ih in ih_keep_arr:
 
-        mah_params_out_ih = [x[msk_n_sample] for x in mah_samples[ih][1]]
+        mah_params_out_ih = [x[:n_sample_min] for x in mah_samples[ih][1]]
         mah_params_out_ih = DEFAULT_MAH_PARAMS._make(mah_params_out_ih)
 
-        log_mah_out_ih = mah_samples[ih][2][msk_n_sample]
-        log_mah_rescaled_out_ih = mah_samples[ih][3][msk_n_sample]
+        log_mah_out_ih = mah_samples[ih][2][:n_sample_min]
+        log_mah_rescaled_out_ih = mah_samples[ih][3][:n_sample_min]
 
         t_table_sample = mah_samples[ih][0]
         line_out_ih = (
@@ -111,13 +105,15 @@ def _mask_halo_samples(tdata, mah_samples, n_sample_min):
 
         mah_samples_out.append(line_out_ih)
 
-    return tdata_out, mah_samples_out
+    return mah_samples_out
 
 
 def load_diffmahpop_target_mu_var(drn=TASSO_DRN):
     cendata, satdata = _load_diffmahpop_mu_var_targets(drn=drn)
-    cendata, satdata = get_target_subset_for_fitting(cendata, satdata)
-    return cendata, satdata
+    cendata, satdata, mah_samples_cens, mah_samples_sats = (
+        get_target_subset_for_fitting(cendata, satdata)
+    )
+    return cendata, satdata, mah_samples_cens, mah_samples_sats
 
 
 def load_diffmahpop_target_samples(cendata, satdata, drn=TASSO_DRN):
