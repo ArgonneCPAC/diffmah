@@ -34,7 +34,24 @@ def load_diffmahpop_targets(
             n_sample_min,
         )
     )
-    return cendata, satdata, mah_samples_cens, mah_samples_sats
+    X = np.array([mah_samples_cens[ih][0] for ih in range(len(mah_samples_cens))])
+    assert np.allclose(X, cendata["t_table"])
+    cendata["log_mah_samples"] = np.array(
+        [mah_samples_cens[ih][2] for ih in range(len(mah_samples_cens))]
+    )
+    cendata["log_mah_rescaled_samples"] = np.array(
+        [mah_samples_cens[ih][3] for ih in range(len(mah_samples_cens))]
+    )
+    Y = np.array([mah_samples_sats[ih][0] for ih in range(len(mah_samples_sats))])
+    assert np.allclose(Y, satdata["t_table"])
+    satdata["log_mah_samples"] = np.array(
+        [mah_samples_sats[ih][2] for ih in range(len(mah_samples_sats))]
+    )
+    satdata["log_mah_rescaled_samples"] = np.array(
+        [mah_samples_sats[ih][3] for ih in range(len(mah_samples_sats))]
+    )
+
+    return cendata, satdata
 
 
 def rescale_target_log_mahs(log_mah_table, lgm_obs):
