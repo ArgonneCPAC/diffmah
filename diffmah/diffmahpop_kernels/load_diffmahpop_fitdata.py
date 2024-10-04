@@ -42,6 +42,20 @@ def load_diffmahpop_targets(
     cendata["log_mah_rescaled_samples"] = np.array(
         [mah_samples_cens[ih][3] for ih in range(len(mah_samples_cens))]
     )
+
+    cendata["logm0_samples"] = np.array(
+        [mah_samples_cens[ih][1].logm0 for ih in range(len(mah_samples_cens))]
+    )
+    cendata["logtc_samples"] = np.array(
+        [mah_samples_cens[ih][1].logtc for ih in range(len(mah_samples_cens))]
+    )
+    cendata["early_index_samples"] = np.array(
+        [mah_samples_cens[ih][1].early_index for ih in range(len(mah_samples_cens))]
+    )
+    cendata["late_index_samples"] = np.array(
+        [mah_samples_cens[ih][1].late_index for ih in range(len(mah_samples_cens))]
+    )
+
     Y = np.array([mah_samples_sats[ih][0] for ih in range(len(mah_samples_sats))])
     assert np.allclose(Y, satdata["t_table"])
     satdata["log_mah_samples"] = np.array(
@@ -49,6 +63,18 @@ def load_diffmahpop_targets(
     )
     satdata["log_mah_rescaled_samples"] = np.array(
         [mah_samples_sats[ih][3] for ih in range(len(mah_samples_sats))]
+    )
+    satdata["logm0_samples"] = np.array(
+        [mah_samples_sats[ih][1].logm0 for ih in range(len(mah_samples_sats))]
+    )
+    satdata["logtc_samples"] = np.array(
+        [mah_samples_sats[ih][1].logtc for ih in range(len(mah_samples_sats))]
+    )
+    satdata["early_index_samples"] = np.array(
+        [mah_samples_sats[ih][1].early_index for ih in range(len(mah_samples_sats))]
+    )
+    satdata["late_index_samples"] = np.array(
+        [mah_samples_sats[ih][1].late_index for ih in range(len(mah_samples_sats))]
     )
 
     return cendata, satdata
@@ -163,8 +189,9 @@ def load_diffmahpop_target_samples(drn, cendata, satdata):
 
         t_table_sample = cendata["t_table"][ih, :]
         mah_params_cens = DEFAULT_MAH_PARAMS._make([cen_sample[:, i] for i in range(4)])
+        t_peak_cens = cen_sample[:, 4]
         __, log_mah_cens = mah_halopop(
-            mah_params_cens, t_table_sample, cen_sample[:, 4], np.log10(13.79)
+            mah_params_cens, t_table_sample, t_peak_cens, np.log10(13.79)
         )
         log_mah_cens_rescaled = rescale_target_log_mahs(
             log_mah_cens, cendata["lgm_obs"][ih]
@@ -183,8 +210,9 @@ def load_diffmahpop_target_samples(drn, cendata, satdata):
 
         t_table_sample = satdata["t_table"][ih, :]
         mah_params_sats = DEFAULT_MAH_PARAMS._make([sat_sample[:, i] for i in range(4)])
+        t_peak_sats = sat_sample[:, 4]
         __, log_mah_sats = mah_halopop(
-            mah_params_sats, t_table_sample, sat_sample[:, 4], np.log10(13.79)
+            mah_params_sats, t_table_sample, t_peak_sats, np.log10(13.79)
         )
         log_mah_sats_rescaled = rescale_target_log_mahs(
             log_mah_sats, satdata["lgm_obs"][ih]
