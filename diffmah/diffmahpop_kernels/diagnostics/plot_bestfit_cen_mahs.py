@@ -217,7 +217,7 @@ def plot_cen_mah_4panel_residuals(cendata, diffmahpop_params, drn="FIGS"):
     mass_colors = cm.coolwarm(np.linspace(0, 1, n_mass))  # blue first
 
     fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(10, 8), sharey=True)
-    ax0.set_ylim(-0.9, 0.9)
+    ax0.set_ylim(-0.45, 0.45)
     t_obs_panel_list = [4.0, 7.0, 10.0, 13.0]
 
     ##############################################
@@ -316,7 +316,7 @@ def plot_cen_mah_4panel_residuals(cendata, diffmahpop_params, drn="FIGS"):
 
     for ax in ax0, ax1, ax2, ax3:
         xlim = ax.set_xlim(*ax.get_xlim())
-        xlim = ax.set_xlim(0.45, xlim[1])
+        xlim = ax.set_xlim(0.95, xlim[1])
         ax.plot(np.linspace(*xlim, 100), np.zeros(100), "--", color="k")
 
     os.makedirs(drn, exist_ok=True)

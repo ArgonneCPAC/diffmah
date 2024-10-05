@@ -12,19 +12,18 @@ from ..utils import _inverse_sigmoid, _sigmoid
 
 EPS = 1e-3
 
-EARLY_INDEX_LGM_X0 = 13.25
 EARLY_INDEX_K = 1.0
 EARLY_INDEX_YHI_K = 0.5
-EARLY_INDEX_YHI_X0 = 8.0
 EARLY_INDEX_YLO_K = 1.0
-EARLY_INDEX_YHI_X0 = 8.0
 
 EARLY_INDEX_PDICT = OrderedDict(
-    early_index_ylo_x0=5.241,
-    early_index_ylo_ylo=3.181,
-    early_index_ylo_yhi=1.573,
-    early_index_yhi_ylo=2.842,
-    early_index_yhi_yhi=2.701,
+    early_index_ylo_x0=6.072,
+    early_index_ylo_ylo=3.018,
+    early_index_ylo_yhi=1.517,
+    early_index_yhi_ylo=3.204,
+    early_index_yhi_yhi=2.774,
+    early_index_yhi_x0=10.274,
+    early_index_lgm_x0=13.504,
 )
 EARLY_INDEX_BOUNDS_PDICT = OrderedDict(
     early_index_ylo_x0=(1.0, 7.0),
@@ -32,6 +31,8 @@ EARLY_INDEX_BOUNDS_PDICT = OrderedDict(
     early_index_ylo_yhi=(0.5, 3.0),
     early_index_yhi_ylo=(2.0, 4.0),
     early_index_yhi_yhi=(1.5, 4.0),
+    early_index_yhi_x0=(4.0, 13.0),
+    early_index_lgm_x0=(12.0, 14.0),
 )
 EarlyIndex_Params = namedtuple("EarlyIndex_Params", EARLY_INDEX_PDICT.keys())
 DEFAULT_EARLY_INDEX_PARAMS = EarlyIndex_Params(**EARLY_INDEX_PDICT)
@@ -49,10 +50,17 @@ def _pred_early_index_kern(params, lgm_obs, t_obs, t_peak):
         t_peak,
     )
     early_index_yhi = _get_early_index_yhi(
-        params.early_index_yhi_ylo, params.early_index_yhi_yhi, t_obs
+        params.early_index_yhi_x0,
+        params.early_index_yhi_ylo,
+        params.early_index_yhi_yhi,
+        t_obs,
     )
     early_index = _sigmoid(
-        lgm_obs, EARLY_INDEX_LGM_X0, EARLY_INDEX_K, early_index_ylo, early_index_yhi
+        lgm_obs,
+        params.early_index_lgm_x0,
+        EARLY_INDEX_K,
+        early_index_ylo,
+        early_index_yhi,
     )
     ylo, yhi = MAH_PBOUNDS.early_index
     early_index = jnp.clip(early_index, ylo + EPS, yhi - EPS)
@@ -74,10 +82,12 @@ def _get_early_index_ylo(
 
 
 @jjit
-def _get_early_index_yhi(early_index_yhi_ylo, early_index_yhi_yhi, t_obs):
+def _get_early_index_yhi(
+    early_index_yhi_x0, early_index_yhi_ylo, early_index_yhi_yhi, t_obs
+):
     early_index_yhi = _sigmoid(
         t_obs,
-        EARLY_INDEX_YHI_X0,
+        early_index_yhi_x0,
         EARLY_INDEX_YHI_K,
         early_index_yhi_ylo,
         early_index_yhi_yhi,

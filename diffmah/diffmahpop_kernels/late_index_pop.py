@@ -11,15 +11,15 @@ from ..diffmah_kernels import MAH_PBOUNDS
 from ..utils import _inverse_sigmoid, _sigmoid
 
 EPS = 1e-3
-LATE_INDEX_X0 = 12.5
 LATE_INDEX_K = 1.0
 
 LATE_INDEX_PDICT = OrderedDict(
-    late_index_ylo=0.184,
-    late_index_yhi=0.197,
+    late_index_x0=11.714,
+    late_index_ylo=0.196,
+    late_index_yhi=0.199,
 )
 LATE_INDEX_BOUNDS_PDICT = OrderedDict(
-    late_index_ylo=(0.01, 0.2), late_index_yhi=(0.01, 0.2)
+    late_index_x0=(11.5, 14.0), late_index_ylo=(0.01, 0.2), late_index_yhi=(0.01, 0.2)
 )
 
 LateIndex_Params = namedtuple("LateIndex_Params", LATE_INDEX_PDICT.keys())
@@ -30,9 +30,9 @@ K_BOUNDING = 0.1
 
 @jjit
 def _pred_late_index_kern(late_index_params, lgm_obs):
-    late_index_ylo, late_index_yhi = late_index_params
+    late_index_x0, late_index_ylo, late_index_yhi = late_index_params
     late_index = _sigmoid(
-        lgm_obs, LATE_INDEX_X0, LATE_INDEX_K, late_index_ylo, late_index_yhi
+        lgm_obs, late_index_x0, LATE_INDEX_K, late_index_ylo, late_index_yhi
     )
     ylo, yhi = MAH_PBOUNDS.late_index
     late_index = jnp.clip(late_index, ylo + EPS, yhi - EPS)
