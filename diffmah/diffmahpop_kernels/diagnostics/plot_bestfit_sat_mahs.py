@@ -218,7 +218,7 @@ def plot_sat_mah_4panel_residuals(satdata, diffmahpop_params, drn="FIGS"):
     mass_colors = cm.coolwarm(np.linspace(0, 1, n_mass))  # blue first
 
     fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(10, 8), sharey=True)
-    ax0.set_ylim(-0.9, 0.9)
+    ax0.set_ylim(-0.45, 0.45)
     t_obs_panel_list = [4.0, 7.0, 10.0, 13.0]
 
     ##############################################
