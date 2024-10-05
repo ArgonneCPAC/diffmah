@@ -18,6 +18,7 @@ LOGTC_PDICT = OrderedDict(
     lgm_c0_tp_ylo=0.070,
     lgm_c0_tp_yhi=-0.074,
     lgm_c1=0.134,
+    logtc_c0_ss_x0=12.0,
 )
 LOGTC_BOUNDS_PDICT = OrderedDict(
     lgm_c0_tp_ytp_tobs_c0=(0.2, 0.9),
@@ -25,6 +26,7 @@ LOGTC_BOUNDS_PDICT = OrderedDict(
     lgm_c0_tp_ylo=(0.02, 0.15),
     lgm_c0_tp_yhi=(-0.25, 0.0),
     lgm_c1=(0.02, 0.15),
+    logtc_c0_ss_x0=(11.0, 13.0),
 )
 Logtc_Params = namedtuple("Logtc_Params", LOGTC_PDICT.keys())
 DEFAULT_LOGTC_PARAMS = Logtc_Params(**LOGTC_PDICT)
@@ -33,7 +35,6 @@ LOGTC_PBOUNDS = Logtc_Params(**LOGTC_BOUNDS_PDICT)
 K_BOUNDING = 0.1
 TAUC_LGMP = 12.0
 C0_SS_XTP = 10.0
-C0_SS_X0 = 12.0
 C0_SS_K = 0.5
 
 
@@ -50,7 +51,7 @@ def _pred_logtc_kern(params, lgm_obs, t_obs, t_peak):
 def _get_c0(params, t_peak, t_obs):
     ytp = params.lgm_c0_tp_ytp_tobs_c0 + params.lgm_c0_tp_ytp_tobs_c1 * t_obs
     ylo, yhi = params.lgm_c0_tp_ylo, params.lgm_c0_tp_yhi
-    c0 = _sig_slope(t_peak, C0_SS_XTP, ytp, C0_SS_X0, C0_SS_K, ylo, yhi)
+    c0 = _sig_slope(t_peak, C0_SS_XTP, ytp, params.logtc_c0_ss_x0, C0_SS_K, ylo, yhi)
     return c0
 
 
