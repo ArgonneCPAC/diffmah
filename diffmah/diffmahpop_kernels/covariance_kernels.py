@@ -14,7 +14,6 @@ from ..utils import (
     get_cholesky_from_params,
 )
 
-COV_LGM_X0 = 13.0
 COV_LGM_K = 2.0
 
 K_BOUNDING = 0.1
@@ -33,10 +32,15 @@ DEFAULT_COV_PDICT = OrderedDict(
     rho_late_logm0=-0.123,
     rho_late_logtc=-0.246,
     rho_late_early=-0.167,
+    cov_lgm_x0_logm0=13.0,
+    cov_lgm_x0_logtc=13.0,
+    cov_lgm_x0_early=13.0,
+    cov_lgm_x0_late=13.0,
 )
 
 STD_BOUNDS = (0.01, 100.0)
 RHO_BOUNDS = (-0.3, 0.3)
+COV_X0_BOUNDS = (11.5, 14.0)
 DEFAULT_COV_BOUNDS_PDICT = OrderedDict(
     std_u_logm0_ylo=STD_BOUNDS,
     std_u_logtc_ylo=STD_BOUNDS,
@@ -52,6 +56,10 @@ DEFAULT_COV_BOUNDS_PDICT = OrderedDict(
     rho_late_logm0=RHO_BOUNDS,
     rho_late_logtc=RHO_BOUNDS,
     rho_late_early=RHO_BOUNDS,
+    cov_lgm_x0_logm0=COV_X0_BOUNDS,
+    cov_lgm_x0_logtc=COV_X0_BOUNDS,
+    cov_lgm_x0_early=COV_X0_BOUNDS,
+    cov_lgm_x0_late=COV_X0_BOUNDS,
 )
 
 
@@ -77,16 +85,32 @@ _get_diffmahpop_cov_vmap = jjit(vmap(_get_diffmahpop_cov, in_axes=(None, 0)))
 @jjit
 def _get_cov_params(params, lgm_obs):
     std_u_logm0 = _sigmoid(
-        lgm_obs, COV_LGM_X0, COV_LGM_K, params.std_u_logm0_ylo, params.std_u_logm0_yhi
+        lgm_obs,
+        params.cov_lgm_x0_logm0,
+        COV_LGM_K,
+        params.std_u_logm0_ylo,
+        params.std_u_logm0_yhi,
     )
     std_u_logtc = _sigmoid(
-        lgm_obs, COV_LGM_X0, COV_LGM_K, params.std_u_logtc_ylo, params.std_u_logtc_yhi
+        lgm_obs,
+        params.cov_lgm_x0_logtc,
+        COV_LGM_K,
+        params.std_u_logtc_ylo,
+        params.std_u_logtc_yhi,
     )
     std_u_early = _sigmoid(
-        lgm_obs, COV_LGM_X0, COV_LGM_K, params.std_u_early_ylo, params.std_u_early_yhi
+        lgm_obs,
+        params.cov_lgm_x0_early,
+        COV_LGM_K,
+        params.std_u_early_ylo,
+        params.std_u_early_yhi,
     )
     std_u_late = _sigmoid(
-        lgm_obs, COV_LGM_X0, COV_LGM_K, params.std_u_late_ylo, params.std_u_late_yhi
+        lgm_obs,
+        params.cov_lgm_x0_late,
+        COV_LGM_K,
+        params.std_u_late_ylo,
+        params.std_u_late_yhi,
     )
 
     diags = jnp.array((std_u_logm0, std_u_logtc, std_u_early, std_u_late))
