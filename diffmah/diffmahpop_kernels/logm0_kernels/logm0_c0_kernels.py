@@ -15,6 +15,7 @@ DEFAULT_LGM0POP_C0_PDICT = OrderedDict(
     lgm0pop_c0_ylo=-0.076,
     lgm0pop_c0_clip_c0=0.684,
     lgm0pop_c0_clip_c1=-0.081,
+    lgm0pop_c0_t_obs_x0=3.0,
 )
 LGM0Pop_C0_Params = namedtuple("LGM0Pop_C0_Params", DEFAULT_LGM0POP_C0_PDICT.keys())
 DEFAULT_LGM0POP_C0_PARAMS = LGM0Pop_C0_Params(**DEFAULT_LGM0POP_C0_PDICT)
@@ -27,20 +28,27 @@ LGM0POP_C0_BOUNDS_DICT = OrderedDict(
     lgm0pop_c0_ylo=(-0.15, -0.05),
     lgm0pop_c0_clip_c0=(0.5, 0.9),
     lgm0pop_c0_clip_c1=(-0.1, -0.01),
+    lgm0pop_c0_t_obs_x0=(1.5, 6.0),
 )
 LGM0POP_C0_BOUNDS = LGM0Pop_C0_Params(**LGM0POP_C0_BOUNDS_DICT)
 
 XTP = 15
-GLOBAL_X0 = 3.0
 GLOBAL_K = 0.25
 K_BOUNDING = 0.1
 
 
 @jjit
 def _pred_c0_kern(params, t_obs, t_peak):
-    c0_ytp, c0_ylo, clip_c0, clip_c1 = params
-    pred_c0 = _sig_slope(t_obs, XTP, c0_ytp, GLOBAL_X0, GLOBAL_K, c0_ylo, 0.0)
-    clip = clip_c0 + clip_c1 * t_peak
+    pred_c0 = _sig_slope(
+        t_obs,
+        XTP,
+        params.lgm0pop_c0_ytp,
+        params.lgm0pop_c0_t_obs_x0,
+        GLOBAL_K,
+        params.lgm0pop_c0_ylo,
+        0.0,
+    )
+    clip = params.lgm0pop_c0_clip_c0 + params.lgm0pop_c0_clip_c1 * t_peak
     pred_c0 = jnp.clip(pred_c0, min=clip)
     return pred_c0
 
