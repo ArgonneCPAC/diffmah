@@ -316,7 +316,7 @@ def plot_cen_mah_4panel_residuals(cendata, diffmahpop_params, drn="FIGS"):
 
     for ax in ax0, ax1, ax2, ax3:
         xlim = ax.set_xlim(*ax.get_xlim())
-        xlim = ax.set_xlim(0.45, xlim[1])
+        xlim = ax.set_xlim(0.95, xlim[1])
         ax.plot(np.linspace(*xlim, 100), np.zeros(100), "--", color="k")
 
     os.makedirs(drn, exist_ok=True)
