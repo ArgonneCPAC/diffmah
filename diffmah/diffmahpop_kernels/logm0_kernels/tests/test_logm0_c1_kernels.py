@@ -62,4 +62,4 @@ def test_default_params_are_in_bounds():
     for key in c1k.DEFAULT_LGM0POP_C1_PARAMS._fields:
         val = getattr(c1k.DEFAULT_LGM0POP_C1_PARAMS, key)
         bound = getattr(c1k.LGM0POP_C1_BOUNDS, key)
-        assert bound[0] < val < bound[1]
+        assert bound[0] < val < bound[1], key
