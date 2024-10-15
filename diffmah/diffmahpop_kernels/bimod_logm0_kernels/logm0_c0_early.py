@@ -11,11 +11,11 @@ from ...bfgs_wrapper import diffmah_fitter
 from ...utils import _inverse_sigmoid, _sig_slope, _sigmoid
 
 DEFAULT_LGM0POP_C0_PDICT = OrderedDict(
-    lgm0pop_c0_ytp=0.011,
-    lgm0pop_c0_ylo=-0.066,
-    lgm0pop_c0_clip_c0=0.602,
-    lgm0pop_c0_clip_c1=-0.090,
-    lgm0pop_c0_t_obs_x0=1.825,
+    lgm0pop_c0_ytp_early=0.011,
+    lgm0pop_c0_ylo_early=-0.066,
+    lgm0pop_c0_clip_c0_early=0.602,
+    lgm0pop_c0_clip_c1_early=-0.090,
+    lgm0pop_c0_t_obs_x0_early=1.825,
 )
 LGM0Pop_C0_Params = namedtuple("LGM0Pop_C0_Params", DEFAULT_LGM0POP_C0_PDICT.keys())
 DEFAULT_LGM0POP_C0_PARAMS = LGM0Pop_C0_Params(**DEFAULT_LGM0POP_C0_PDICT)
@@ -24,11 +24,11 @@ _C0_UPNAMES = ["u_" + key for key in LGM0Pop_C0_Params._fields]
 LGM0Pop_C0_UParams = namedtuple("LGM0Pop_C0_UParams", _C0_UPNAMES)
 
 LGM0POP_C0_BOUNDS_DICT = OrderedDict(
-    lgm0pop_c0_ytp=(0.01, 0.4),
-    lgm0pop_c0_ylo=(-0.15, -0.05),
-    lgm0pop_c0_clip_c0=(0.5, 0.9),
-    lgm0pop_c0_clip_c1=(-0.1, -0.01),
-    lgm0pop_c0_t_obs_x0=(1.5, 6.0),
+    lgm0pop_c0_ytp_early=(0.01, 0.4),
+    lgm0pop_c0_ylo_early=(-0.15, -0.05),
+    lgm0pop_c0_clip_c0_early=(0.5, 0.9),
+    lgm0pop_c0_clip_c1_early=(-0.1, -0.01),
+    lgm0pop_c0_t_obs_x0_early=(1.5, 6.0),
 )
 LGM0POP_C0_BOUNDS = LGM0Pop_C0_Params(**LGM0POP_C0_BOUNDS_DICT)
 
@@ -42,13 +42,13 @@ def _pred_c0_kern(params, t_obs, t_peak):
     pred_c0 = _sig_slope(
         t_obs,
         XTP,
-        params.lgm0pop_c0_ytp,
-        params.lgm0pop_c0_t_obs_x0,
+        params.lgm0pop_c0_ytp_early,
+        params.lgm0pop_c0_t_obs_x0_early,
         GLOBAL_K,
-        params.lgm0pop_c0_ylo,
+        params.lgm0pop_c0_ylo_early,
         0.0,
     )
-    clip = params.lgm0pop_c0_clip_c0 + params.lgm0pop_c0_clip_c1 * t_peak
+    clip = params.lgm0pop_c0_clip_c0_early + params.lgm0pop_c0_clip_c1_early * t_peak
     pred_c0 = jnp.clip(pred_c0, min=clip)
     return pred_c0
 
