@@ -17,13 +17,18 @@ def test_mc_mean_diffmah_params_are_always_in_bounds():
     ran_key = jran.key(0)
     lgmarr = np.linspace(10, 16, 20)
     for lgm_obs in lgmarr:
-        mah_params_e, t_peak_e, mah_params_l, t_peak_l = mcdpk._mean_diffmah_params(
+        _res = mcdpk._mean_diffmah_params(
             DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, np.log10(t_0)
         )
+        mah_params_e, t_peak_e, mah_params_l, t_peak_l, fec = _res
+
         assert np.all(t_peak_e > 0)
         assert np.all(t_peak_e <= t_0 + EPS)
         assert np.all(t_peak_l > 0)
         assert np.all(t_peak_l <= t_0 + EPS)
+
+        assert np.all(fec >= 0)
+        assert np.all(fec <= 1)
 
         for p, bound in zip(mah_params_e, MAH_PBOUNDS):
             assert np.all(bound[0] < p)
@@ -59,7 +64,7 @@ def test_mc_diffmah_params_singlecen():
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0)
         _res = mcdpk.mc_diffmah_params_singlecen(*args)
-        mah_params_e, t_peak_e, mah_params_l, t_peak_l = _res
+        mah_params_e, t_peak_e, mah_params_l, t_peak_l, frac_early = _res
         assert np.all(np.isfinite(mah_params_e.logtc))
         assert np.all(np.isfinite(mah_params_l.logtc))
 
@@ -90,7 +95,8 @@ def test_mc_diffmah_halo_sample():
         args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
         _res = mcdpk._mc_diffmah_halo_sample(*args)
         _res_early = _res[:4]
-        _res_late = _res[4:]
+        _res_late = _res[4:8]
+        frac_early = _res[8]
 
         # Test early sequence
         (mah_params, t_peak, dmhdt, log_mah) = _res_early
@@ -113,3 +119,6 @@ def test_mc_diffmah_halo_sample():
 
         assert np.all(np.isfinite(log_mah))
         assert np.all(np.isfinite(dmhdt))
+
+        assert np.all(frac_early > 0)
+        assert np.all(frac_early < 1)
