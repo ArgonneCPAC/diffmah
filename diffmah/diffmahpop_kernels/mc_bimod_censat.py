@@ -78,14 +78,6 @@ _mc_diffmah_params_vmap_kern = jjit(vmap(mc_diffmah_params_singlecen, in_axes=_A
 
 
 @jjit
-def mc_diffmah_params_cenpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
-    ran_keys = jran.split(ran_key, lgm_obs.size)
-    return _mc_diffmah_params_vmap_kern(
-        diffmahpop_params, lgm_obs, t_obs, ran_keys, lgt0
-    )
-
-
-@jjit
 def _mc_diffmah_singlecen(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
     _res = mc_diffmah_params_singlecen(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
     mah_params, t_peak = _res
