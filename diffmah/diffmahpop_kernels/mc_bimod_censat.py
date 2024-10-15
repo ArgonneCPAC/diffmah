@@ -24,7 +24,8 @@ from .covariance_kernels import _get_diffmahpop_cov
 from .early_index_pop import _pred_early_index_kern
 from .frac_early_cens import _frac_early_cens_kern
 from .late_index_pop import _pred_late_index_kern
-from .logtc_pop import _pred_logtc_kern
+from .logtc_early import _pred_logtc_kern as _pred_logtc_early
+from .logtc_late import _pred_logtc_kern as _pred_logtc_late
 from .t_peak_kernels.tp_pdf_monocens import mc_tpeak_singlecen
 
 NH_PER_M0BIN = 200
@@ -65,7 +66,7 @@ def _mean_diffmah_params_early(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
     t_peak = mc_tpeak_singlecen(tp_pdf_cens_params, lgm_obs, tpc_key, t_0)
 
     logm0 = _pred_logm0_kern_early(logm0_params, lgm_obs, t_obs, t_peak)
-    logtc = _pred_logtc_kern(logtc_params, lgm_obs, t_obs, t_peak)
+    logtc = _pred_logtc_early(logtc_params, lgm_obs, t_obs, t_peak)
     early_index = _pred_early_index_kern(early_index_params, lgm_obs, t_obs, t_peak)
     late_index = _pred_late_index_kern(late_index_params, lgm_obs)
 
@@ -94,7 +95,7 @@ def _mean_diffmah_params_late(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
     t_peak = mc_tpeak_singlecen(tp_pdf_cens_params, lgm_obs, tpc_key, t_0)
 
     logm0 = _pred_logm0_kern_late(logm0_params, lgm_obs, t_obs, t_peak)
-    logtc = _pred_logtc_kern(logtc_params, lgm_obs, t_obs, t_peak)
+    logtc = _pred_logtc_late(logtc_params, lgm_obs, t_obs, t_peak)
     early_index = _pred_early_index_kern(early_index_params, lgm_obs, t_obs, t_peak)
     late_index = _pred_late_index_kern(late_index_params, lgm_obs)
 
