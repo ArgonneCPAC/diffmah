@@ -6,6 +6,7 @@ from jax import numpy as jnp
 from jax import random as jran
 from jax import value_and_grad, vmap
 
+from . import bimod_censat_params
 from . import mc_bimod_censat as mcdk
 
 T_OBS_FIT_MIN = 0.5
@@ -95,4 +96,15 @@ def loss_mah_moments_multibin(
     return jnp.mean(losses)
 
 
-loss_and_grads_mah_moments_multibin = value_and_grad(loss_mah_moments_multibin)
+@jjit
+def loss_mah_moments_multibin_u_params(u_params, loss_data):
+    u_params = bimod_censat_params.DEFAULT_DIFFMAHPOP_U_PARAMS._replace(
+        **u_params._asdict()
+    )
+    params = bimod_censat_params.get_diffmahpop_params_from_u_params(u_params)
+    return loss_mah_moments_multibin(params, *loss_data)
+
+
+loss_and_grads_mah_moments_multibin = jjit(
+    value_and_grad(loss_mah_moments_multibin_u_params)
+)
