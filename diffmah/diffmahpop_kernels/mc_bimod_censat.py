@@ -15,7 +15,7 @@ from ..diffmah_kernels import (
     get_unbounded_mah_params,
     mah_singlehalo,
 )
-from .bimod_logm0_kernels.logm0_pop_early import _pred_logm0_kern
+from .bimod_logm0_kernels.logm0_pop_bimod import _pred_logm0_kern_early
 from .covariance_kernels import _get_diffmahpop_cov
 from .diffmahpop_params_monocensat import get_component_model_params
 from .early_index_pop import _pred_early_index_kern
@@ -47,7 +47,7 @@ def _mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
     args = tp_pdf_cens_params, lgm_obs, tpc_key, t_0
     t_peak = mc_tpeak_singlecen(*args)
 
-    logm0 = _pred_logm0_kern(logm0_params, lgm_obs, t_obs, t_peak)
+    logm0 = _pred_logm0_kern_early(logm0_params, lgm_obs, t_obs, t_peak)
     logtc = _pred_logtc_kern(logtc_params, lgm_obs, t_obs, t_peak)
     early_index = _pred_early_index_kern(early_index_params, lgm_obs, t_obs, t_peak)
     late_index = _pred_late_index_kern(late_index_params, lgm_obs)
