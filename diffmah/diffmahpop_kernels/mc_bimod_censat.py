@@ -176,11 +176,15 @@ def predict_mah_moments_singlebin(
     w_e = frac_late * weights_late
     w_l = (1 - frac_late) * weights_early
 
-    mean_log_mah = jnp.sum(log_mah_early * w_e + log_mah_late + w_l, axis=0)
+    mu_e = jnp.sum(log_mah_early * w_e, axis=0)
+    mu_l = jnp.sum(log_mah_late + w_l, axis=0)
+    mean_log_mah = mu_e + mu_l
 
     dlgm_sq_early = (log_mah_early - mean_log_mah) ** 2
     dlgm_sq_late = (log_mah_late - mean_log_mah) ** 2
-    var_log_mah = jnp.sum(dlgm_sq_early * w_e + dlgm_sq_late + w_l, axis=0)
+    var_e = jnp.sum(dlgm_sq_early * w_e, axis=0)
+    var_l = jnp.sum(dlgm_sq_late * w_l, axis=0)
+    var_log_mah = var_e + var_l
     std_log_mah = jnp.sqrt(var_log_mah)
 
     frac_peaked = 0.5 + jnp.zeros_like(mean_log_mah)
