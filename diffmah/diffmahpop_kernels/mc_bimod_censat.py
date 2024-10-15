@@ -166,17 +166,23 @@ def predict_mah_moments_singlebin(
     dmhdt_early, log_mah_early = _res_early[2:]
     dmhdt_late, log_mah_late = _res_late[2:]
 
-    mean_log_mah_early = jnp.mean(log_mah_early, axis=0)
-    std_log_mah_early = jnp.std(log_mah_early, axis=0)
+    n_early = log_mah_early.shape[0]
+    n_late = log_mah_early.shape[0]
 
-    mean_log_mah_late = jnp.mean(log_mah_late, axis=0)
-    std_log_mah_late = jnp.std(log_mah_late, axis=0)
+    frac_early = 0.5
+    frac_late = 1.0 - frac_early
+    weights_early = 1 / float(n_early)
+    weights_late = 1 / float(n_late)
+    w_e = frac_late * weights_late
+    w_l = (1 - frac_late) * weights_early
 
-    frac_peaked_early = jnp.mean(dmhdt_early == 0, axis=0)
-    frac_peaked_late = jnp.mean(dmhdt_late == 0, axis=0)
+    mean_log_mah = jnp.sum(log_mah_early * w_e + log_mah_late + w_l, axis=0)
 
-    mean_log_mah = 0.5 * (mean_log_mah_early + mean_log_mah_late)
-    std_log_mah = 0.5 * (std_log_mah_early + std_log_mah_late)
-    frac_peaked = 0.5 * (frac_peaked_early + frac_peaked_late)
+    dlgm_sq_early = (log_mah_early - mean_log_mah) ** 2
+    dlgm_sq_late = (log_mah_late - mean_log_mah) ** 2
+    var_log_mah = jnp.sum(dlgm_sq_early * w_e + dlgm_sq_late + w_l, axis=0)
+    std_log_mah = jnp.sqrt(var_log_mah)
+
+    frac_peaked = 0.5 + jnp.zeros_like(mean_log_mah)
 
     return mean_log_mah, std_log_mah, frac_peaked
