@@ -15,11 +15,11 @@ from ..diffmah_kernels import (
     get_unbounded_mah_params,
     mah_singlehalo,
 )
+from .bimod_logm0_kernels.logm0_pop_early import _pred_logm0_kern
 from .covariance_kernels import _get_diffmahpop_cov
 from .diffmahpop_params_monocensat import get_component_model_params
 from .early_index_pop import _pred_early_index_kern
 from .late_index_pop import _pred_late_index_kern
-from .logm0_kernels.logm0_pop import _pred_logm0_kern
 from .logtc_pop import _pred_logtc_kern
 from .t_peak_kernels.tp_pdf_monocens import mc_tpeak_singlecen
 
