@@ -27,12 +27,8 @@ TP_LGMP = 12.0
 
 @jjit
 def _pred_logm0_kern(logm0_params, lgm_obs, t_obs, t_peak):
-    c0_params = logm0_params[:5]
-    c0_params = logm0_c0_late.DEFAULT_LGM0POP_C0_PARAMS._make(c0_params)
-    c1_params = logm0_params[5:]
-    c1_params = logm0_c1_late.DEFAULT_LGM0POP_C1_PARAMS._make(c1_params)
-    c0 = logm0_c0_late._pred_c0_kern(c0_params, t_obs, t_peak)
-    c1 = logm0_c1_late._pred_c1_kern(c1_params, t_obs, t_peak)
+    c0 = logm0_c0_late._pred_c0_kern(logm0_params, t_obs, t_peak)
+    c1 = logm0_c1_late._pred_c1_kern(logm0_params, t_obs, t_peak)
     delta_lgm = c0 + c1 * (lgm_obs - TP_LGMP)
     return lgm_obs + delta_lgm
 

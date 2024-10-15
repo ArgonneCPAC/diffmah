@@ -163,11 +163,11 @@ def predict_mah_moments_singlebin(
     )
     _res_early = _res[:4]
     _res_late = _res[4:]
-    dmhdt_early, log_mah_early = _res_early[2:]
-    dmhdt_late, log_mah_late = _res_late[2:]
+    mah_params_early, t_peak_early, dmhdt_early, log_mah_early = _res_early
+    mah_params_late, t_peak_late, dmhdt_late, log_mah_late = _res_late
 
     n_early = log_mah_early.shape[0]
-    n_late = log_mah_early.shape[0]
+    n_late = log_mah_late.shape[0]
 
     frac_early = 0.5
     frac_late = 1.0 - frac_early
@@ -177,7 +177,7 @@ def predict_mah_moments_singlebin(
     w_l = frac_late * weights_early
 
     mu_e = jnp.sum(log_mah_early * w_e, axis=0)
-    mu_l = jnp.sum(log_mah_late + w_l, axis=0)
+    mu_l = jnp.sum(log_mah_late * w_l, axis=0)
     mean_log_mah = mu_e + mu_l
 
     dlgm_sq_early = (log_mah_early - mean_log_mah) ** 2
