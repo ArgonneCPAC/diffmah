@@ -13,6 +13,7 @@ from . import (
     logtc_bimod,
 )
 from .bimod_logm0_kernels import logm0_pop_bimod
+from .bimod_logm0_sats import logm0_pop_bimod_sats
 from .t_peak_kernels import tp_pdf_cens_flex, tp_pdf_sats
 
 DEFAULT_DIFFMAHPOP_PDICT = OrderedDict()
@@ -20,6 +21,7 @@ COMPONENT_PDICTS = (
     tp_pdf_cens_flex.DEFAULT_TPCENS_PDICT,
     tp_pdf_sats.DEFAULT_TP_SATS_PDICT,
     logm0_pop_bimod.DEFAULT_LOGM0_PDICT,
+    logm0_pop_bimod_sats.DEFAULT_LOGM0_PDICT,
     logtc_bimod.LOGTC_PDICT,
     early_index_bimod.EARLY_INDEX_PDICT,
     late_index_bimod.LATE_INDEX_PDICT,
@@ -36,6 +38,7 @@ COMPONENT_U_PDICTS = (
     tp_pdf_cens_flex.DEFAULT_TPCENS_U_PARAMS._asdict(),
     tp_pdf_sats.DEFAULT_TP_SATS_U_PARAMS._asdict(),
     logm0_pop_bimod.DEFAULT_LOGM0POP_U_PARAMS._asdict(),
+    logm0_pop_bimod_sats.DEFAULT_LOGM0POP_U_PARAMS._asdict(),
     logtc_bimod.DEFAULT_LOGTC_U_PARAMS._asdict(),
     early_index_bimod.DEFAULT_EARLY_INDEX_U_PARAMS._asdict(),
     late_index_bimod.DEFAULT_LATE_INDEX_U_PARAMS._asdict(),
@@ -66,6 +69,14 @@ def get_component_model_params(diffmahpop_params):
             for key in logm0_pop_bimod.LGM0Pop_Params._fields
         ]
     )
+
+    logm0_params_sats = logm0_pop_bimod_sats.LGM0Pop_Params(
+        *[
+            getattr(diffmahpop_params, key)
+            for key in logm0_pop_bimod_sats.LGM0Pop_Params._fields
+        ]
+    )
+
     logtc_params = logtc_bimod.Logtc_Params(
         *[getattr(diffmahpop_params, key) for key in logtc_bimod.Logtc_Params._fields]
     )
@@ -96,6 +107,7 @@ def get_component_model_params(diffmahpop_params):
         tp_pdf_cens_flex_params,
         tp_pdf_sats_params,
         logm0_params,
+        logm0_params_sats,
         logtc_params,
         early_index_params,
         late_index_params,
@@ -124,6 +136,14 @@ def get_component_model_u_params(diffmahpop_u_params):
             for key in logm0_pop_bimod.LGM0Pop_UParams._fields
         ]
     )
+
+    logm0_sats_u_params = logm0_pop_bimod_sats.LGM0Pop_UParams(
+        *[
+            getattr(diffmahpop_u_params, key)
+            for key in logm0_pop_bimod_sats.LGM0Pop_UParams._fields
+        ]
+    )
+
     logtc_u_params = logtc_bimod.Logtc_UParams(
         *[
             getattr(diffmahpop_u_params, key)
@@ -161,6 +181,7 @@ def get_component_model_u_params(diffmahpop_u_params):
         tp_pdf_cens_flex_u_params,
         tp_pdf_sats_u_params,
         logm0_u_params,
+        logm0_sats_u_params,
         logtc_u_params,
         early_index_u_params,
         late_index_u_params,
@@ -172,14 +193,19 @@ def get_component_model_u_params(diffmahpop_u_params):
 @jjit
 def get_diffmahpop_params_from_u_params(diffmahpop_u_params):
     component_model_u_params = get_component_model_u_params(diffmahpop_u_params)
-    tpc_u_params, tps_u_params, logm0_u_params = component_model_u_params[:3]
-    logtc_u_params = component_model_u_params[3]
-    early_index_u_params, late_index_u_params = component_model_u_params[4:6]
-    fec_u_params, cov_u_params = component_model_u_params[6:]
+    tpc_u_params, tps_u_params, logm0_u_params, logm0_sats_u_params = (
+        component_model_u_params[:4]
+    )
+    logtc_u_params = component_model_u_params[4]
+    early_index_u_params, late_index_u_params = component_model_u_params[5:7]
+    fec_u_params, cov_u_params = component_model_u_params[7:]
 
     tpc_params = tp_pdf_cens_flex.get_bounded_tp_cens_params(tpc_u_params)
     tps_params = tp_pdf_sats.get_bounded_tp_sat_params(tps_u_params)
     logm0_params = logm0_pop_bimod.get_bounded_m0pop_params(logm0_u_params)
+    logm0_sats_params = logm0_pop_bimod_sats.get_bounded_m0pop_params(
+        logm0_sats_u_params
+    )
     logtc_params = logtc_bimod.get_bounded_logtc_params(logtc_u_params)
     early_index_params = early_index_bimod.get_bounded_early_index_params(
         early_index_u_params
@@ -195,6 +221,7 @@ def get_diffmahpop_params_from_u_params(diffmahpop_u_params):
         tpc_params,
         tps_params,
         logm0_params,
+        logm0_sats_params,
         logtc_params,
         early_index_params,
         late_index_params,
@@ -211,14 +238,17 @@ def get_diffmahpop_params_from_u_params(diffmahpop_u_params):
 @jjit
 def get_diffmahpop_u_params_from_params(diffmahpop_params):
     component_model_params = get_component_model_params(diffmahpop_params)
-    tpc_params, tps_params, logm0_params = component_model_params[:3]
-    logtc_params = component_model_params[3]
-    early_index_params, late_index_params = component_model_params[4:6]
-    fec_params, cov_params = component_model_params[6:]
+    tpc_params, tps_params, logm0_params, logm0_sats_params = component_model_params[:4]
+    logtc_params = component_model_params[4]
+    early_index_params, late_index_params = component_model_params[5:7]
+    fec_params, cov_params = component_model_params[7:]
 
     tpc_u_params = tp_pdf_cens_flex.get_unbounded_tp_cens_params(tpc_params)
     tps_u_params = tp_pdf_sats.get_unbounded_tp_sat_params(tps_params)
     logm0_u_params = logm0_pop_bimod.get_unbounded_m0pop_params(logm0_params)
+    logm0_sats_u_params = logm0_pop_bimod_sats.get_unbounded_m0pop_params(
+        logm0_sats_params
+    )
     logtc_u_params = logtc_bimod.get_unbounded_logtc_params(logtc_params)
     early_index_u_params = early_index_bimod.get_unbounded_early_index_params(
         early_index_params
@@ -233,6 +263,7 @@ def get_diffmahpop_u_params_from_params(diffmahpop_params):
         tpc_u_params,
         tps_u_params,
         logm0_u_params,
+        logm0_sats_u_params,
         logtc_u_params,
         early_index_u_params,
         late_index_u_params,

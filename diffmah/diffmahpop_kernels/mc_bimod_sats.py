@@ -16,7 +16,7 @@ from ..diffmah_kernels import (
     mah_singlehalo,
 )
 from .bimod_censat_params import get_component_model_params
-from .bimod_logm0_kernels.logm0_pop_bimod import (
+from .bimod_logm0_sats.logm0_pop_bimod_sats import (
     _pred_logm0_kern_early,
     _pred_logm0_kern_late,
 )
@@ -53,6 +53,7 @@ def _mean_diffmah_params_early(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
         tp_pdf_cens_params,
         tp_pdf_sats_params,
         logm0_params,
+        logm0_sats_params,
         logtc_params,
         early_index_params,
         late_index_params,
@@ -65,7 +66,7 @@ def _mean_diffmah_params_early(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
     args = tp_pdf_sats_params, tpc_key, lgm_obs, t_obs
     t_peak = mc_tpeak_singlesat(*args)
 
-    logm0 = _pred_logm0_kern_early(logm0_params, lgm_obs, t_obs, t_peak)
+    logm0 = _pred_logm0_kern_early(logm0_sats_params, lgm_obs, t_obs, t_peak)
     logtc = _pred_logtc_early(logtc_params, lgm_obs, t_obs, t_peak)
     early_index = _pred_early_index_early(early_index_params, lgm_obs, t_obs, t_peak)
     late_index = _pred_late_index_early(late_index_params, lgm_obs)
@@ -82,6 +83,7 @@ def _mean_diffmah_params_late(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
         tp_pdf_cens_params,
         tp_pdf_sats_params,
         logm0_params,
+        logm0_sats_params,
         logtc_params,
         early_index_params,
         late_index_params,
@@ -94,7 +96,7 @@ def _mean_diffmah_params_late(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
     args = tp_pdf_sats_params, tpc_key, lgm_obs, t_obs
     t_peak = mc_tpeak_singlesat(*args)
 
-    logm0 = _pred_logm0_kern_late(logm0_params, lgm_obs, t_obs, t_peak)
+    logm0 = _pred_logm0_kern_late(logm0_sats_params, lgm_obs, t_obs, t_peak)
     logtc = _pred_logtc_late(logtc_params, lgm_obs, t_obs, t_peak)
     early_index = _pred_early_index_late(early_index_params, lgm_obs, t_obs, t_peak)
     late_index = _pred_late_index_late(late_index_params, lgm_obs)
