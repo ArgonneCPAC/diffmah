@@ -52,6 +52,13 @@ def test_param_u_param_inversion():
             assert np.allclose(x, y, rtol=0.01)
 
 
+def test_default_params_are_in_bounds():
+    for key in ck.DEFAULT_COV_PARAMS._fields:
+        val = getattr(ck.DEFAULT_COV_PARAMS, key)
+        bound = getattr(ck.COV_PBOUNDS, key)
+        assert bound[0] < val < bound[1]
+
+
 def test_covariances_are_always_covariances():
     lgmarr = np.linspace(10, 15, 20)
     ran_key = jran.key(0)
