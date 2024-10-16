@@ -14,9 +14,9 @@ EPS = 1e-3
 LATE_INDEX_K = 1.0
 
 LATE_INDEX_PDICT = OrderedDict(
-    late_index_x0_beta=11.561,
-    late_index_ylo_beta=0.195,
-    late_index_yhi_beta=0.195,
+    late_index_x0_beta=11.567,
+    late_index_ylo_beta=0.190,
+    late_index_yhi_beta=0.190,
 )
 LATE_INDEX_BOUNDS_PDICT = OrderedDict(
     late_index_x0_beta=(11.5, 14.0),

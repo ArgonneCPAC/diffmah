@@ -20,13 +20,13 @@ UTP_SCALE_LGM_YHI = 0.16
 K_BOUNDING = 0.1
 
 DEFAULT_TP_SATS_PDICT = OrderedDict(
-    utp_loc_lgm_ylo_t0=7.0,
-    utp_loc_lgm_ylo_early=0.6,
-    utp_loc_lgm_ylo_late=0.155,
-    utp_loc_lgm_x0=12.0,
-    utp_scale_lgm_ylo_t0=9.0,
-    utp_scale_lgm_ylo_early=0.2,
-    utp_scale_lgm_ylo_late=0.4,
+    utp_loc_lgm_ylo_t0=8.779,
+    utp_loc_lgm_ylo_early=0.797,
+    utp_loc_lgm_ylo_late=0.160,
+    utp_loc_lgm_x0=12.967,
+    utp_scale_lgm_ylo_t0=6.623,
+    utp_scale_lgm_ylo_early=0.105,
+    utp_scale_lgm_ylo_late=0.334,
 )
 TP_Sats_Params = namedtuple("TP_Sats_Params", DEFAULT_TP_SATS_PDICT.keys())
 DEFAULT_TP_SATS_PARAMS = TP_Sats_Params(**DEFAULT_TP_SATS_PDICT)
