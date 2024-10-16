@@ -13,12 +13,12 @@ from ..utils import _inverse_sigmoid, _sig_slope, _sigmoid
 EPS = 1e-3
 K_BOUNDING = 0.1
 LOGTC_PDICT = OrderedDict(
-    logtc_lgm_c0_tp_ytp_tobs_c0_early=0.213,
-    logtc_lgm_c0_tp_ytp_tobs_c1_early=0.030,
-    logtc_lgm_c0_tp_ylo_early=0.076,
-    logtc_lgm_c0_tp_yhi_early=-0.082,
-    logtc_lgm_c1_early=0.092,
-    logtc_c0_ss_x0_early=11.444,
+    logtc_lgm_c0_tp_ytp_tobs_c0_early=0.201,
+    logtc_lgm_c0_tp_ytp_tobs_c1_early=0.019,
+    logtc_lgm_c0_tp_ylo_early=0.136,
+    logtc_lgm_c0_tp_yhi_early=-0.164,
+    logtc_lgm_c1_early=0.132,
+    logtc_c0_ss_x0_early=11.077,
 )
 LOGTC_BOUNDS_PDICT = OrderedDict(
     logtc_lgm_c0_tp_ytp_tobs_c0_early=(0.2, 0.9),

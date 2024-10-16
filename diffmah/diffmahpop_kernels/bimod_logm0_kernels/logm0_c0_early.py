@@ -12,10 +12,10 @@ from ...utils import _inverse_sigmoid, _sig_slope, _sigmoid
 
 DEFAULT_LGM0POP_C0_PDICT = OrderedDict(
     lgm0pop_c0_ytp_early=0.011,
-    lgm0pop_c0_ylo_early=-0.066,
-    lgm0pop_c0_clip_c0_early=0.602,
-    lgm0pop_c0_clip_c1_early=-0.090,
-    lgm0pop_c0_t_obs_x0_early=1.825,
+    lgm0pop_c0_ylo_early=-0.086,
+    lgm0pop_c0_clip_c0_early=0.516,
+    lgm0pop_c0_clip_c1_early=-0.056,
+    lgm0pop_c0_t_obs_x0_early=1.504,
 )
 LGM0Pop_C0_Params = namedtuple("LGM0Pop_C0_Params", DEFAULT_LGM0POP_C0_PDICT.keys())
 DEFAULT_LGM0POP_C0_PARAMS = LGM0Pop_C0_Params(**DEFAULT_LGM0POP_C0_PDICT)

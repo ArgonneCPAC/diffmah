@@ -21,19 +21,19 @@ UTP_T_OBS_X0_K = 2.0
 UTP_MIN = 0.05
 
 DEFAULT_TPCENS_PDICT = OrderedDict(
-    cen_tp_lgm_x0_x0=13.0,
-    cen_tp_t_obs_x0_x0=8.0,
-    cen_tp_x0_ylo_early=0.817,
-    cen_tp_x0_yhi_early=1.566,
-    cen_tp_x0_ylo_late=0.817,
-    cen_tp_x0_yhi_late=1.566,
+    cen_tp_lgm_x0_x0=11.060,
+    cen_tp_t_obs_x0_x0=3.053,
+    cen_tp_x0_ylo_early=0.995,
+    cen_tp_x0_yhi_early=1.790,
+    cen_tp_x0_ylo_late=0.526,
+    cen_tp_x0_yhi_late=1.361,
 )
 TPCens_Params = namedtuple("TPCens_Params", DEFAULT_TPCENS_PDICT.keys())
 DEFAULT_TPCENS_PARAMS = TPCens_Params(**DEFAULT_TPCENS_PDICT)
 
 CEN_TP_PDF_BOUNDS_DICT = OrderedDict(
-    cen_tp_lgm_x0_x0=(12.0, 14.0),
-    cen_tp_t_obs_x0_x0=(5.0, 13.0),
+    cen_tp_lgm_x0_x0=(11.0, 14.0),
+    cen_tp_t_obs_x0_x0=(3.0, 10.0),
     cen_tp_x0_ylo_early=(0.5, 1.0),
     cen_tp_x0_yhi_early=(1.0, 1.8),
     cen_tp_x0_ylo_late=(0.5, 1.0),

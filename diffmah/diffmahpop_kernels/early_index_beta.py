@@ -17,13 +17,13 @@ EARLY_INDEX_YHI_K = 0.5
 EARLY_INDEX_YLO_K = 1.0
 
 EARLY_INDEX_PDICT = OrderedDict(
-    early_index_ylo_x0_beta=6.072,
-    early_index_ylo_ylo_beta=3.018,
-    early_index_ylo_yhi_beta=1.517,
-    early_index_yhi_ylo_beta=3.204,
-    early_index_yhi_yhi_beta=2.774,
-    early_index_yhi_x0_beta=10.274,
-    early_index_lgm_x0_beta=13.504,
+    early_index_ylo_x0_beta=6.981,
+    early_index_ylo_ylo_beta=1.082,
+    early_index_ylo_yhi_beta=1.014,
+    early_index_yhi_ylo_beta=2.624,
+    early_index_yhi_yhi_beta=2.198,
+    early_index_yhi_x0_beta=7.913,
+    early_index_lgm_x0_beta=12.835,
 )
 EARLY_INDEX_BOUNDS_PDICT = OrderedDict(
     early_index_ylo_x0_beta=(1.0, 7.0),

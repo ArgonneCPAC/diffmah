@@ -14,12 +14,12 @@ FEC_T_K = 1.0
 K_BOUNDING = 0.1
 
 DEFAULT_FEC_PDICT = OrderedDict(
-    fec_t_obs_x0=8.0,
-    fec_lgm_x0=12.0,
-    fec_lgm_ylo_early=0.5,
-    fec_lgm_ylo_late=0.5,
-    fec_lgm_yhi_early=0.5,
-    fec_lgm_yhi_late=0.5,
+    fec_t_obs_x0=6.251,
+    fec_lgm_x0=11.965,
+    fec_lgm_ylo_early=0.588,
+    fec_lgm_ylo_late=0.433,
+    fec_lgm_yhi_early=0.419,
+    fec_lgm_yhi_late=0.342,
 )
 
 _FBOUNDS = (1.0 / 4.0, 3.0 / 4.0)

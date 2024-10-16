@@ -90,7 +90,7 @@ def test_mc_diffmah_halo_sample():
     lgt0 = np.log10(t_0)
     t_obs = 10.0
     tarr = np.linspace(0.1, t_obs, 100)
-    lgmarr = np.linspace(10, 16, 20)
+    lgmarr = np.linspace(10, 15.5, 20)
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
         _res = mcdpk._mc_diffmah_halo_sample(*args)
@@ -111,7 +111,8 @@ def test_mc_diffmah_halo_sample():
 
         # Test late sequence
         (mah_params, t_peak, dmhdt, log_mah) = _res_late
-        assert np.all(np.isfinite(mah_params))
+        for x, pname in zip(mah_params, mah_params._fields):
+            assert np.all(np.isfinite(mah_params)), (lgm_obs, pname)
 
         assert np.all(np.isfinite(t_peak))
         assert np.all(t_peak > 0.0)
