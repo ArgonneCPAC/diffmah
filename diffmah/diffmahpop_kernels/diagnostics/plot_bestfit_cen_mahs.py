@@ -6,7 +6,7 @@ import os
 import numpy as np
 from jax import random as jran
 
-from .. import mc_diffmahpop_kernels_monocens as mcc
+from .. import mc_bimod_censat as mcc
 from .defaults import mblue, mred
 
 try:
