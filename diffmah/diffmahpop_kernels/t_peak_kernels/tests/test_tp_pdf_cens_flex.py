@@ -72,9 +72,10 @@ def test_default_params_are_in_bounds():
 def test_mc_tpeak_singlecen():
     t_0 = 13.0
     ran_key = jran.key(0)
-    ran_key, m_key = jran.split(ran_key, 2)
+    ran_key, m_key, t_key = jran.split(ran_key, 3)
     lgm_obs = jran.uniform(m_key, minval=10.0, maxval=15.0, shape=())
-    args = tpc.DEFAULT_TPCENS_PARAMS, lgm_obs, ran_key, t_0
+    t_obs = jran.uniform(t_key, minval=1.0, maxval=15.0, shape=())
+    args = tpc.DEFAULT_TPCENS_PARAMS, lgm_obs, t_obs, ran_key, t_0
     t_peak_mc_sample = tpc.mc_tpeak_singlecen(*args)
     assert t_peak_mc_sample.shape == ()
     assert np.all(np.isfinite(t_peak_mc_sample))
@@ -85,10 +86,11 @@ def test_mc_tpeak_singlecen():
 def test_mc_t_peak_cenpop():
     t_0 = 13.0
     ran_key = jran.key(0)
-    ran_key, m_key = jran.split(ran_key, 2)
+    ran_key, m_key, t_key = jran.split(ran_key, 3)
     n_gals = int(1e4)
     lgm_obs = jran.uniform(m_key, minval=10.0, maxval=15.0, shape=(n_gals,))
-    args = tpc.DEFAULT_TPCENS_PARAMS, lgm_obs, ran_key, t_0
+    t_obs = jran.uniform(t_key, minval=1.0, maxval=15.0, shape=(n_gals,))
+    args = tpc.DEFAULT_TPCENS_PARAMS, lgm_obs, t_obs, ran_key, t_0
     t_peak_mc_sample = tpc.mc_t_peak_cenpop(*args)
     assert t_peak_mc_sample.shape == (n_gals,)
     assert np.all(np.isfinite(t_peak_mc_sample))

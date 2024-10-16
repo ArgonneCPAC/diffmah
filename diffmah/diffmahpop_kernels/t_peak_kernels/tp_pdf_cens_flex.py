@@ -14,19 +14,30 @@ from ...utils import _inverse_sigmoid, _sigmoid
 YLO = 0.0
 YHI = 1.0
 K = 5.0
-UTP_X0_K = 2.0
+UTP_LGM_X0_K = 1.0
+UTP_T_OBS_X0_K = 2.0
 
 
 UTP_MIN = 0.05
 
 DEFAULT_TPCENS_PDICT = OrderedDict(
-    cen_tp_x0_x0=13.0, cen_tp_x0_ylo=0.817, cen_tp_x0_yhi=1.566
+    cen_tp_lgm_x0_x0=13.0,
+    cen_tp_t_obs_x0_x0=8.0,
+    cen_tp_x0_ylo_early=0.817,
+    cen_tp_x0_yhi_early=1.566,
+    cen_tp_x0_ylo_late=0.817,
+    cen_tp_x0_yhi_late=1.566,
 )
 TPCens_Params = namedtuple("TPCens_Params", DEFAULT_TPCENS_PDICT.keys())
 DEFAULT_TPCENS_PARAMS = TPCens_Params(**DEFAULT_TPCENS_PDICT)
 
 CEN_TP_PDF_BOUNDS_DICT = OrderedDict(
-    cen_tp_x0_x0=(12.0, 14.0), cen_tp_x0_ylo=(0.6, 1.0), cen_tp_x0_yhi=(1.0, 1.8)
+    cen_tp_lgm_x0_x0=(12.0, 14.0),
+    cen_tp_t_obs_x0_x0=(5.0, 13.0),
+    cen_tp_x0_ylo_early=(0.5, 1.0),
+    cen_tp_x0_yhi_early=(1.0, 1.8),
+    cen_tp_x0_ylo_late=(0.5, 1.0),
+    cen_tp_x0_yhi_late=(1.0, 1.8),
 )
 TPCENS_PBOUNDS = TPCens_Params(**CEN_TP_PDF_BOUNDS_DICT)
 
@@ -39,24 +50,24 @@ UTP_TABLE = jnp.linspace(0.0, 1.0, 200)
 
 
 @jjit
-def mc_tpeak_singlecen(params, lgm_obs, ran_key, t_0):
-    utp = mc_utp_singlecen(params, lgm_obs, ran_key)
+def mc_tpeak_singlecen(params, lgm_obs, t_obs, ran_key, t_0):
+    utp = mc_utp_singlecen(params, lgm_obs, t_obs, ran_key)
     return utp * t_0
 
 
-_CP = (None, 0, 0, None)
+_CP = (None, 0, 0, 0, None)
 mc_t_peak_cenpop_kern = jjit(vmap(mc_tpeak_singlecen, in_axes=_CP))
 
 
 @jjit
-def mc_t_peak_cenpop(params, lgm_obs, ran_key, t_0):
+def mc_t_peak_cenpop(params, lgm_obs, t_obs, ran_key, t_0):
     ran_keys = jran.split(ran_key, lgm_obs.size)
-    return mc_t_peak_cenpop_kern(params, lgm_obs, ran_keys, t_0)
+    return mc_t_peak_cenpop_kern(params, lgm_obs, t_obs, ran_keys, t_0)
 
 
 @jjit
-def mc_utp_singlecen(params, lgm_obs, ran_key):
-    fp_table = _frac_peaked_vs_lgm(params, UTP_TABLE, lgm_obs)
+def mc_utp_singlecen(params, lgm_obs, t_obs, ran_key):
+    fp_table = _frac_peaked_vs_lgm(params, UTP_TABLE, lgm_obs, t_obs)
     uran = jran.uniform(ran_key, minval=0, maxval=1, shape=())
     utp = jnp.interp(uran, fp_table, UTP_TABLE)
     utp = jnp.clip(utp, UTP_MIN)
@@ -69,16 +80,30 @@ def _frac_peaked_kern(utp, utp_x0):
 
 
 @jjit
-def _get_utp_x0_from_lgm(params, lgm):
+def _get_utp_x0_from_lgm(params, lgm, t_obs):
+    utp_x0_early = _sigmoid(
+        lgm,
+        params.cen_tp_lgm_x0_x0,
+        UTP_LGM_X0_K,
+        params.cen_tp_x0_ylo_early,
+        params.cen_tp_x0_yhi_early,
+    )
+    utp_x0_late = _sigmoid(
+        lgm,
+        params.cen_tp_lgm_x0_x0,
+        UTP_LGM_X0_K,
+        params.cen_tp_x0_ylo_late,
+        params.cen_tp_x0_yhi_late,
+    )
     utp_x0 = _sigmoid(
-        lgm, params.cen_tp_x0_x0, UTP_X0_K, params.cen_tp_x0_ylo, params.cen_tp_x0_yhi
+        t_obs, params.cen_tp_t_obs_x0_x0, UTP_T_OBS_X0_K, utp_x0_early, utp_x0_late
     )
     return utp_x0
 
 
 @jjit
-def _frac_peaked_vs_lgm(params, utp, lgm):
-    utp_x0 = _get_utp_x0_from_lgm(params, lgm)
+def _frac_peaked_vs_lgm(params, utp, lgm, t_obs):
+    utp_x0 = _get_utp_x0_from_lgm(params, lgm, t_obs)
     return _sigmoid(utp, utp_x0, K, YLO, YHI)
 
 
@@ -95,20 +120,22 @@ def _mae(x, y):
 
 
 @jjit
-def _loss_kern_single_mass(params, utp_target, y_target, lgm_obs):
-    y_pred = _frac_peaked_vs_lgm(params, utp_target, lgm_obs)
+def _loss_kern_single_mass(params, utp_target, y_target, lgm_obs, t_obs):
+    y_pred = _frac_peaked_vs_lgm(params, utp_target, lgm_obs, t_obs)
     return _mae(y_pred, y_target)
 
 
 _loss_kern_single_mass_vmap = jjit(
-    vmap(_loss_kern_single_mass, in_axes=(None, 0, 0, 0))
+    vmap(_loss_kern_single_mass, in_axes=(None, 0, 0, 0, 0))
 )
 
 
 @jjit
 def loss_multimass(params, loss_data):
-    utp_targets, y_targets, lgm_obs_arr = loss_data
-    losses = _loss_kern_single_mass_vmap(params, utp_targets, y_targets, lgm_obs_arr)
+    utp_targets, y_targets, lgm_obs_arr, t_obs_arr = loss_data
+    losses = _loss_kern_single_mass_vmap(
+        params, utp_targets, y_targets, lgm_obs_arr, t_obs_arr
+    )
     return jnp.mean(losses)
 
 
