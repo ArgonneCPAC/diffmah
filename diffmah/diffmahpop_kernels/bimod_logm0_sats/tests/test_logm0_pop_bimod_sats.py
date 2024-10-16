@@ -4,7 +4,7 @@
 import numpy as np
 from jax import random as jran
 
-from .. import logm0_pop_bimod as m0pop
+from .. import logm0_pop_bimod_sats as m0pop
 
 TOL = 1e-2
 
