@@ -7,7 +7,7 @@ from jax import random as jran
 from jax import value_and_grad, vmap
 
 from . import bimod_censat_params
-from . import mc_bimod_censat as mcdk
+from . import mc_bimod_cens as mcdk
 
 T_OBS_FIT_MIN = 0.5
 

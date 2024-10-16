@@ -5,7 +5,7 @@ import numpy as np
 from jax import random as jran
 
 from ...diffmah_kernels import MAH_PBOUNDS
-from .. import mc_bimod_censat as mcdpk
+from .. import mc_bimod_cens as mcdpk
 from ..bimod_censat_params import DEFAULT_DIFFMAHPOP_PARAMS
 
 EPS = 1e-4
