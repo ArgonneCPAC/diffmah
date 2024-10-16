@@ -11,24 +11,24 @@ from ...bfgs_wrapper import diffmah_fitter
 from ...utils import _inverse_sigmoid, _sig_slope, _sigmoid
 
 DEFAULT_LGM0POP_C1_PDICT = OrderedDict(
-    lgm0pop_c1_ytp_late=0.027,
-    lgm0pop_c1_ylo_late=-0.048,
-    lgm0pop_c1_clip_x0_late=8.443,
-    lgm0pop_c1_clip_ylo_late=0.145,
-    lgm0pop_c1_clip_yhi_late=0.002,
-    lgm0pop_c1_t_obs_x0_late=6.377,
+    lgm0pop_c1_ytp_early_sats=0.002,
+    lgm0pop_c1_ylo_early_sats=-0.020,
+    lgm0pop_c1_clip_x0_early_sats=10.539,
+    lgm0pop_c1_clip_ylo_early_sats=0.116,
+    lgm0pop_c1_clip_yhi_early_sats=0.048,
+    lgm0pop_c1_t_obs_x0_early_sats=3.031,
 )
 LGM0Pop_C1_Params = namedtuple("LGM0Pop_C1_Params", DEFAULT_LGM0POP_C1_PDICT.keys())
 DEFAULT_LGM0POP_C1_PARAMS = LGM0Pop_C1_Params(**DEFAULT_LGM0POP_C1_PDICT)
 
 
 LGM0POP_C1_BOUNDS_DICT = OrderedDict(
-    lgm0pop_c1_ytp_late=(0.001, 0.1),
-    lgm0pop_c1_ylo_late=(-0.05, -0.001),
-    lgm0pop_c1_clip_x0_late=(4.0, 11.0),
-    lgm0pop_c1_clip_ylo_late=(0.02, 0.15),
-    lgm0pop_c1_clip_yhi_late=(0.001, 0.05),
-    lgm0pop_c1_t_obs_x0_late=(3.0, 10.0),
+    lgm0pop_c1_ytp_early_sats=(0.001, 0.1),
+    lgm0pop_c1_ylo_early_sats=(-0.05, -0.001),
+    lgm0pop_c1_clip_x0_early_sats=(4.0, 11.0),
+    lgm0pop_c1_clip_ylo_early_sats=(0.02, 0.15),
+    lgm0pop_c1_clip_yhi_early_sats=(0.001, 0.05),
+    lgm0pop_c1_t_obs_x0_early_sats=(3.0, 10.0),
 )
 LGM0POP_C1_BOUNDS = LGM0Pop_C1_Params(**LGM0POP_C1_BOUNDS_DICT)
 
@@ -46,19 +46,19 @@ def _pred_c1_kern(params, t_obs, t_peak):
     pred_c1 = _sig_slope(
         t_obs,
         XTP,
-        params.lgm0pop_c1_ytp_late,
-        params.lgm0pop_c1_t_obs_x0_late,
+        params.lgm0pop_c1_ytp_early_sats,
+        params.lgm0pop_c1_t_obs_x0_early_sats,
         GLOBAL_K,
-        params.lgm0pop_c1_ylo_late,
+        params.lgm0pop_c1_ylo_early_sats,
         0.0,
     )
 
     clip = _sigmoid(
         t_peak,
-        params.lgm0pop_c1_clip_x0_late,
+        params.lgm0pop_c1_clip_x0_early_sats,
         CLIP_TP_K,
-        params.lgm0pop_c1_clip_ylo_late,
-        params.lgm0pop_c1_clip_yhi_late,
+        params.lgm0pop_c1_clip_ylo_early_sats,
+        params.lgm0pop_c1_clip_yhi_early_sats,
     )
     pred_c1 = jnp.clip(pred_c1, min=clip)
     return pred_c1

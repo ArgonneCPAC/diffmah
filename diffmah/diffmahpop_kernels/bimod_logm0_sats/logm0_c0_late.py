@@ -11,11 +11,11 @@ from ...bfgs_wrapper import diffmah_fitter
 from ...utils import _inverse_sigmoid, _sig_slope, _sigmoid
 
 DEFAULT_LGM0POP_C0_PDICT = OrderedDict(
-    lgm0pop_c0_ytp_late=0.020,
-    lgm0pop_c0_ylo_late=-0.140,
-    lgm0pop_c0_clip_c0_late=0.89,
-    lgm0pop_c0_clip_c1_late=-0.090,
-    lgm0pop_c0_t_obs_x0_late=2.533,
+    lgm0pop_c0_ytp_late_sats=0.011,
+    lgm0pop_c0_ylo_late_sats=-0.080,
+    lgm0pop_c0_clip_c0_late_sats=0.521,
+    lgm0pop_c0_clip_c1_late_sats=-0.043,
+    lgm0pop_c0_t_obs_x0_late_sats=1.581,
 )
 LGM0Pop_C0_Params = namedtuple("LGM0Pop_C0_Params", DEFAULT_LGM0POP_C0_PDICT.keys())
 DEFAULT_LGM0POP_C0_PARAMS = LGM0Pop_C0_Params(**DEFAULT_LGM0POP_C0_PDICT)
@@ -24,11 +24,11 @@ _C0_UPNAMES = ["u_" + key for key in LGM0Pop_C0_Params._fields]
 LGM0Pop_C0_UParams = namedtuple("LGM0Pop_C0_UParams", _C0_UPNAMES)
 
 LGM0POP_C0_BOUNDS_DICT = OrderedDict(
-    lgm0pop_c0_ytp_late=(0.01, 0.4),
-    lgm0pop_c0_ylo_late=(-0.15, -0.05),
-    lgm0pop_c0_clip_c0_late=(0.5, 0.9),
-    lgm0pop_c0_clip_c1_late=(-0.1, -0.01),
-    lgm0pop_c0_t_obs_x0_late=(1.5, 6.0),
+    lgm0pop_c0_ytp_late_sats=(0.01, 0.4),
+    lgm0pop_c0_ylo_late_sats=(-0.15, -0.05),
+    lgm0pop_c0_clip_c0_late_sats=(0.5, 0.9),
+    lgm0pop_c0_clip_c1_late_sats=(-0.1, -0.01),
+    lgm0pop_c0_t_obs_x0_late_sats=(1.5, 6.0),
 )
 LGM0POP_C0_BOUNDS = LGM0Pop_C0_Params(**LGM0POP_C0_BOUNDS_DICT)
 
@@ -42,13 +42,16 @@ def _pred_c0_kern(params, t_obs, t_peak):
     pred_c0 = _sig_slope(
         t_obs,
         XTP,
-        params.lgm0pop_c0_ytp_late,
-        params.lgm0pop_c0_t_obs_x0_late,
+        params.lgm0pop_c0_ytp_late_sats,
+        params.lgm0pop_c0_t_obs_x0_late_sats,
         GLOBAL_K,
-        params.lgm0pop_c0_ylo_late,
+        params.lgm0pop_c0_ylo_late_sats,
         0.0,
     )
-    clip = params.lgm0pop_c0_clip_c0_late + params.lgm0pop_c0_clip_c1_late * t_peak
+    clip = (
+        params.lgm0pop_c0_clip_c0_late_sats
+        + params.lgm0pop_c0_clip_c1_late_sats * t_peak
+    )
     pred_c0 = jnp.clip(pred_c0, min=clip)
     return pred_c0
 
