@@ -7,7 +7,7 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad, vmap
 
-from ...bfgs_wrapper import diffmah_fitter
+from ...bfgs_wrapper import bfgs_adam_fallback
 from ...utils import _inverse_sigmoid, _sigmoid
 from . import utp_pdf_kernels as tpk
 
@@ -107,7 +107,7 @@ def t_peak_cens_fitter(
     loss_data = x_target, pdf_target, t_0
     args = (loss_and_grads_kern, u_p_init, loss_data)
 
-    u_p_best, loss_best, fit_terminates, code_used = diffmah_fitter(
+    u_p_best, loss_best, fit_terminates, code_used = bfgs_adam_fallback(
         *args, nstep=nstep, n_warmup=n_warmup
     )
     u_p_best = tpk.UTP_UParams(*u_p_best)

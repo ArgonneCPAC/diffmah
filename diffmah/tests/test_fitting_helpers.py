@@ -3,14 +3,9 @@
 
 import numpy as np
 
+from .. import diffmah_kernels as dk
 from .. import fitting_helpers as fithelp
-from ..bfgs_wrapper import diffmah_fitter
-from ..diffmah_kernels import (
-    DiffmahParams,
-    DiffmahUParams,
-    _rolling_plaw_vs_logt,
-    get_bounded_mah_params,
-)
+from ..bfgs_wrapper import bfgs_adam_fallback
 
 
 def test_fitting_helpers_integration():
@@ -21,19 +16,21 @@ def test_fitting_helpers_integration():
     logm0 = 13.0
     logtc = 0.4
     early, late = 0.8, 0.15
-    p_true = DiffmahParams(logm0, logtc, early, late)
-    log_mah_sim = _rolling_plaw_vs_logt(logt, logt0, logm0, logtc, early, late)
+    t_peak = 13.0
+    p_true = dk.DiffmahParams(logm0, logtc, early, late, t_peak)
+    log_mah_sim = dk.mah_singlehalo(p_true, t_sim, logt0)[1]
 
     u_p_init, loss_data = fithelp.get_loss_data(t_sim, log_mah_sim, lgm_min)
-    t_target, log_mah_target, t_peak, logt0_out = loss_data
+    t_target, log_mah_target, u_t_peak, logt0_out = loss_data
+    t_peak_inferred = dk._get_bounded_diffmah_param(u_t_peak, dk.MAH_PBOUNDS.t_peak)
     assert np.all(np.isfinite(u_p_init))
     assert np.allclose(logt0, logt0_out)
-    assert np.allclose(t_peak, t_sim[-1])
+    assert np.allclose(t_peak_inferred, p_true.t_peak, atol=0.05)
 
     msk = t_sim >= t_target.min()
     assert np.allclose(log_mah_target, log_mah_sim[msk])
 
-    _res = diffmah_fitter(fithelp.loss_and_grads_kern, u_p_init, loss_data)
+    _res = bfgs_adam_fallback(fithelp.loss_and_grads_kern, u_p_init, loss_data)
     u_p_best, loss_best, fit_terminates, code_used = _res
 
     ATOL = 0.1
@@ -41,7 +38,7 @@ def test_fitting_helpers_integration():
     assert fit_terminates
     assert code_used == 0
     assert loss_best < 0.001
-    p_best_inferred = get_bounded_mah_params(DiffmahUParams(*u_p_best))
+    p_best_inferred = dk.get_bounded_mah_params(dk.DiffmahUParams(*u_p_best, u_t_peak))
     assert np.allclose(p_best_inferred, p_true, rtol=ATOL)
     npts_mah = log_mah_target.size
 

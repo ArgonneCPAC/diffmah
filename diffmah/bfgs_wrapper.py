@@ -44,7 +44,7 @@ def scipy_lbfgs_wrapper(val_and_grads, p_init, loss_data):
     return _res
 
 
-def diffmah_fitter(val_and_grads, p_init, loss_data, nstep=200, n_warmup=1):
+def bfgs_adam_fallback(val_and_grads, u_p_init, loss_data, nstep=200, n_warmup=1):
     """
     Function that runs scipy's LBFGS minimizer.
     If that is not successful, minimize the fit with the ADAM minimizer from JAX
@@ -72,7 +72,7 @@ def diffmah_fitter(val_and_grads, p_init, loss_data, nstep=200, n_warmup=1):
         p_best, loss_best, fit_terminates, code_used
 
     """
-    _res = scipy_lbfgs_wrapper(val_and_grads, p_init, loss_data)
+    _res = scipy_lbfgs_wrapper(val_and_grads, u_p_init, loss_data)
 
     # check if LBFGS succeeds. If yes, save those results.
     # Otherwise try the Adam wrapper
@@ -84,7 +84,7 @@ def diffmah_fitter(val_and_grads, p_init, loss_data, nstep=200, n_warmup=1):
         _res.append(code_used)
         return _res
     else:
-        res = jax_adam_wrapper(val_and_grads, p_init, loss_data, nstep, n_warmup)
+        res = jax_adam_wrapper(val_and_grads, u_p_init, loss_data, nstep, n_warmup)
         p_best, loss_best, loss_arr, params_arr, fit_terminates = res
         code_used = 1  # Adam
         _res = [p_best, loss_best, fit_terminates, code_used]
