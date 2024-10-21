@@ -33,17 +33,17 @@ NH_PER_M0BIN = 200
 
 @jjit
 def _mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
-    _early = _mean_diffmah_params_early(
+    mah_params_early = _mean_diffmah_params_early(
         diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0
     )
-    mah_params_early, t_peak_early = _early
 
-    _late = _mean_diffmah_params_late(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
-    mah_params_late, t_peak_late = _late
+    mah_params_late = _mean_diffmah_params_late(
+        diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0
+    )
 
     frac_early_cens = _frac_early_cens_kern(diffmahpop_params, lgm_obs, t_obs)
 
-    return mah_params_early, t_peak_early, mah_params_late, t_peak_late, frac_early_cens
+    return mah_params_early, mah_params_late, frac_early_cens
 
 
 @jjit
@@ -71,9 +71,9 @@ def _mean_diffmah_params_early(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
     early_index = _pred_early_index_early(early_index_params, lgm_obs, t_obs, t_peak)
     late_index = _pred_late_index_early(late_index_params, lgm_obs)
 
-    mah_params = DiffmahParams(logm0, logtc, early_index, late_index)
+    mah_params = DiffmahParams(logm0, logtc, early_index, late_index, t_peak)
 
-    return mah_params, t_peak
+    return mah_params
 
 
 @jjit
@@ -101,21 +101,15 @@ def _mean_diffmah_params_late(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
     early_index = _pred_early_index_late(early_index_params, lgm_obs, t_obs, t_peak)
     late_index = _pred_late_index_late(late_index_params, lgm_obs)
 
-    mah_params = DiffmahParams(logm0, logtc, early_index, late_index)
+    mah_params = DiffmahParams(logm0, logtc, early_index, late_index, t_peak)
 
-    return mah_params, t_peak
+    return mah_params
 
 
 @jjit
 def mc_diffmah_params_singlecen(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
     _res = _mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
-    (
-        mean_mah_params_early,
-        t_peak_early,
-        mean_mah_params_late,
-        t_peak_late,
-        frac_early_cens,
-    ) = _res
+    (mean_mah_params_early, mean_mah_params_late, frac_early_cens) = _res
 
     mean_mah_u_params_early = get_unbounded_mah_params(mean_mah_params_early)
     mean_mah_u_params_late = get_unbounded_mah_params(mean_mah_params_late)
@@ -124,32 +118,34 @@ def mc_diffmah_params_singlecen(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0
 
     early_key, late_key = jran.split(ran_key, 2)
     ran_diffmah_u_params_tp_early = jran.multivariate_normal(
-        early_key, jnp.array(mean_mah_u_params_early), cov, shape=()
+        early_key, jnp.array(mean_mah_u_params_early)[:-1], cov, shape=()
     )
-    ran_diffmah_u_params_early = DiffmahUParams(*ran_diffmah_u_params_tp_early)
+    ran_diffmah_u_params_early = DiffmahUParams(
+        *ran_diffmah_u_params_tp_early, mean_mah_u_params_early[-1]
+    )
 
     ran_diffmah_u_params_tp_late = jran.multivariate_normal(
-        late_key, jnp.array(mean_mah_u_params_late), cov, shape=()
+        late_key, jnp.array(mean_mah_u_params_late)[:-1], cov, shape=()
     )
-    ran_diffmah_u_params_late = DiffmahUParams(*ran_diffmah_u_params_tp_late)
+    ran_diffmah_u_params_late = DiffmahUParams(
+        *ran_diffmah_u_params_tp_late, mean_mah_u_params_late[-1]
+    )
 
     mah_params_early = get_bounded_mah_params(ran_diffmah_u_params_early)
     mah_params_late = get_bounded_mah_params(ran_diffmah_u_params_late)
 
-    return mah_params_early, t_peak_early, mah_params_late, t_peak_late, frac_early_cens
+    return mah_params_early, mah_params_late, frac_early_cens
 
 
 @jjit
 def _mc_diffmah_singlecen(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
     _res = mc_diffmah_params_singlecen(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
-    mah_params_early, t_peak_early, mah_params_late, t_peak_late, frac_early_cens = _res
-    dmhdt_early, log_mah_early = mah_singlehalo(
-        mah_params_early, tarr, t_peak_early, lgt0
-    )
-    dmhdt_late, log_mah_late = mah_singlehalo(mah_params_late, tarr, t_peak_late, lgt0)
+    mah_params_early, mah_params_late, frac_early_cens = _res
+    dmhdt_early, log_mah_early = mah_singlehalo(mah_params_early, tarr, lgt0)
+    dmhdt_late, log_mah_late = mah_singlehalo(mah_params_late, tarr, lgt0)
 
-    _ret_early = (mah_params_early, t_peak_early, dmhdt_early, log_mah_early)
-    _ret_late = (mah_params_late, t_peak_late, dmhdt_late, log_mah_late)
+    _ret_early = (mah_params_early, dmhdt_early, log_mah_early)
+    _ret_late = (mah_params_late, dmhdt_late, log_mah_late)
     _ret = (*_ret_early, *_ret_late, frac_early_cens)
     return _ret
 
@@ -176,11 +172,11 @@ def predict_mah_moments_singlebin(
     _res = _mc_diffmah_halo_sample(
         diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0
     )
-    _res_early = _res[:4]
-    _res_late = _res[4:8]
-    frac_early = _res[8]
-    mah_params_early, t_peak_early, dmhdt_early, log_mah_early = _res_early
-    mah_params_late, t_peak_late, dmhdt_late, log_mah_late = _res_late
+    _res_early = _res[:3]
+    _res_late = _res[3:6]
+    frac_early = _res[6]
+    mah_params_early, dmhdt_early, log_mah_early = _res_early
+    mah_params_late, dmhdt_late, log_mah_late = _res_late
 
     n_early = log_mah_early.shape[0]
     n_late = log_mah_late.shape[0]

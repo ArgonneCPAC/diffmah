@@ -20,12 +20,12 @@ def test_mc_mean_diffmah_params_are_always_in_bounds():
         _res = mcdpk._mean_diffmah_params(
             DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, np.log10(t_0)
         )
-        mah_params_e, t_peak_e, mah_params_l, t_peak_l, fec = _res
+        mah_params_e, mah_params_l, fec = _res
 
-        assert np.all(t_peak_e > 0)
-        assert np.all(t_peak_e <= t_0 + EPS)
-        assert np.all(t_peak_l > 0)
-        assert np.all(t_peak_l <= t_0 + EPS)
+        assert np.all(mah_params_e.t_peak > 0)
+        assert np.all(mah_params_e.t_peak <= t_0 + EPS)
+        assert np.all(mah_params_l.t_peak > 0)
+        assert np.all(mah_params_l.t_peak <= t_0 + EPS)
 
         assert np.all(fec >= 0)
         assert np.all(fec <= 1)
@@ -64,7 +64,7 @@ def test_mc_diffmah_params_singlecen():
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0)
         _res = mcdpk.mc_diffmah_params_singlecen(*args)
-        mah_params_e, t_peak_e, mah_params_l, t_peak_l, frac_early = _res
+        mah_params_e, mah_params_l, frac_early = _res
         assert np.all(np.isfinite(mah_params_e.logtc))
         assert np.all(np.isfinite(mah_params_l.logtc))
 
@@ -94,29 +94,29 @@ def test_mc_diffmah_halo_sample():
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
         _res = mcdpk._mc_diffmah_halo_sample(*args)
-        _res_early = _res[:4]
-        _res_late = _res[4:8]
-        frac_early = _res[8]
+        _res_early = _res[:3]
+        _res_late = _res[3:6]
+        frac_early = _res[6]
 
         # Test early sequence
-        (mah_params, t_peak, dmhdt, log_mah) = _res_early
+        (mah_params, dmhdt, log_mah) = _res_early
         assert np.all(np.isfinite(mah_params))
 
-        assert np.all(np.isfinite(t_peak))
-        assert np.all(t_peak > 0.0)
-        assert np.all(t_peak <= t_0)
+        assert np.all(np.isfinite(mah_params.t_peak))
+        assert np.all(mah_params.t_peak > 0.0)
+        assert np.all(mah_params.t_peak <= t_0)
 
         assert np.all(np.isfinite(log_mah))
         assert np.all(np.isfinite(dmhdt))
 
         # Test late sequence
-        (mah_params, t_peak, dmhdt, log_mah) = _res_late
+        (mah_params, dmhdt, log_mah) = _res_late
         for x, pname in zip(mah_params, mah_params._fields):
             assert np.all(np.isfinite(mah_params)), (lgm_obs, pname)
 
-        assert np.all(np.isfinite(t_peak))
-        assert np.all(t_peak > 0.0)
-        assert np.all(t_peak <= t_0)
+        assert np.all(np.isfinite(mah_params.t_peak))
+        assert np.all(mah_params.t_peak > 0.0)
+        assert np.all(mah_params.t_peak <= t_0)
 
         assert np.all(np.isfinite(log_mah))
         assert np.all(np.isfinite(dmhdt))
