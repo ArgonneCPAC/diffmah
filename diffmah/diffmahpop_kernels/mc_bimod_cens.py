@@ -9,6 +9,7 @@ from jax import random as jran
 from jax import vmap
 
 from ..diffmah_kernels import (
+    DEFAULT_MAH_PARAMS,
     DiffmahParams,
     DiffmahUParams,
     get_bounded_mah_params,
@@ -167,6 +168,32 @@ def _mc_diffmah_halo_sample(
     return _mc_diffmah_singlecen_vmap_kern(
         diffmahpop_params, tarr, lgm_obs + zz, t_obs + zz, ran_keys, lgt0
     )
+
+
+@jjit
+def mc_cenpop(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
+    """"""
+    n_mc = lgm_obs.shape[0]
+    ran_keys = jran.split(ran_key, n_mc + 1)
+    dmah_keys = ran_keys[:-1]
+    uran_key = ran_keys[-1]
+    _res = _mc_diffmah_singlecen_vmap_kern(
+        diffmahpop_params, tarr, lgm_obs, t_obs, dmah_keys, lgt0
+    )
+    p_e, dmhdt_early, log_mah_early = _res[0:3]
+    p_l, dmhdt_late, log_mah_late = _res[3:6]
+    frac_early_cens = _res[6]
+
+    uran = jran.uniform(uran_key, minval=0, maxval=1, shape=lgm_obs.shape)
+    msk = uran < frac_early_cens
+
+    pns = DEFAULT_MAH_PARAMS._fields
+    mah_params = [jnp.where(msk, getattr(p_e, pn), getattr(p_l, pn)) for pn in pns]
+    mah_params = DEFAULT_MAH_PARAMS._make(mah_params)
+
+    dmhdt = jnp.where(msk.reshape((-1, 1)), dmhdt_early, dmhdt_late)
+    log_mah = jnp.where(msk.reshape((-1, 1)), log_mah_early, log_mah_late)
+    return mah_params, dmhdt, log_mah
 
 
 @jjit
