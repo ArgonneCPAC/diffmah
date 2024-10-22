@@ -131,11 +131,11 @@ def test_mc_cenpop():
 
     n_t = 100
     tarr = np.linspace(0.1, t0, n_t)
-    n_halos = 200
+    n_halos = 20_000
     ran_key = jran.key(0)
     halo_key, lgm_key, t_key = jran.split(ran_key, 3)
     lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
-    t_obs = jran.uniform(t_key, minval=1, maxval=t0, shape=(n_halos,))
+    t_obs = jran.uniform(t_key, minval=2, maxval=t0, shape=(n_halos,))
 
     _res = mcdpk.mc_cenpop(
         DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, halo_key, LGT0

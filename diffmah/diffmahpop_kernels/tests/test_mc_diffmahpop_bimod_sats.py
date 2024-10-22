@@ -4,7 +4,8 @@
 import numpy as np
 from jax import random as jran
 
-from ...diffmah_kernels import MAH_PBOUNDS
+from ... import diffmah_kernels as dk
+from ...defaults import LGT0
 from .. import mc_bimod_sats as mcdpk
 from ..bimod_censat_params import DEFAULT_DIFFMAHPOP_PARAMS
 
@@ -30,16 +31,16 @@ def test_mc_mean_diffmah_params_are_always_in_bounds():
         assert np.all(fec >= 0)
         assert np.all(fec <= 1)
 
-        for p, bound in zip(mah_params_e, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_e, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
-        for p, bound in zip(mah_params_e, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_e, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
-        for p, bound in zip(mah_params_l, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_l, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
-        for p, bound in zip(mah_params_l, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_l, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
 
@@ -123,3 +124,27 @@ def test_mc_diffmah_halo_sample():
 
         assert np.all(frac_early > 0)
         assert np.all(frac_early < 1)
+
+
+def test_mc_satpop():
+    t0 = 10**LGT0
+
+    n_t = 100
+    tarr = np.linspace(0.1, t0, n_t)
+    n_halos = 20_000
+    ran_key = jran.key(0)
+    halo_key, lgm_key, t_key = jran.split(ran_key, 3)
+    lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
+    t_obs = jran.uniform(t_key, minval=2, maxval=t0, shape=(n_halos,))
+
+    _res = mcdpk.mc_satpop(
+        DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, halo_key, LGT0
+    )
+    for _x in _res:
+        assert np.all(np.isfinite(_x))
+    mah_params, dmhdt, log_mah = _res
+    assert log_mah.shape == (n_halos, n_t)
+
+    dmhdt_recomputed, log_mah_recomputed = dk.mah_halopop(mah_params, tarr, LGT0)
+    assert np.allclose(dmhdt, dmhdt_recomputed)
+    assert np.allclose(log_mah, log_mah_recomputed)
