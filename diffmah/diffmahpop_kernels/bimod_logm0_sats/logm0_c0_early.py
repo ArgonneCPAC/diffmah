@@ -7,7 +7,7 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad, vmap
 
-from ...bfgs_wrapper import diffmah_fitter
+from ...bfgs_wrapper import bfgs_adam_fallback
 from ...utils import _inverse_sigmoid, _sig_slope, _sigmoid
 
 DEFAULT_LGM0POP_C0_PDICT = OrderedDict(
@@ -81,7 +81,7 @@ global_loss_and_grads_kern = jjit(value_and_grad(global_loss_kern))
 
 
 def fit_global_c0_model(global_loss_data, p_init=DEFAULT_LGM0POP_C0_PARAMS):
-    _res = diffmah_fitter(global_loss_and_grads_kern, p_init, global_loss_data)
+    _res = bfgs_adam_fallback(global_loss_and_grads_kern, p_init, global_loss_data)
     p_best, loss_best, fit_terminates, code_used = _res
     return p_best, loss_best, fit_terminates, code_used
 

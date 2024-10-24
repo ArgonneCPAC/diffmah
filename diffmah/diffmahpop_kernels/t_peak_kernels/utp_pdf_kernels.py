@@ -9,7 +9,7 @@ from jax import random as jran
 from jax import value_and_grad, vmap
 from jax.scipy.stats import truncnorm
 
-from ...bfgs_wrapper import diffmah_fitter
+from ...bfgs_wrapper import bfgs_adam_fallback
 from ...utils import _inverse_sigmoid, _sigmoid
 
 K_BOUNDING = 0.1
@@ -139,7 +139,7 @@ def t_peak_fitter(x_target, pdf_target):
     loss_data = x_target, pdf_target
     args = (loss_and_grads_kern, DEFAULT_UTP_U_PARAMS, loss_data)
 
-    u_p_best, loss_best, fit_terminates, code_used = diffmah_fitter(*args)
+    u_p_best, loss_best, fit_terminates, code_used = bfgs_adam_fallback(*args)
     u_p_best = UTP_UParams(*u_p_best)
     p_best = get_bounded_utp_params(u_p_best)
     return p_best, loss_best, fit_terminates, code_used

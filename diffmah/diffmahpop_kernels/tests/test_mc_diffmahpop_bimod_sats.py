@@ -4,7 +4,8 @@
 import numpy as np
 from jax import random as jran
 
-from ...diffmah_kernels import MAH_PBOUNDS
+from ... import diffmah_kernels as dk
+from ...defaults import LGT0
 from .. import mc_bimod_sats as mcdpk
 from ..bimod_censat_params import DEFAULT_DIFFMAHPOP_PARAMS
 
@@ -20,26 +21,26 @@ def test_mc_mean_diffmah_params_are_always_in_bounds():
         _res = mcdpk._mean_diffmah_params(
             DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, np.log10(t_0)
         )
-        mah_params_e, t_peak_e, mah_params_l, t_peak_l, fec = _res
+        mah_params_e, mah_params_l, fec = _res
 
-        assert np.all(t_peak_e > 0)
-        assert np.all(t_peak_e <= t_0 + EPS)
-        assert np.all(t_peak_l > 0)
-        assert np.all(t_peak_l <= t_0 + EPS)
+        assert np.all(mah_params_e.t_peak > 0)
+        assert np.all(mah_params_e.t_peak <= t_0 + EPS)
+        assert np.all(mah_params_l.t_peak > 0)
+        assert np.all(mah_params_l.t_peak <= t_0 + EPS)
 
         assert np.all(fec >= 0)
         assert np.all(fec <= 1)
 
-        for p, bound in zip(mah_params_e, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_e, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
-        for p, bound in zip(mah_params_e, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_e, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
-        for p, bound in zip(mah_params_l, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_l, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
-        for p, bound in zip(mah_params_l, MAH_PBOUNDS):
+        for p, bound in zip(mah_params_l, dk.MAH_PBOUNDS):
             assert np.all(bound[0] < p)
             assert np.all(p < bound[1])
 
@@ -64,7 +65,7 @@ def test_mc_diffmah_params_singlecen():
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0)
         _res = mcdpk.mc_diffmah_params_singlecen(*args)
-        mah_params_e, t_peak_e, mah_params_l, t_peak_l, frac_early = _res
+        mah_params_e, mah_params_l, frac_early = _res
         assert np.all(np.isfinite(mah_params_e.logtc))
         assert np.all(np.isfinite(mah_params_l.logtc))
 
@@ -94,32 +95,56 @@ def test_mc_diffmah_halo_sample():
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, ran_key, lgt0)
         _res = mcdpk._mc_diffmah_halo_sample(*args)
-        _res_early = _res[:4]
-        _res_late = _res[4:8]
-        frac_early = _res[8]
+        _res_early = _res[:3]
+        _res_late = _res[3:6]
+        frac_early = _res[6]
 
         # Test early sequence
-        (mah_params, t_peak, dmhdt, log_mah) = _res_early
+        (mah_params, dmhdt, log_mah) = _res_early
         assert np.all(np.isfinite(mah_params))
 
-        assert np.all(np.isfinite(t_peak))
-        assert np.all(t_peak > 0.0)
-        assert np.all(t_peak <= t_0)
+        assert np.all(np.isfinite(mah_params.t_peak))
+        assert np.all(mah_params.t_peak > 0.0)
+        assert np.all(mah_params.t_peak <= t_0)
 
         assert np.all(np.isfinite(log_mah))
         assert np.all(np.isfinite(dmhdt))
 
         # Test late sequence
-        (mah_params, t_peak, dmhdt, log_mah) = _res_late
+        (mah_params, dmhdt, log_mah) = _res_late
         for x, pname in zip(mah_params, mah_params._fields):
             assert np.all(np.isfinite(mah_params)), (lgm_obs, pname)
 
-        assert np.all(np.isfinite(t_peak))
-        assert np.all(t_peak > 0.0)
-        assert np.all(t_peak <= t_0)
+        assert np.all(np.isfinite(mah_params.t_peak))
+        assert np.all(mah_params.t_peak > 0.0)
+        assert np.all(mah_params.t_peak <= t_0)
 
         assert np.all(np.isfinite(log_mah))
         assert np.all(np.isfinite(dmhdt))
 
         assert np.all(frac_early > 0)
         assert np.all(frac_early < 1)
+
+
+def test_mc_satpop():
+    t0 = 10**LGT0
+
+    n_t = 100
+    tarr = np.linspace(0.1, t0, n_t)
+    n_halos = 20_000
+    ran_key = jran.key(0)
+    halo_key, lgm_key, t_key = jran.split(ran_key, 3)
+    lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
+    t_obs = jran.uniform(t_key, minval=2, maxval=t0, shape=(n_halos,))
+
+    _res = mcdpk.mc_satpop(
+        DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, halo_key, LGT0
+    )
+    for _x in _res:
+        assert np.all(np.isfinite(_x))
+    mah_params, dmhdt, log_mah = _res
+    assert log_mah.shape == (n_halos, n_t)
+
+    dmhdt_recomputed, log_mah_recomputed = dk.mah_halopop(mah_params, tarr, LGT0)
+    assert np.allclose(dmhdt, dmhdt_recomputed)
+    assert np.allclose(log_mah, log_mah_recomputed)

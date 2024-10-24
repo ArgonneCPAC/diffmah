@@ -7,7 +7,7 @@ from jax import numpy as jnp
 from jax import random as jran
 from jax import value_and_grad
 
-from ....bfgs_wrapper import diffmah_fitter
+from ....bfgs_wrapper import bfgs_adam_fallback
 from .. import utp_pdf_kernels as tpk
 
 
@@ -116,7 +116,7 @@ def test_utp_param_fitter_default_params():
 
     args = (tpk.loss_and_grads_kern, u_p_init, loss_data)
 
-    u_p_best, loss_best, fit_terminates, code_used = diffmah_fitter(*args)
+    u_p_best, loss_best, fit_terminates, code_used = bfgs_adam_fallback(*args)
     u_p_best = tpk.UTP_UParams(*u_p_best)
     p_best = tpk.get_bounded_utp_params(u_p_best)
 
