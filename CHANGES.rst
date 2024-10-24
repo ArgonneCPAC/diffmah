@@ -1,3 +1,7 @@
+0.6.1 (2024-10-24)
+------------------
+- Include t_peak as fifth diffmah parameter (https://github.com/ArgonneCPAC/diffmah/pull/147)
+
 0.6.0 (2024-08-09)
 ------------------
 - Add prototype for P(MAH | m_obs, t_obs) (https://github.com/ArgonneCPAC/diffmah/pull/132)
