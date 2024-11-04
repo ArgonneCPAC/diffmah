@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+from jax import random as jran
 
 from .. import diffmah_kernels as dk
 from .. import fitting_helpers as fithelp
@@ -54,3 +55,32 @@ def test_fitting_helpers_integration():
     assert np.allclose(outdata[3], early, rtol=ATOL)
     assert np.allclose(outdata[4], late, rtol=ATOL)
     assert np.allclose(outdata[5], t_peak, rtol=ATOL)
+
+
+def test_diffmah_fitter():
+    ran_key = jran.key(0)
+    LGT0 = np.log10(13.79)
+
+    t_sim = np.linspace(0.5, 13.8, 100)
+    lgm_min = 7.0
+
+    n_tests = 10
+    for __ in range(n_tests):
+        test_key, noise_key, ran_key = jran.split(ran_key, 3)
+
+        u_p = np.array(dk.DEFAULT_MAH_U_PARAMS)
+        uran = jran.uniform(test_key, minval=-10, maxval=10, shape=u_p.shape)
+        u_p = dk.DEFAULT_MAH_U_PARAMS._make(u_p + uran)
+        mah_params = dk.get_bounded_mah_params(u_p)
+        __, log_mah_sim = dk.mah_singlehalo(mah_params, t_sim, LGT0)
+
+        log_mah_noise = jran.uniform(
+            noise_key, minval=-0.1, maxval=0.1, shape=log_mah_sim.shape
+        )
+        log_mah_target = log_mah_sim + log_mah_noise
+
+        _res = fithelp.diffmah_fitter(t_sim, log_mah_target, lgm_min)
+        p_best, loss_best, fit_terminates, code_used = _res
+        __, log_mah_fit = dk.mah_singlehalo(p_best, t_sim, LGT0)
+        loss_check = fithelp._mse(log_mah_fit, log_mah_sim)
+        assert loss_check < 0.01
