@@ -56,7 +56,7 @@ def diffmah_fitter(
     _res = bfgs_adam_fallback(loss_and_grads_kern, u_p_init, loss_data, nstep, n_warmup)
     u_p_best, loss_best, fit_terminates, code_used = _res
     u_t_peak = loss_data[2]
-    u_p_best = dk.DEFAULT_MAH_U_PARAMS(*u_p_best, u_t_peak)
+    u_p_best = dk.DEFAULT_MAH_U_PARAMS._make((*u_p_best, u_t_peak))
     p_best = dk.get_bounded_mah_params(u_p_best)
     return p_best, loss_best, fit_terminates, code_used
 
