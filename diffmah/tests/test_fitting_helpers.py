@@ -84,3 +84,31 @@ def test_diffmah_fitter():
         __, log_mah_fit = dk.mah_singlehalo(p_best, t_sim, LGT0)
         loss_check = fithelp._mse(log_mah_fit, log_mah_sim)
         assert loss_check < 0.01
+
+
+def test_get_target_data():
+    t_sim = np.linspace(0.1, 13.8, 100)
+    log_mah_sim = np.linspace(1, 14, t_sim.size)
+    dlogm_cut = 20.0
+    t_fit_min = 0.0
+
+    # No data points should be excluded
+    lgm_min = 0.0
+    logt_target, log_mah_target = fithelp.get_target_data(
+        t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
+    )
+    assert log_mah_target.size == log_mah_sim.size
+
+    # First data point should be excluded
+    lgm_min = 1.001
+    logt_target, log_mah_target = fithelp.get_target_data(
+        t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
+    )
+    assert log_mah_target.size == log_mah_sim.size - 1
+
+    # All data points should be excluded
+    lgm_min = 21.001
+    logt_target, log_mah_target = fithelp.get_target_data(
+        t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
+    )
+    assert len(log_mah_target) == 0
