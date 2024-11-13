@@ -80,7 +80,7 @@ def test_diffmah_fitter():
         log_mah_target = log_mah_sim + log_mah_noise
 
         _res = fithelp.diffmah_fitter(t_sim, log_mah_target, lgm_min)
-        p_best, loss_best, fit_terminates, code_used = _res
+        p_best, loss_best, fit_terminates, code_used, loss_data = _res
         __, log_mah_fit = dk.mah_singlehalo(p_best, t_sim, LGT0)
         loss_check = fithelp._mse(log_mah_fit, log_mah_sim)
         assert loss_check < 0.01
