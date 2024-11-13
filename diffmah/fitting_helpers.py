@@ -35,7 +35,7 @@ LJ_h = 0.6766
 def diffmah_fitter(
     t_sim,
     log_mah_sim,
-    lgm_min,
+    lgm_min=-float("inf"),
     dlogm_cut=DLOGM_CUT,
     t_fit_min=T_FIT_MIN,
     nstep=200,

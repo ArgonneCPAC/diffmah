@@ -99,6 +99,13 @@ def test_get_target_data():
     )
     assert log_mah_target.size == log_mah_sim.size
 
+    # No data points should be excluded
+    lgm_min = -float("inf")
+    logt_target, log_mah_target = fithelp.get_target_data(
+        t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
+    )
+    assert log_mah_target.size == log_mah_sim.size
+
     # First data point should be excluded
     lgm_min = 1.001
     logt_target, log_mah_target = fithelp.get_target_data(
