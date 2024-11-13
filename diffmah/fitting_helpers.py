@@ -32,6 +32,8 @@ VariedDiffmahUParams = namedtuple("VariedDiffmahUParams", _MAH_UPNAMES)
 LJ_Om = 0.310
 LJ_h = 0.6766
 
+NOFIT_FILL = -99.0
+
 
 def diffmah_fitter(
     t_sim,
@@ -46,7 +48,11 @@ def diffmah_fitter(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     if skip_fit:
-        raise NotImplementedError
+        p_best = np.zeros_like(u_p_init) + NOFIT_FILL
+        loss_best = +NOFIT_FILL
+        fit_terminates = False
+        code_used = -1
+        return p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
     else:
         _res = bfgs_adam_fallback(
             loss_and_grads_kern, u_p_init, loss_data, nstep, n_warmup
@@ -55,7 +61,7 @@ def diffmah_fitter(
         u_t_peak = loss_data[2]
         u_p_best = dk.DEFAULT_MAH_U_PARAMS._make((*u_p_best, u_t_peak))
         p_best = dk.get_bounded_mah_params(u_p_best)
-        return p_best, loss_best, fit_terminates, code_used, loss_data
+        return p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
 
 
 def write_collated_data(outname, fit_data_strings, chunk_arr=None):
@@ -128,9 +134,9 @@ def get_loss_data(
 
     if npts < npts_min:
         skip_fit = True
-        u_t_peak, logt0 = -99.0, -99.0
+        u_t_peak, logt0 = NOFIT_FILL, NOFIT_FILL
         loss_data = (t_target, log_mah_target, u_t_peak, logt0)
-        u_p_init = np.zeros(len(VariedDiffmahUParams._fields)) - 99.0
+        u_p_init = np.zeros(len(VariedDiffmahUParams._fields)) + NOFIT_FILL
         return u_p_init, loss_data, skip_fit
     else:
         skip_fit = False

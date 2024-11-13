@@ -80,7 +80,7 @@ def test_diffmah_fitter():
         log_mah_target = log_mah_sim + log_mah_noise
 
         _res = fithelp.diffmah_fitter(t_sim, log_mah_target, lgm_min)
-        p_best, loss_best, fit_terminates, code_used, loss_data = _res
+        p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data = _res
         __, log_mah_fit = dk.mah_singlehalo(p_best, t_sim, LGT0)
         loss_check = fithelp._mse(log_mah_fit, log_mah_sim)
         assert loss_check < 0.01
@@ -89,9 +89,13 @@ def test_diffmah_fitter():
 def test_diffmah_fitter_skips_mahs_with_insufficient_data():
     t_sim = np.linspace(0.1, 13.8, 100)
     log_mah_sim = np.linspace(1, 14, t_sim.size)
-    _res = fithelp.diffmah_fitter(t_sim, log_mah_sim)
-    p_best, loss_best, fit_terminates, code_used, loss_data = _res
-    raise NotImplementedError()
+    _res = fithelp.diffmah_fitter(t_sim, log_mah_sim, lgm_min=log_mah_sim[-1] + 1)
+    p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data = _res
+    assert skip_fit
+    assert fit_terminates is False
+    assert code_used == -1
+    assert loss_best == fithelp.NOFIT_FILL
+    assert np.allclose(p_best, fithelp.NOFIT_FILL)
 
 
 def test_get_target_data():
