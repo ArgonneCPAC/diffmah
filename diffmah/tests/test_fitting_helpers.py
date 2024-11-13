@@ -86,6 +86,14 @@ def test_diffmah_fitter():
         assert loss_check < 0.01
 
 
+def test_diffmah_fitter_skips_mahs_with_insufficient_data():
+    t_sim = np.linspace(0.1, 13.8, 100)
+    log_mah_sim = np.linspace(1, 14, t_sim.size)
+    _res = fithelp.diffmah_fitter(t_sim, log_mah_sim)
+    p_best, loss_best, fit_terminates, code_used, loss_data = _res
+    raise NotImplementedError()
+
+
 def test_get_target_data():
     t_sim = np.linspace(0.1, 13.8, 100)
     log_mah_sim = np.linspace(1, 14, t_sim.size)
