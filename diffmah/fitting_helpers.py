@@ -14,22 +14,13 @@ from jax import value_and_grad, vmap
 
 from . import diffmah_kernels as dk
 from .bfgs_wrapper import bfgs_adam_fallback
-from .diffmah_kernels import (
-    DEFAULT_MAH_PARAMS,
-    DEFAULT_MAH_PDICT,
-    DiffmahParams,
-    DiffmahUParams,
-    _log_mah_kern_u_params,
-    get_bounded_mah_params,
-    get_unbounded_mah_params,
-)
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
 HEADER = "# halo_id logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"  # noqa : E501
 DEFAULT_NCHUNKS = 50
 
-VARIED_MAH_PDICT = deepcopy(DEFAULT_MAH_PDICT)
+VARIED_MAH_PDICT = deepcopy(dk.DEFAULT_MAH_PDICT)
 VARIED_MAH_PDICT.pop("t_peak")
 VariedDiffmahParams = namedtuple("VariedDiffmahParams", list(VARIED_MAH_PDICT.keys()))
 VARIED_MAH_PARAMS = VariedDiffmahParams(*list(VARIED_MAH_PDICT.values()))
@@ -131,11 +122,11 @@ def get_loss_data(
     indx_t_peak = compute_indx_t_peak_singlehalo(log_mah_sim)
     t_peak = t_sim[indx_t_peak]
 
-    p_init = np.array(DEFAULT_MAH_PARAMS).astype("f4")
+    p_init = np.array(dk.DEFAULT_MAH_PARAMS).astype("f4")
     p_init[0] = log_mah_sim[indx_t_peak]
     p_init[4] = t_peak
-    p_init = DiffmahParams(*p_init)
-    u_p_init_all = get_unbounded_mah_params(p_init)
+    p_init = dk.DiffmahParams(*p_init)
+    u_p_init_all = dk.get_unbounded_mah_params(p_init)
     u_t_peak = u_p_init_all.u_t_peak
     u_p_init = VariedDiffmahUParams(*u_p_init_all[:-1])
 
@@ -155,8 +146,8 @@ def log_mah_loss_uparams(u_params_varied, loss_data):
     """MSE loss function for fitting individual halo growth."""
     t_target, log_mah_target, u_t_peak, logt0 = loss_data
 
-    u_params = DiffmahUParams(*u_params_varied, u_t_peak)
-    log_mah_pred = _log_mah_kern_u_params(u_params, t_target, logt0)
+    u_params = dk.DiffmahUParams(*u_params_varied, u_t_peak)
+    log_mah_pred = dk._log_mah_kern_u_params(u_params, t_target, logt0)
     log_mah_loss = _mse(log_mah_pred, log_mah_target)
     return log_mah_loss
 
@@ -182,7 +173,7 @@ def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
 def get_outline(halo_id, loss_data, u_p_best, loss_best, npts_mah, algo):
     """Return the string storing fitting results that will be written to disk"""
     u_t_peak = loss_data[2]
-    p_best = get_bounded_mah_params(DiffmahUParams(*u_p_best, u_t_peak))
+    p_best = dk.get_bounded_mah_params(dk.DiffmahUParams(*u_p_best, u_t_peak))
     logm0, logtc, early, late, t_peak = p_best
     _floats = (logm0, logtc, early, late, t_peak, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
