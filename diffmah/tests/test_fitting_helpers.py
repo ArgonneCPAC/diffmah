@@ -1,6 +1,8 @@
 """
 """
 
+import warnings
+
 import numpy as np
 from jax import random as jran
 
@@ -188,3 +190,12 @@ def test_get_loss_data():
         t_sim, mah_sim, lgm_min=lgm_min, npts_min=npts_min
     )
     assert skip_fit is False
+
+
+def test_diffmah_fitter_raises_warning_when_passed_log_mah_instead_of_mah():
+    t_sim = np.linspace(0.1, 13.8, 100)
+    log_mah_sim = np.linspace(5, 15, t_sim.size)
+    with warnings.catch_warnings(record=True) as w:
+        fithelp.diffmah_fitter(t_sim, log_mah_sim)
+    substr = "Values of input MAH are suspiciously small"
+    assert substr in str(w[-1].message)
