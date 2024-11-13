@@ -4,6 +4,7 @@
 import warnings
 
 import numpy as np
+import pytest
 from jax import random as jran
 
 from .. import diffmah_kernels as dk
@@ -163,7 +164,7 @@ def test_get_loss_data():
     assert np.allclose(log_mah_target, np.log10(mah_sim[msk]))
 
     # Fit should be skipped on account of npts_min cut
-    npts_min = 4
+    npts_min = fithelp.NPTS_FIT_MIN - 2
     lgm_min = np.log10(mah_sim[-npts_min])
     u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
         t_sim, mah_sim, lgm_min=lgm_min, npts_min=npts_min
@@ -171,8 +172,8 @@ def test_get_loss_data():
     assert skip_fit is True
 
     # Fit should NOT be skipped on account of npts_min cut
-    npts_min = 4
-    lgm_min = np.log10(mah_sim[-npts_min - 1])
+    npts_min = fithelp.NPTS_FIT_MIN - 3
+    lgm_min = np.log10(mah_sim[-npts_min])
     u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
         t_sim, mah_sim, lgm_min=lgm_min, npts_min=npts_min
     )
@@ -231,8 +232,9 @@ def test_get_outline_good_fits():
 
 
 def test_get_outline_bad_fit():
-    t_sim = np.array((1.0, 14.0))
-    mah_sim = np.zeros(2) + 1e10
+    """Set up and check a hard-coded example of a no-fit MAH"""
+    t_sim = np.array((2.0, 5.0, 13.0))
+    mah_sim = 10 ** np.array([14.5, 14.75, 15.0])
     fit_results = fithelp.diffmah_fitter(t_sim, mah_sim)
     outline = fithelp.get_outline(fit_results)
     assert outline[-1] == "\n"
@@ -242,5 +244,5 @@ def test_get_outline_bad_fit():
         assert val == fithelp.NOFIT_FILL
     assert outdata.loss == fithelp.NOFIT_FILL
 
-    assert outdata.n_points_per_fit == 2
+    assert outdata.n_points_per_fit == 2, fit_results.loss_data.log_mah_target
     assert outdata.fit_algo == -1

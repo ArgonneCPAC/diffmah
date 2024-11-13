@@ -99,6 +99,8 @@ def diffmah_fitter(
     Note that the input data is the MAH, not log10(MAH)
 
     """
+    msg = "Mismatched shapes for diffmah_fitter inputs `mah_sim` and `t_sim`"
+    assert mah_sim.shape == t_sim.shape, msg
     _check_for_logmah_vs_mah_mistake(mah_sim)
 
     u_p_init, loss_data, skip_fit = get_loss_data(
@@ -224,7 +226,8 @@ def get_loss_data(
         t_fit_min,
     )
     t_target = 10**logt_target
-    npts = len(t_target)
+
+    npts = _compute_non_trivial_npts_in_log_mah_target(log_mah_target)
 
     if npts < npts_min:
         skip_fit = True
@@ -277,13 +280,27 @@ def log_mah_loss_uparams(u_params_varied, loss_data):
 loss_and_grads_kern = jjit(value_and_grad(log_mah_loss_uparams))
 
 
+def _compute_non_trivial_npts_in_log_mah_target(log_mah_target):
+    try:
+        logmp0 = log_mah_target[-1]
+    except IndexError:
+        logmp0 = -float("inf")
+
+    msk_non_trivial = log_mah_target < logmp0
+    npts_non_trivial_mah = msk_non_trivial.sum()
+    return npts_non_trivial_mah
+
+
 def get_outline(fit_results):
     """Transform return of diffmah_fitter into ASCII"""
     _floats = (*fit_results.p_best, fit_results.loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
 
-    npts_mah = len(fit_results.loss_data.log_mah_target)
+    npts_mah = _compute_non_trivial_npts_in_log_mah_target(
+        fit_results.loss_data.log_mah_target
+    )
+
     out_list = [*out_list, str(npts_mah), str(fit_results.code_used)]
     outline = " ".join(out_list) + "\n"
     return outline
