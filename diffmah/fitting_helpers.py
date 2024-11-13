@@ -171,9 +171,6 @@ def write_collated_data(outname, fit_data_strings, chunk_arr=None):
         hdf["n_points_per_fit"] = n_points_per_fit
         hdf["fit_algo"] = fit_algo
 
-        if chunk_arr is not None:
-            hdf["chunk"] = chunk_arr
-
 
 @jjit
 def compute_indx_t_peak_singlehalo(log_mah_table):
