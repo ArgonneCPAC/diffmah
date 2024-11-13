@@ -20,8 +20,10 @@ NPTS_FIT_MIN = 3  # Number of non-trivial points in the MAH
 NOFIT_FILL = -99.0
 EPSILON = 1e-7
 
-HEADER = "# halo_id logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"  # noqa : E501
-DEFAULT_NCHUNKS = 50
+HEADER = "# logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"  # noqa : E501
+FIT_COLNAMES = HEADER[1:].strip().split()
+DiffmahFitData = namedtuple("DiffmahFitData", FIT_COLNAMES)
+
 
 VARIED_MAH_PDICT = deepcopy(dk.DEFAULT_MAH_PDICT)
 VARIED_MAH_PDICT.pop("t_peak")
@@ -275,29 +277,21 @@ def log_mah_loss_uparams(u_params_varied, loss_data):
 loss_and_grads_kern = jjit(value_and_grad(log_mah_loss_uparams))
 
 
-def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
-    log_mah_target = loss_data[1]
-    logm0 = log_mah_target[-1]
-    logtc, early, late = NOFIT_FILL, NOFIT_FILL, NOFIT_FILL
-    u_t_peak = loss_data[2]
-    t_peak = dk._get_bounded_diffmah_param(u_t_peak, dk.MAH_PBOUNDS.t_peak)
-    loss_best = NOFIT_FILL
-    _floats = (logm0, logtc, early, late, t_peak, loss_best)
+def get_outline(fit_results):
+    """Transform return of diffmah_fitter into ASCII"""
+    _floats = (*fit_results.p_best, fit_results.loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
-    out_list = [str(halo_id), *out_list, str(npts_mah), str(algo)]
+
+    npts_mah = len(fit_results.loss_data.log_mah_target)
+    out_list = [*out_list, str(npts_mah), str(fit_results.code_used)]
     outline = " ".join(out_list) + "\n"
     return outline
 
 
-def get_outline(halo_id, loss_data, u_p_best, loss_best, npts_mah, algo):
-    """Return the string storing fitting results that will be written to disk"""
-    u_t_peak = loss_data[2]
-    p_best = dk.get_bounded_mah_params(dk.DiffmahUParams(*u_p_best, u_t_peak))
-    logm0, logtc, early, late, t_peak = p_best
-    _floats = (logm0, logtc, early, late, t_peak, loss_best)
-    out_list = ["{:.5e}".format(float(x)) for x in _floats]
-    out_list = [str(x) for x in out_list]
-    out_list = [str(halo_id), *out_list, str(npts_mah), str(algo)]
-    outline = " ".join(out_list) + "\n"
-    return outline
+def _parse_outline(outline):
+    """Parse ASCII data into return of diffmah_fitter"""
+    outdata = outline.strip().split()
+    formatter = [*[float] * 6, *[int] * 2]
+    outdata = [f(x) for f, x in zip(formatter, outdata)]
+    return DiffmahFitData(*outdata)
