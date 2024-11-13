@@ -4,7 +4,6 @@
 import warnings
 
 import numpy as np
-import pytest
 from jax import random as jran
 
 from .. import diffmah_kernels as dk
