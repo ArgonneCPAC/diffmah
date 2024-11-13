@@ -3,7 +3,6 @@ Data loading functions require h5py and/or haccytrees
 
 """
 
-import os
 from collections import namedtuple
 from copy import deepcopy
 
@@ -179,10 +178,10 @@ loss_and_grads_kern = jjit(value_and_grad(log_mah_loss_uparams))
 def get_outline_bad_fit(halo_id, loss_data, npts_mah, algo):
     log_mah_target = loss_data[1]
     logm0 = log_mah_target[-1]
-    logtc, early, late = -1.0, -1.0, -1.0
+    logtc, early, late = NOFIT_FILL, NOFIT_FILL, NOFIT_FILL
     u_t_peak = loss_data[2]
     t_peak = dk._get_bounded_diffmah_param(u_t_peak, dk.MAH_PBOUNDS.t_peak)
-    loss_best = -1.0
+    loss_best = NOFIT_FILL
     _floats = (logm0, logtc, early, late, t_peak, loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
     out_list = [str(x) for x in out_list]
