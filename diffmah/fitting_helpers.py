@@ -17,6 +17,7 @@ from .bfgs_wrapper import bfgs_adam_fallback
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
+NPTS_FIT_MIN = 3  # Number of non-trivial points in the MAH
 HEADER = "# halo_id logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"  # noqa : E501
 DEFAULT_NCHUNKS = 50
 
@@ -41,7 +42,7 @@ def diffmah_fitter(
     nstep=200,
     n_warmup=1,
 ):
-    u_p_init, loss_data = get_loss_data(
+    u_p_init, loss_data, skip_fit = get_loss_data(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     _res = bfgs_adam_fallback(loss_and_grads_kern, u_p_init, loss_data, nstep, n_warmup)
@@ -105,9 +106,10 @@ def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
 def get_loss_data(
     t_sim,
     log_mah_sim,
-    lgm_min,
+    lgm_min=-float("inf"),
     dlogm_cut=DLOGM_CUT,
     t_fit_min=T_FIT_MIN,
+    npts_min=NPTS_FIT_MIN,
 ):
     logt_target, log_mah_target = get_target_data(
         t_sim,
@@ -117,21 +119,32 @@ def get_loss_data(
         t_fit_min,
     )
     t_target = 10**logt_target
+    npts = len(t_target)
 
-    logt0 = np.log10(t_sim[-1])
-    indx_t_peak = compute_indx_t_peak_singlehalo(log_mah_sim)
-    t_peak = t_sim[indx_t_peak]
+    if npts < npts_min:
+        skip_fit = True
+        u_t_peak, logt0 = -99.0, -99.0
+        loss_data = (t_target, log_mah_target, u_t_peak, logt0)
+        u_p_init = np.zeros(len(VariedDiffmahUParams._fields)) - 99.0
+        return u_p_init, loss_data, skip_fit
+    else:
+        skip_fit = False
 
-    p_init = np.array(dk.DEFAULT_MAH_PARAMS).astype("f4")
-    p_init[0] = log_mah_sim[indx_t_peak]
-    p_init[4] = t_peak
-    p_init = dk.DiffmahParams(*p_init)
-    u_p_init_all = dk.get_unbounded_mah_params(p_init)
-    u_t_peak = u_p_init_all.u_t_peak
-    u_p_init = VariedDiffmahUParams(*u_p_init_all[:-1])
+        logt0 = np.log10(t_sim[-1])
 
-    loss_data = (t_target, log_mah_target, u_t_peak, logt0)
-    return u_p_init, loss_data
+        indx_t_peak = compute_indx_t_peak_singlehalo(log_mah_sim)
+        t_peak = t_sim[indx_t_peak]
+
+        p_init = np.array(dk.DEFAULT_MAH_PARAMS).astype("f4")
+        p_init[0] = log_mah_sim[indx_t_peak]
+        p_init[4] = t_peak
+        p_init = dk.DiffmahParams(*p_init)
+        u_p_init_all = dk.get_unbounded_mah_params(p_init)
+        u_t_peak = u_p_init_all.u_t_peak
+        u_p_init = VariedDiffmahUParams(*u_p_init_all[:-1])
+
+        loss_data = (t_target, log_mah_target, u_t_peak, logt0)
+        return u_p_init, loss_data, skip_fit
 
 
 @jjit

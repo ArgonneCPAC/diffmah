@@ -21,7 +21,7 @@ def test_fitting_helpers_integration():
     p_true = dk.DiffmahParams(logm0, logtc, early, late, t_peak)
     log_mah_sim = dk.mah_singlehalo(p_true, t_sim, logt0)[1]
 
-    u_p_init, loss_data = fithelp.get_loss_data(t_sim, log_mah_sim, lgm_min)
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(t_sim, log_mah_sim, lgm_min)
     t_target, log_mah_target, u_t_peak, logt0_out = loss_data
     t_peak_inferred = dk._get_bounded_diffmah_param(u_t_peak, dk.MAH_PBOUNDS.t_peak)
     assert np.all(np.isfinite(u_p_init))
@@ -119,3 +119,19 @@ def test_get_target_data():
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     assert len(log_mah_target) == 0
+
+
+def get_get_loss_data():
+    t_sim = np.linspace(0.1, 13.8, 100)
+    log_mah_sim = np.linspace(1, 14, t_sim.size)
+
+    # No data points should be excluded
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(t_sim, log_mah_sim)
+    t_target, log_mah_target, u_t_peak, logt0 = loss_data
+    assert t_target.size == t_sim.size
+    assert log_mah_target.size == log_mah_sim.size
+    assert np.all(np.isfinite(u_t_peak))
+    t0 = 10**logt0
+    assert 5 < t0 < 25
+    assert np.all(np.isfinite(u_p_init))
+    assert len(u_p_init) == len(dk.DEFAULT_MAH_PARAMS) - 1
