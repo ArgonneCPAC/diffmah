@@ -16,7 +16,7 @@ from .bfgs_wrapper import bfgs_adam_fallback
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
-NPTS_FIT_MIN = 3  # Number of non-trivial points in the MAH
+NPTS_FIT_MIN = 3  # Number of non-trivial points in the MAH, excluding MAH(z=0)
 NOFIT_FILL = -99.0
 EPSILON = 1e-7
 
