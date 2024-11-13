@@ -108,7 +108,10 @@ def diffmah_fitter(
         loss_best = NOFIT_FILL
         fit_terminates = False
         code_used = -1
-        return p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
+        fit_results = DiffmahFitResult(
+            p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
+        )
+        return fit_results
     else:
         _res = bfgs_adam_fallback(
             loss_and_grads_kern, u_p_init, loss_data, nstep, n_warmup
@@ -117,7 +120,21 @@ def diffmah_fitter(
         u_t_peak = loss_data[2]
         u_p_best = dk.DEFAULT_MAH_U_PARAMS._make((*u_p_best, u_t_peak))
         p_best = dk.get_bounded_mah_params(u_p_best)
-        return p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
+        fit_results = DiffmahFitResult(
+            p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
+        )
+        return fit_results
+
+
+_res_names = (
+    "p_best",
+    "loss_best",
+    "skip_fit",
+    "fit_terminates",
+    "code_used",
+    "loss_data",
+)
+DiffmahFitResult = namedtuple("DiffmahFitResult", _res_names)
 
 
 def _check_for_logmah_vs_mah_mistake(mah_sim):
@@ -210,7 +227,7 @@ def get_loss_data(
     if npts < npts_min:
         skip_fit = True
         u_t_peak, logt0 = NOFIT_FILL, NOFIT_FILL
-        loss_data = (t_target, log_mah_target, u_t_peak, logt0)
+        loss_data = DiffmahFitLossData(t_target, log_mah_target, u_t_peak, logt0)
         u_p_init = np.zeros(len(VariedDiffmahUParams._fields)) + NOFIT_FILL
         return u_p_init, loss_data, skip_fit
     else:
@@ -229,8 +246,12 @@ def get_loss_data(
         u_t_peak = u_p_init_all.u_t_peak
         u_p_init = VariedDiffmahUParams(*u_p_init_all[:-1])
 
-        loss_data = (t_target, log_mah_target, u_t_peak, logt0)
+        loss_data = DiffmahFitLossData(t_target, log_mah_target, u_t_peak, logt0)
         return u_p_init, loss_data, skip_fit
+
+
+_loss_names = ("t_target", "log_mah_target", "u_t_peak", "logt0")
+DiffmahFitLossData = namedtuple("DiffmahFitLossData", _loss_names)
 
 
 @jjit
