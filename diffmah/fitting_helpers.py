@@ -1,5 +1,4 @@
-"""Utility functions for fitting MAHs with diffmah.
-Data loading functions require h5py and/or haccytrees
+"""Module implements diffmah_fitter for fitting MAHs with diffmah
 
 """
 
@@ -42,6 +41,62 @@ def diffmah_fitter(
     nstep=200,
     n_warmup=1,
 ):
+    """Fit simulated MAH with diffmah
+
+    Parameters
+    ----------
+    t_sim : array, shape (n_t, )
+        Age of the universe in Gyr
+
+    mah_sim : array, shape (n_t, )
+        Halo mass in units of Msun/h
+
+    lgm_min : float, optional
+        Minimum halo mass to use input halo data in the fitter. Default is -inf.
+
+    dlogm_cut : float, optional
+        Maximum change in log10(MAH) from z=0 mass to use input halo data in the fitter.
+        Default is DLOGM_CUT.
+
+    t_fit_min : float, optional
+        Minimum time to use input halo data in the fitter. Default is T_FIT_MIN.
+
+    nstep : int
+        Number of gradient descent steps to use in fitter. Default is 200.
+        Only applies to cases where BFGS fails and Adam is used.
+
+    n_warmup : int
+        Number of warmup iterations in gradient descent. Default is 1.
+        Only applies to cases where BFGS fails and Adam is used.
+
+    Returns
+    -------
+    p_best : namedtuple
+        Best-fit diffmah parameters
+
+    loss_best : float
+        MSE loss of best-fit parameters
+
+    skip_fit : bool
+        True if the fitter was not run at all due to insufficient input MAH data
+
+    fit_terminates : bool
+        True if the fitter ran to completion
+
+    code_used : int
+        0 for BFGS, 1 for Adam, -1 if skip_fit is True
+
+    loss_data : tuple
+        t_target, log_mah_target, u_t_peak, logt0 = loss_data
+
+        * u_t_peak is the unbounded version of the diffmah t_peak parameter
+        * logt0 is base-10 log of the z=0 age of the universe in Gyr
+
+    Notes
+    -----
+    Note that the input data is the MAH, not log10(MAH)
+
+    """
     _check_for_logmah_vs_mah_mistake(mah_sim)
 
     u_p_init, loss_data, skip_fit = get_loss_data(
