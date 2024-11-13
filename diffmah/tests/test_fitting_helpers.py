@@ -121,13 +121,16 @@ def test_get_target_data():
     assert len(log_mah_target) == 0
 
 
-def get_get_loss_data():
+def test_get_loss_data():
     t_sim = np.linspace(0.1, 13.8, 100)
     log_mah_sim = np.linspace(1, 14, t_sim.size)
 
     # No data points should be excluded
-    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(t_sim, log_mah_sim)
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
+        t_sim, log_mah_sim, dlogm_cut=100.0, t_fit_min=0.0
+    )
     t_target, log_mah_target, u_t_peak, logt0 = loss_data
+    assert skip_fit is False
     assert t_target.size == t_sim.size
     assert log_mah_target.size == log_mah_sim.size
     assert np.all(np.isfinite(u_t_peak))
@@ -135,3 +138,39 @@ def get_get_loss_data():
     assert 5 < t0 < 25
     assert np.all(np.isfinite(u_p_init))
     assert len(u_p_init) == len(dk.DEFAULT_MAH_PARAMS) - 1
+
+    # High-redshift data points should be excluded
+    t_fit_min = 2.0
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
+        t_sim, log_mah_sim, dlogm_cut=100.0, t_fit_min=t_fit_min
+    )
+    assert skip_fit is False
+    t_target = loss_data[0]
+    msk = t_sim > t_fit_min
+    assert np.allclose(t_target, t_sim[msk])
+
+    # Low-mass data points should be excluded
+    dlogm_cut = 3.0
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
+        t_sim, log_mah_sim, dlogm_cut=dlogm_cut, t_fit_min=t_fit_min
+    )
+    assert skip_fit is False
+    log_mah_target = loss_data[1]
+    msk = log_mah_sim > log_mah_sim[-1] - dlogm_cut
+    assert np.allclose(log_mah_target, log_mah_sim[msk])
+
+    # Fit should be skipped on account of npts_min cut
+    npts_min = 4
+    lgm_min = log_mah_sim[-npts_min]
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
+        t_sim, log_mah_sim, lgm_min=lgm_min, npts_min=npts_min
+    )
+    assert skip_fit is True
+
+    # Fit should NOT be skipped on account of npts_min cut
+    npts_min = 4
+    lgm_min = log_mah_sim[-npts_min - 1]
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
+        t_sim, log_mah_sim, lgm_min=lgm_min, npts_min=npts_min
+    )
+    assert skip_fit is False
