@@ -5,6 +5,7 @@ Data loading functions require h5py and/or haccytrees
 
 from collections import namedtuple
 from copy import deepcopy
+from warnings import warn
 
 import numpy as np
 from jax import jit as jjit
@@ -18,6 +19,7 @@ DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
 NPTS_FIT_MIN = 3  # Number of non-trivial points in the MAH
 NOFIT_FILL = -99.0
+EPSILON = 1e-7
 
 HEADER = "# halo_id logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_algo\n"  # noqa : E501
 DEFAULT_NCHUNKS = 50
@@ -33,19 +35,22 @@ VariedDiffmahUParams = namedtuple("VariedDiffmahUParams", _MAH_UPNAMES)
 
 def diffmah_fitter(
     t_sim,
-    log_mah_sim,
+    mah_sim,
     lgm_min=-float("inf"),
     dlogm_cut=DLOGM_CUT,
     t_fit_min=T_FIT_MIN,
     nstep=200,
     n_warmup=1,
 ):
+    _check_for_logmah_vs_mah_mistake(mah_sim)
+
     u_p_init, loss_data, skip_fit = get_loss_data(
-        t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
+        t_sim, mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     if skip_fit:
-        p_best = np.zeros_like(u_p_init) + NOFIT_FILL
-        loss_best = +NOFIT_FILL
+        p_best = np.zeros(len(dk.DEFAULT_MAH_PARAMS)) + NOFIT_FILL
+        p_best = dk.DEFAULT_MAH_PARAMS._make(p_best)
+        loss_best = NOFIT_FILL
         fit_terminates = False
         code_used = -1
         return p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
@@ -58,6 +63,14 @@ def diffmah_fitter(
         u_p_best = dk.DEFAULT_MAH_U_PARAMS._make((*u_p_best, u_t_peak))
         p_best = dk.get_bounded_mah_params(u_p_best)
         return p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data
+
+
+def _check_for_logmah_vs_mah_mistake(mah_sim):
+    issue_warning = mah_sim.max() < 1e4
+    msg = "Values of input MAH are suspiciously small.\n"
+    msg += "Double-check that you have not input log_mah"
+    if issue_warning:
+        warn(msg)
 
 
 def write_collated_data(outname, fit_data_strings, chunk_arr=None):
@@ -98,7 +111,7 @@ def compute_indx_t_peak_singlehalo(log_mah_table):
 compute_indx_t_peak_halopop = jjit(vmap(compute_indx_t_peak_singlehalo, in_axes=(0,)))
 
 
-def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
+def _get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
     logm0_sim = log_mah_sim[-1]
 
     msk = log_mah_sim > (logm0_sim - dlogm_cut)
@@ -110,15 +123,26 @@ def get_target_data(t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min):
     return logt_target, log_mah_target
 
 
+def _get_clipped_log_mah(mah, lgm_min):
+    msk = mah <= 10**lgm_min
+    clip = EPSILON + 10**lgm_min
+    clipped_log_mah = np.log10(np.where(msk, clip, mah))
+    return clipped_log_mah
+
+
 def get_loss_data(
     t_sim,
-    log_mah_sim,
+    mah_sim,
     lgm_min=-float("inf"),
     dlogm_cut=DLOGM_CUT,
     t_fit_min=T_FIT_MIN,
     npts_min=NPTS_FIT_MIN,
 ):
-    logt_target, log_mah_target = get_target_data(
+    _check_for_logmah_vs_mah_mistake(mah_sim)
+
+    log_mah_sim = _get_clipped_log_mah(mah_sim, lgm_min)
+
+    logt_target, log_mah_target = _get_target_data(
         t_sim,
         log_mah_sim,
         lgm_min,

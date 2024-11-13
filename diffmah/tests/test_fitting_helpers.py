@@ -19,9 +19,9 @@ def test_fitting_helpers_integration():
     early, late = 0.8, 0.15
     t_peak = 13.0
     p_true = dk.DiffmahParams(logm0, logtc, early, late, t_peak)
-    log_mah_sim = dk.mah_singlehalo(p_true, t_sim, logt0)[1]
+    mah_sim = 10 ** dk.mah_singlehalo(p_true, t_sim, logt0)[1]
 
-    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(t_sim, log_mah_sim, lgm_min)
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(t_sim, mah_sim, lgm_min)
     t_target, log_mah_target, u_t_peak, logt0_out = loss_data
     t_peak_inferred = dk._get_bounded_diffmah_param(u_t_peak, dk.MAH_PBOUNDS.t_peak)
     assert np.all(np.isfinite(u_p_init))
@@ -29,7 +29,7 @@ def test_fitting_helpers_integration():
     assert np.allclose(t_peak_inferred, p_true.t_peak, atol=0.05)
 
     msk = t_sim >= t_target.min()
-    assert np.allclose(log_mah_target, log_mah_sim[msk])
+    assert np.allclose(log_mah_target, np.log10(mah_sim[msk]))
 
     _res = bfgs_adam_fallback(fithelp.loss_and_grads_kern, u_p_init, loss_data)
     u_p_best, loss_best, fit_terminates, code_used = _res
@@ -72,24 +72,26 @@ def test_diffmah_fitter():
         uran = jran.uniform(test_key, minval=-10, maxval=10, shape=u_p.shape)
         u_p = dk.DEFAULT_MAH_U_PARAMS._make(u_p + uran)
         mah_params = dk.get_bounded_mah_params(u_p)
-        __, log_mah_sim = dk.mah_singlehalo(mah_params, t_sim, LGT0)
+        mah_sim = 10 ** dk.mah_singlehalo(mah_params, t_sim, LGT0)[1]
 
         log_mah_noise = jran.uniform(
-            noise_key, minval=-0.1, maxval=0.1, shape=log_mah_sim.shape
+            noise_key, minval=-0.1, maxval=0.1, shape=mah_sim.shape
         )
-        log_mah_target = log_mah_sim + log_mah_noise
+        mah_target = 10 ** (np.log10(mah_sim) + log_mah_noise)
 
-        _res = fithelp.diffmah_fitter(t_sim, log_mah_target, lgm_min)
+        _res = fithelp.diffmah_fitter(t_sim, mah_target, lgm_min)
         p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data = _res
         __, log_mah_fit = dk.mah_singlehalo(p_best, t_sim, LGT0)
-        loss_check = fithelp._mse(log_mah_fit, log_mah_sim)
+        loss_check = fithelp._mse(log_mah_fit, np.log10(mah_sim))
         assert loss_check < 0.01
 
 
 def test_diffmah_fitter_skips_mahs_with_insufficient_data():
     t_sim = np.linspace(0.1, 13.8, 100)
-    log_mah_sim = np.linspace(1, 14, t_sim.size)
-    _res = fithelp.diffmah_fitter(t_sim, log_mah_sim, lgm_min=log_mah_sim[-1] + 1)
+    mah_sim = 10 ** np.linspace(0, 14, t_sim.size)
+    mah_sim[:10] = 0.0
+    lgm_min = 100
+    _res = fithelp.diffmah_fitter(t_sim, mah_sim, lgm_min=lgm_min)
     p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data = _res
     assert skip_fit
     assert fit_terminates is False
@@ -106,28 +108,28 @@ def test_get_target_data():
 
     # No data points should be excluded
     lgm_min = 0.0
-    logt_target, log_mah_target = fithelp.get_target_data(
+    logt_target, log_mah_target = fithelp._get_target_data(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     assert log_mah_target.size == log_mah_sim.size
 
     # No data points should be excluded
     lgm_min = -float("inf")
-    logt_target, log_mah_target = fithelp.get_target_data(
+    logt_target, log_mah_target = fithelp._get_target_data(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     assert log_mah_target.size == log_mah_sim.size
 
     # First data point should be excluded
     lgm_min = 1.001
-    logt_target, log_mah_target = fithelp.get_target_data(
+    logt_target, log_mah_target = fithelp._get_target_data(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     assert log_mah_target.size == log_mah_sim.size - 1
 
     # All data points should be excluded
     lgm_min = 21.001
-    logt_target, log_mah_target = fithelp.get_target_data(
+    logt_target, log_mah_target = fithelp._get_target_data(
         t_sim, log_mah_sim, lgm_min, dlogm_cut, t_fit_min
     )
     assert len(log_mah_target) == 0
@@ -135,16 +137,16 @@ def test_get_target_data():
 
 def test_get_loss_data():
     t_sim = np.linspace(0.1, 13.8, 100)
-    log_mah_sim = np.linspace(1, 14, t_sim.size)
+    mah_sim = 10 ** np.linspace(1, 14, t_sim.size)
 
     # No data points should be excluded
     u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
-        t_sim, log_mah_sim, dlogm_cut=100.0, t_fit_min=0.0
+        t_sim, mah_sim, dlogm_cut=100.0, t_fit_min=0.0
     )
     t_target, log_mah_target, u_t_peak, logt0 = loss_data
     assert skip_fit is False
     assert t_target.size == t_sim.size
-    assert log_mah_target.size == log_mah_sim.size
+    assert log_mah_target.size == mah_sim.size
     assert np.all(np.isfinite(u_t_peak))
     t0 = 10**logt0
     assert 5 < t0 < 25
@@ -154,7 +156,7 @@ def test_get_loss_data():
     # High-redshift data points should be excluded
     t_fit_min = 2.0
     u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
-        t_sim, log_mah_sim, dlogm_cut=100.0, t_fit_min=t_fit_min
+        t_sim, mah_sim, dlogm_cut=100.0, t_fit_min=t_fit_min
     )
     assert skip_fit is False
     t_target = loss_data[0]
@@ -164,25 +166,25 @@ def test_get_loss_data():
     # Low-mass data points should be excluded
     dlogm_cut = 3.0
     u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
-        t_sim, log_mah_sim, dlogm_cut=dlogm_cut, t_fit_min=t_fit_min
+        t_sim, mah_sim, dlogm_cut=dlogm_cut, t_fit_min=t_fit_min
     )
     assert skip_fit is False
     log_mah_target = loss_data[1]
-    msk = log_mah_sim > log_mah_sim[-1] - dlogm_cut
-    assert np.allclose(log_mah_target, log_mah_sim[msk])
+    msk = mah_sim > 10 ** (np.log10(mah_sim[-1]) - dlogm_cut)
+    assert np.allclose(log_mah_target, np.log10(mah_sim[msk]))
 
     # Fit should be skipped on account of npts_min cut
     npts_min = 4
-    lgm_min = log_mah_sim[-npts_min]
+    lgm_min = np.log10(mah_sim[-npts_min])
     u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
-        t_sim, log_mah_sim, lgm_min=lgm_min, npts_min=npts_min
+        t_sim, mah_sim, lgm_min=lgm_min, npts_min=npts_min
     )
     assert skip_fit is True
 
     # Fit should NOT be skipped on account of npts_min cut
     npts_min = 4
-    lgm_min = log_mah_sim[-npts_min - 1]
+    lgm_min = np.log10(mah_sim[-npts_min - 1])
     u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
-        t_sim, log_mah_sim, lgm_min=lgm_min, npts_min=npts_min
+        t_sim, mah_sim, lgm_min=lgm_min, npts_min=npts_min
     )
     assert skip_fit is False
