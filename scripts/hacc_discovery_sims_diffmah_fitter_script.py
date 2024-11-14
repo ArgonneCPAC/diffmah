@@ -10,7 +10,7 @@ import numpy as np
 from diffmah import fitting_helpers as cfh
 from mpi4py import MPI
 
-from load_w0wa_cores import NCHUNKS, NUM_SUBVOLS_DISCOVERY, load_mahs
+from load_w0wa_cores import NCHUNKS, NUM_SUBVOLS_DISCOVERY, load_mahs_per_rank
 
 TMP_OUTPAT = "tmp_mah_fits_rank_{0}.dat"
 
@@ -90,24 +90,11 @@ if __name__ == "__main__":
             comm.Barrier()
             ichunk_start = time()
 
-            tarr, mahs = load_mahs(fn_data, fn_cfg, chunknum, nchunks=nchunks)
-
-            if rank == 0:
-                print("Number of halos in chunk = {}".format(mahs.shape[0]))
-
-            # Ensure the target MAHs are cumulative peak masses
-            mahs = np.maximum.accumulate(mahs, axis=1)
-
-            # Get data for rank
-            if args.test:
-                nhalos_tot = nranks * 5
-            else:
-                nhalos_tot = mahs.shape[0]
-            _a = np.arange(0, nhalos_tot).astype("i8")
-            indx = np.array_split(_a, nranks)[rank]
-
-            mahs_for_rank = mahs[indx]
+            tarr, mahs_for_rank = load_mahs_per_rank(
+                fn_data, fn_cfg, chunknum, nchunks=nchunks, comm=MPI.COMM_WORLD
+            )
             nhalos_for_rank = mahs_for_rank.shape[0]
+            nhalos_tot = comm.reduce(nhalos_for_rank, op=MPI.SUM)
 
             chunknum_str = f"{chunknum:0{nchar_chunks}d}"
             outbase_chunk = f"subvol_{subvol_str}_chunk_{chunknum_str}"
@@ -129,7 +116,9 @@ if __name__ == "__main__":
 
             msg = "\n\nWallclock runtime to fit {0} halos with {1} ranks = {2:.1f} seconds\n\n"
             if rank == 0:
-                print("\nFinished with subvolume {}".format(isubvol))
+                print("\nFinished with subvolume {} chunk {}".format(
+                    isubvol, chunknum
+                ))
                 runtime = ichunk_end - ichunk_start
                 print(msg.format(nhalos_tot, nranks, runtime))
 
