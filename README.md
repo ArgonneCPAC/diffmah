@@ -14,7 +14,7 @@ $ pip install .
 ```
 
 ### Environment configuration
-For a typical development environment in conda-forge:
+For a typical development environment in conda:
 
 ```
 $ conda create -c conda-forge -n diffit python=3.9 numpy jax pytest ipython jupyter matplotlib scipy h5py diffmah
@@ -24,7 +24,7 @@ $ conda create -c conda-forge -n diffit python=3.9 numpy jax pytest ipython jupy
 Data for this project can be found [at this URL](https://portal.nersc.gov/project/hacc/aphearin/diffmah_data/).
 
 ## Documentation
-Online documentation for Diffmah is available [diffmah.readthedocs.io](https://diffmah.readthedocs.io/en/latest/).
+Online documentation for Diffmah is available at [diffmah.readthedocs.io](https://diffmah.readthedocs.io/en/latest/).
 
 ## Scripts and demo notebooks
 The `diffmah_fitter_demo.ipynb` notebook demonstrates how to fit the MAH of a simulated halo with a diffmah approximation. See `history_fitting_script.py` for an example of how to fit the MAHs of a large number of simulated halos in parallel with mpi4py.
