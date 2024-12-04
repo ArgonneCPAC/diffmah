@@ -192,7 +192,7 @@ def mc_diffmah_params_singlesat(
             diffmahpop_params, lgm_obs, t_obs, t_peak, ran_key
         )
 
-    (mean_mah_params_early, mean_mah_params_late, frac_early_cens) = _res
+    mean_mah_params_early, mean_mah_params_late, frac_early_cens = _res
 
     mean_mah_u_params_early = get_unbounded_mah_params(mean_mah_params_early)
     mean_mah_u_params_late = get_unbounded_mah_params(mean_mah_params_late)
