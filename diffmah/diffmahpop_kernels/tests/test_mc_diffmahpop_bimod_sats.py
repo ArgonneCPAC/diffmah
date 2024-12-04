@@ -56,7 +56,7 @@ def test_mean_diffmah_params():
             assert np.all(np.isfinite(_x))
 
 
-def test_mc_diffmah_params_singlecen():
+def test_mc_diffmah_params_singlesat():
     ran_key = jran.key(0)
     t_0 = 13.0
     lgt0 = np.log10(t_0)
@@ -64,10 +64,32 @@ def test_mc_diffmah_params_singlecen():
     lgmarr = np.linspace(10, 15, 20)
     for lgm_obs in lgmarr:
         args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0)
-        _res = mcdpk.mc_diffmah_params_singlecen(*args)
+        _res = mcdpk.mc_diffmah_params_singlesat(*args)
         mah_params_e, mah_params_l, frac_early = _res
         assert np.all(np.isfinite(mah_params_e.logtc))
         assert np.all(np.isfinite(mah_params_l.logtc))
+
+
+def test_mc_diffmah_params_singlesat_agrees_with_fixed_t_peak_version():
+    ran_key = jran.key(0)
+    t_0 = 13.0
+    lgt0 = np.log10(t_0)
+    t_obs = 10.0
+    lgmarr = np.linspace(10, 15, 20)
+    for lgm_obs in lgmarr:
+        args = (DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0)
+        _res = mcdpk.mc_diffmah_params_singlesat(*args)
+        mah_params_e, mah_params_l, frac_early = _res
+
+        _res2 = mcdpk.mc_diffmah_params_singlesat(*args, t_peak=mah_params_e.t_peak)
+        mah_params_e2, mah_params_l2, frac_early2 = _res2
+        for p, p2 in zip(mah_params_e, mah_params_e2):
+            assert np.allclose(p, p2)
+
+        _res3 = mcdpk.mc_diffmah_params_singlesat(*args, t_peak=mah_params_l.t_peak)
+        mah_params_e3, mah_params_l3, frac_early3 = _res3
+        for p, p2 in zip(mah_params_l, mah_params_l3):
+            assert np.allclose(p, p2)
 
 
 def test_predict_mah_moments_singlebin():
