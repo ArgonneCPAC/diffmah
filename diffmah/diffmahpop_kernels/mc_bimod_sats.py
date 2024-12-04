@@ -269,7 +269,7 @@ def mc_diffmah_satpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0, t_peak=N
     mc_early = uran < frac_early_cens
     _p = [jnp.where(mc_early, x, y) for x, y in zip(mah_params_early, mah_params_late)]
     mah_params = DEFAULT_MAH_PARAMS._make(_p)
-    return mah_params, mah_params_early, mah_params_late, frac_early_cens
+    return mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early
 
 
 @jjit

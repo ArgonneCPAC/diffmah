@@ -185,13 +185,13 @@ def test_mc_diffmah_satpop():
 
     args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0
     _res = mcdpk.mc_diffmah_satpop(*args)
-    mah_params, mah_params_early, mah_params_late, frac_early_cens = _res
+    mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early = _res
     for x in mah_params:
         assert x.shape == (n_halos,)
         assert np.all(np.isfinite(x))
 
     _res = mcdpk.mc_diffmah_satpop(*args, t_peak=t_peak)
-    mah_params, mah_params_early, mah_params_late, frac_early_cens = _res
+    mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early = _res
     for x in mah_params:
         assert x.shape == (n_halos,)
         assert np.all(np.isfinite(x))
