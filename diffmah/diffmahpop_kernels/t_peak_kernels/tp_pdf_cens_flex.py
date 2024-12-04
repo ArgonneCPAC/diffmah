@@ -18,6 +18,7 @@ UTP_LGM_X0_K = 1.0
 UTP_T_OBS_X0_K = 2.0
 
 
+# lower bound on t_peak/t_obs
 UTP_MIN = 0.05
 
 DEFAULT_TPCENS_PDICT = OrderedDict(

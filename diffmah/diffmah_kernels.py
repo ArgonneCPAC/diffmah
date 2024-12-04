@@ -25,7 +25,7 @@ MAH_PBDICT = OrderedDict(
     logtc=(-1.0, 1.0),
     early_index=(0.1, 10.0),
     late_index=(0.1, 5.0),
-    t_peak=(0.5, 20.0),
+    t_peak=(0.05, 20.0),
 )
 MAH_PBOUNDS = DiffmahParams(*list(MAH_PBDICT.values()))
 
