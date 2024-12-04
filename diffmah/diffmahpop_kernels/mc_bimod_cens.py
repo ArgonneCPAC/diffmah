@@ -240,6 +240,13 @@ _V = (None, None, 0, 0, 0, None)
 _mc_diffmah_singlecen_vmap_kern = jjit(vmap(_mc_diffmah_singlecen, in_axes=_V))
 
 
+_P1 = (None, 0, 0, 0, None, None)
+mc_diffmah_params_cenpop_kern1 = jjit(vmap(mc_diffmah_params_singlecen, in_axes=_P1))
+
+_P2 = (None, 0, 0, 0, None, 0)
+mc_diffmah_params_cenpop_kern2 = jjit(vmap(mc_diffmah_params_singlecen, in_axes=_P2))
+
+
 @partial(jjit, static_argnames=["n_mc"])
 def _mc_diffmah_halo_sample(
     diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0, n_mc=NH_PER_M0BIN
@@ -249,6 +256,24 @@ def _mc_diffmah_halo_sample(
     return _mc_diffmah_singlecen_vmap_kern(
         diffmahpop_params, tarr, lgm_obs + zz, t_obs + zz, ran_keys, lgt0
     )
+
+
+@jjit
+def mc_diffmah_cenpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0, t_peak=None):
+    """"""
+    early_late_key, ran_key = jran.split(ran_key, 2)
+    ran_keys = jran.split(ran_key, lgm_obs.size)
+    args = diffmahpop_params, lgm_obs, t_obs, ran_keys, lgt0, t_peak
+    if t_peak is None:
+        _res = mc_diffmah_params_cenpop_kern1(*args)
+    else:
+        _res = mc_diffmah_params_cenpop_kern2(*args)
+    mah_params_early, mah_params_late, frac_early_cens = _res
+    uran = jran.uniform(early_late_key, shape=frac_early_cens.shape)
+    mc_early = uran < frac_early_cens
+    _p = [jnp.where(mc_early, x, y) for x, y in zip(mah_params_early, mah_params_late)]
+    mah_params = DEFAULT_MAH_PARAMS._make(_p)
+    return mah_params, mah_params_early, mah_params_late, frac_early_cens
 
 
 @jjit

@@ -98,6 +98,31 @@ def test_mc_diffmah_params_singlecen_agrees_with_fixed_t_peak_version():
             assert np.allclose(p, p2)
 
 
+def test_mc_diffmah_cenpop():
+    ran_key = jran.key(0)
+    t_0 = 13.0
+    lgt0 = np.log10(t_0)
+
+    n_halos = 450
+    lgm_key, t_obs_key, t_peak_key, ran_key = jran.split(ran_key, 4)
+    lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
+    t_obs = jran.uniform(t_obs_key, minval=2, maxval=15, shape=(n_halos,))
+    t_peak = jran.uniform(t_obs_key, minval=2, maxval=15, shape=(n_halos,))
+
+    args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0
+    _res = mcdpk.mc_diffmah_cenpop(*args)
+    mah_params, mah_params_early, mah_params_late, frac_early_cens = _res
+    for x in mah_params:
+        assert x.shape == (n_halos,)
+        assert np.all(np.isfinite(x))
+
+    _res = mcdpk.mc_diffmah_cenpop(*args, t_peak=t_peak)
+    mah_params, mah_params_early, mah_params_late, frac_early_cens = _res
+    for x in mah_params:
+        assert x.shape == (n_halos,)
+        assert np.all(np.isfinite(x))
+
+
 def test_predict_mah_moments_singlebin():
     ran_key = jran.key(0)
     t_0 = 13.0
