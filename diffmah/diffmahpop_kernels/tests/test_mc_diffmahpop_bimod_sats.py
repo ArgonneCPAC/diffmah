@@ -199,3 +199,20 @@ def test_mc_diffmah_satpop():
     for x in mah_params:
         assert x.shape == (n_halos,)
         assert np.all(np.isfinite(x))
+
+
+def test_mc_diffmah_satpop_holds_t_peak_fixed_correctly():
+    ran_key = jran.key(0)
+    t_0 = 13.0
+    lgt0 = np.log10(t_0)
+
+    n_halos = 450
+    lgm_key, t_obs_key, t_peak_key, ran_key = jran.split(ran_key, 4)
+    lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
+    t_obs = jran.uniform(t_obs_key, minval=2, maxval=15, shape=(n_halos,))
+    t_peak = jran.uniform(t_obs_key, minval=0.2, maxval=10, shape=(n_halos,))
+
+    args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0
+    halopop = mcdpk.mc_diffmah_satpop(*args, t_peak=t_peak)
+    mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early = halopop
+    assert np.allclose(t_peak, mah_params.t_peak, atol=0.01)
