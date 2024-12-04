@@ -170,3 +170,28 @@ def test_mc_satpop():
     dmhdt_recomputed, log_mah_recomputed = dk.mah_halopop(mah_params, tarr, LGT0)
     assert np.allclose(dmhdt, dmhdt_recomputed)
     assert np.allclose(log_mah, log_mah_recomputed)
+
+
+def test_mc_diffmah_satpop():
+    ran_key = jran.key(0)
+    t_0 = 13.0
+    lgt0 = np.log10(t_0)
+
+    n_halos = 450
+    lgm_key, t_obs_key, t_peak_key, ran_key = jran.split(ran_key, 4)
+    lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
+    t_obs = jran.uniform(t_obs_key, minval=2, maxval=15, shape=(n_halos,))
+    t_peak = jran.uniform(t_obs_key, minval=2, maxval=15, shape=(n_halos,))
+
+    args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0
+    _res = mcdpk.mc_diffmah_satpop(*args)
+    mah_params, mah_params_early, mah_params_late, frac_early_cens = _res
+    for x in mah_params:
+        assert x.shape == (n_halos,)
+        assert np.all(np.isfinite(x))
+
+    _res = mcdpk.mc_diffmah_satpop(*args, t_peak=t_peak)
+    mah_params, mah_params_early, mah_params_late, frac_early_cens = _res
+    for x in mah_params:
+        assert x.shape == (n_halos,)
+        assert np.all(np.isfinite(x))

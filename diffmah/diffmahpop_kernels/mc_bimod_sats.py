@@ -247,6 +247,31 @@ def _mc_diffmah_halo_sample(
     )
 
 
+_P1 = (None, 0, 0, 0, None, None)
+mc_diffmah_params_satpop_kern1 = jjit(vmap(mc_diffmah_params_singlesat, in_axes=_P1))
+
+_P2 = (None, 0, 0, 0, None, 0)
+mc_diffmah_params_satpop_kern2 = jjit(vmap(mc_diffmah_params_singlesat, in_axes=_P2))
+
+
+@jjit
+def mc_diffmah_satpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0, t_peak=None):
+    """"""
+    early_late_key, ran_key = jran.split(ran_key, 2)
+    ran_keys = jran.split(ran_key, lgm_obs.size)
+    args = diffmahpop_params, lgm_obs, t_obs, ran_keys, lgt0, t_peak
+    if t_peak is None:
+        _res = mc_diffmah_params_satpop_kern1(*args)
+    else:
+        _res = mc_diffmah_params_satpop_kern2(*args)
+    mah_params_early, mah_params_late, frac_early_cens = _res
+    uran = jran.uniform(early_late_key, shape=frac_early_cens.shape)
+    mc_early = uran < frac_early_cens
+    _p = [jnp.where(mc_early, x, y) for x, y in zip(mah_params_early, mah_params_late)]
+    mah_params = DEFAULT_MAH_PARAMS._make(_p)
+    return mah_params, mah_params_early, mah_params_late, frac_early_cens
+
+
 @jjit
 def mc_satpop(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
     """"""
