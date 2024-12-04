@@ -1,6 +1,7 @@
 """
 """
 
+from collections import namedtuple
 from functools import partial
 
 from jax import jit as jjit
@@ -273,7 +274,18 @@ def mc_diffmah_cenpop(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0, t_peak=N
     mc_early = uran < frac_early_cens
     _p = [jnp.where(mc_early, x, y) for x, y in zip(mah_params_early, mah_params_late)]
     mah_params = DEFAULT_MAH_PARAMS._make(_p)
-    return mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early
+
+    halopop_keys = (
+        "mah_params",
+        "mah_params_early",
+        "mah_params_late",
+        "frac_early_cens",
+        "mc_early",
+    )
+    HaloPop = namedtuple("HaloPop", halopop_keys)
+    return HaloPop(
+        mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early
+    )
 
 
 @jjit
@@ -299,7 +311,10 @@ def mc_cenpop(diffmahpop_params, tarr, lgm_obs, t_obs, ran_key, lgt0):
 
     dmhdt = jnp.where(msk.reshape((-1, 1)), dmhdt_early, dmhdt_late)
     log_mah = jnp.where(msk.reshape((-1, 1)), log_mah_early, log_mah_late)
-    return mah_params, dmhdt, log_mah
+
+    halopop_keys = ("mah_params", "dmhdt", "log_mah")
+    HaloPop = namedtuple("HaloPop", halopop_keys)
+    return HaloPop(mah_params, dmhdt, log_mah)
 
 
 @jjit

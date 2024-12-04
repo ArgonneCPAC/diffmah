@@ -159,12 +159,14 @@ def test_mc_satpop():
     lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
     t_obs = jran.uniform(t_key, minval=2, maxval=t0, shape=(n_halos,))
 
-    _res = mcdpk.mc_satpop(
+    halopop = mcdpk.mc_satpop(
         DEFAULT_DIFFMAHPOP_PARAMS, tarr, lgm_obs, t_obs, halo_key, LGT0
     )
-    for _x in _res:
+    for _x in halopop:
         assert np.all(np.isfinite(_x))
-    mah_params, dmhdt, log_mah = _res
+    mah_params, dmhdt, log_mah = halopop
+    assert hasattr(halopop, "mah_params")
+    assert hasattr(halopop, "dmhdt")
     assert log_mah.shape == (n_halos, n_t)
 
     dmhdt_recomputed, log_mah_recomputed = dk.mah_halopop(mah_params, tarr, LGT0)
@@ -184,8 +186,10 @@ def test_mc_diffmah_satpop():
     t_peak = jran.uniform(t_obs_key, minval=2, maxval=15, shape=(n_halos,))
 
     args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0
-    _res = mcdpk.mc_diffmah_satpop(*args)
-    mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early = _res
+    halopop = mcdpk.mc_diffmah_satpop(*args)
+    mah_params, mah_params_early, mah_params_late, frac_early_cens, mc_early = halopop
+    assert hasattr(halopop, "mah_params")
+
     for x in mah_params:
         assert x.shape == (n_halos,)
         assert np.all(np.isfinite(x))
