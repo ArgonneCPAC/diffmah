@@ -129,11 +129,11 @@ def test_mc_diffmah_cenpop_holds_t_peak_fixed_correctly():
     t_0 = 13.0
     lgt0 = np.log10(t_0)
 
-    n_halos = 450
+    n_halos = 4_500
     lgm_key, t_obs_key, t_peak_key, ran_key = jran.split(ran_key, 4)
     lgm_obs = jran.uniform(lgm_key, minval=10, maxval=15, shape=(n_halos,))
     t_obs = jran.uniform(t_obs_key, minval=2, maxval=15, shape=(n_halos,))
-    t_peak = jran.uniform(t_obs_key, minval=3, maxval=10, shape=(n_halos,))
+    t_peak = jran.uniform(t_obs_key, minval=0.2, maxval=10, shape=(n_halos,))
 
     args = DEFAULT_DIFFMAHPOP_PARAMS, lgm_obs, t_obs, ran_key, lgt0
     halopop = mcdpk.mc_diffmah_cenpop(*args, t_peak=t_peak)
