@@ -48,6 +48,21 @@ def _mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
 
 
 @jjit
+def _mean_diffmah_params_t_peak(diffmahpop_params, lgm_obs, t_obs, t_peak, ran_key):
+    mah_params_early = _mean_diffmah_params_early_t_peak(
+        diffmahpop_params, lgm_obs, t_obs, t_peak, ran_key
+    )
+
+    mah_params_late = _mean_diffmah_params_late_t_peak(
+        diffmahpop_params, lgm_obs, t_obs, t_peak, ran_key
+    )
+
+    frac_early_cens = _frac_early_cens_kern(diffmahpop_params, lgm_obs, t_obs)
+
+    return mah_params_early, mah_params_late, frac_early_cens
+
+
+@jjit
 def _mean_diffmah_params_early(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
     t_0 = 10**lgt0
     model_params = get_component_model_params(diffmahpop_params)
@@ -66,6 +81,35 @@ def _mean_diffmah_params_early(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
     tpc_key, ran_key = jran.split(ran_key, 2)
 
     t_peak = mc_tpeak_singlecen(tp_pdf_cens_params, lgm_obs, t_obs, tpc_key, t_0)
+
+    logm0 = _pred_logm0_kern_early(logm0_params, lgm_obs, t_obs, t_peak)
+    logtc = _pred_logtc_early(logtc_params, lgm_obs, t_obs, t_peak)
+    early_index = _pred_early_index_early(early_index_params, lgm_obs, t_obs, t_peak)
+    late_index = _pred_late_index_early(late_index_params, lgm_obs)
+
+    mah_params = DiffmahParams(logm0, logtc, early_index, late_index, t_peak)
+
+    return mah_params
+
+
+@jjit
+def _mean_diffmah_params_early_t_peak(
+    diffmahpop_params, lgm_obs, t_obs, t_peak, ran_key
+):
+    model_params = get_component_model_params(diffmahpop_params)
+    (
+        tp_pdf_cens_params,
+        tp_pdf_sats_params,
+        logm0_params,
+        logm0_sats_params,
+        logtc_params,
+        early_index_params,
+        late_index_params,
+        fec_params,
+        cov_params,
+    ) = model_params
+
+    tpc_key, ran_key = jran.split(ran_key, 2)
 
     logm0 = _pred_logm0_kern_early(logm0_params, lgm_obs, t_obs, t_peak)
     logtc = _pred_logtc_early(logtc_params, lgm_obs, t_obs, t_peak)
@@ -108,8 +152,45 @@ def _mean_diffmah_params_late(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
 
 
 @jjit
-def mc_diffmah_params_singlecen(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0):
-    _res = _mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
+def _mean_diffmah_params_late_t_peak(
+    diffmahpop_params, lgm_obs, t_obs, t_peak, ran_key
+):
+    model_params = get_component_model_params(diffmahpop_params)
+    (
+        tp_pdf_cens_params,
+        tp_pdf_sats_params,
+        logm0_params,
+        logm0_sats_params,
+        logtc_params,
+        early_index_params,
+        late_index_params,
+        fec_params,
+        cov_params,
+    ) = model_params
+
+    tpc_key, ran_key = jran.split(ran_key, 2)
+
+    logm0 = _pred_logm0_kern_late(logm0_params, lgm_obs, t_obs, t_peak)
+    logtc = _pred_logtc_late(logtc_params, lgm_obs, t_obs, t_peak)
+    early_index = _pred_early_index_late(early_index_params, lgm_obs, t_obs, t_peak)
+    late_index = _pred_late_index_late(late_index_params, lgm_obs)
+
+    mah_params = DiffmahParams(logm0, logtc, early_index, late_index, t_peak)
+
+    return mah_params
+
+
+@jjit
+def mc_diffmah_params_singlecen(
+    diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0, t_peak=None
+):
+    if t_peak is None:
+        _res = _mean_diffmah_params(diffmahpop_params, lgm_obs, t_obs, ran_key, lgt0)
+    else:
+        _res = _mean_diffmah_params_t_peak(
+            diffmahpop_params, lgm_obs, t_obs, t_peak, ran_key
+        )
+
     (
         mean_mah_params_early,
         mean_mah_params_late,
