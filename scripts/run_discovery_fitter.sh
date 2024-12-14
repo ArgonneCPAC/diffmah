@@ -13,7 +13,7 @@
 
 # Load software
 source ~/.bash_profile
-conda activate diffhacc
+conda activate improv311
 
-cd /home/ahearin/work/random/1113
-mpirun -n 100 python hacc_discovery_sims_diffmah_fitter_script.py LCRC LCDM /lcrc/project/halotools/DESI_W0WA/diffmah_fits/LCDM -istart 0 -iend 1
+cd /home/ahearin/work/random/1214
+mpirun -n 100 python hacc_discovery_sims_diffmah_fitter_script.py LCRC W0WA /lcrc/project/halotools/DESI_W0WA/diffmah_fits/W0WA -istart 0 -iend 1
