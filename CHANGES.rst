@@ -1,14 +1,28 @@
+0.6.2 (2024-12-14)
+------------------
+- Add data_loader sub-package (https://github.com/ArgonneCPAC/diffmah/pull/153)
+
+- Add script for fitting HACC core merger trees (https://github.com/ArgonneCPAC/diffmah/pull/152)
+
+- Change t_peak param bounds (https://github.com/ArgonneCPAC/diffmah/pull/156)
+
+- Change API of DiffmahPop MC generators (https://github.com/ArgonneCPAC/diffmah/pull/155)
+
+
 0.6.1 (2024-10-24)
 ------------------
 - Include t_peak as fifth diffmah parameter (https://github.com/ArgonneCPAC/diffmah/pull/147)
+
 
 0.6.0 (2024-08-09)
 ------------------
 - Add prototype for P(MAH | m_obs, t_obs) (https://github.com/ArgonneCPAC/diffmah/pull/132)
 
+
 0.5.1 (2024-08-07)
 ------------------
 - Add new convenience kernels for diffstar (https://github.com/ArgonneCPAC/diffmah/pull/131)
+
 
 0.5.0 (2024-01-15)
 ------------------
