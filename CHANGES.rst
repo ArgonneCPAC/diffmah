@@ -1,3 +1,8 @@
+0.6.3 (2024-12-14)
+------------------
+- Require python>=3.11 (https://github.com/ArgonneCPAC/diffmah/pull/158)
+
+
 0.6.2 (2024-12-14)
 ------------------
 - Add data_loader sub-package (https://github.com/ArgonneCPAC/diffmah/pull/153)
