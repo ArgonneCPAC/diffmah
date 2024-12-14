@@ -9,7 +9,7 @@ from jax import random as jran
 from jax import value_and_grad, vmap
 from jax.scipy.stats import truncnorm
 
-from ...bfgs_wrapper import bfgs_adam_fallback
+from ...fitting_helpers.bfgs_wrapper import bfgs_adam_fallback
 from ...utils import _inverse_sigmoid, _sigmoid
 
 K_BOUNDING = 0.1
