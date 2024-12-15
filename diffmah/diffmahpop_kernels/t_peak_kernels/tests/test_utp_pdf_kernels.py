@@ -7,7 +7,7 @@ from jax import numpy as jnp
 from jax import random as jran
 from jax import value_and_grad
 
-from ....bfgs_wrapper import bfgs_adam_fallback
+from ....fitting_helpers.bfgs_wrapper import bfgs_adam_fallback
 from .. import utp_pdf_kernels as tpk
 
 

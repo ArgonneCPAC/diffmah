@@ -1,18 +1,33 @@
-"""Script to fit Bolshoi, MDPL2, or TNG MAHs with the diffmah model."""
-import numpy as np
-import os
-from mpi4py import MPI
+"""Script to fit Bolshoi, MDPL2, or TNG MAHs with the diffmah model.
+
+This script only runs on diffmah<=0.6.2
+
+"""
+
 import argparse
-from time import time
-from diffmah.load_mah_data import load_tng_data, load_bolshoi_data, load_mdpl2_data
-from diffmah.load_mah_data import TASSO, BEBOP
-from diffmah.fit_mah_helpers import get_header, get_outline_bad_fit
-from diffmah.fit_mah_helpers import get_loss_data
-from diffmah.fit_mah_helpers import log_mah_mse_loss_and_grads
-from diffmah.fit_mah_helpers import get_outline
-from diffmah.utils import jax_adam_wrapper
+import os
 import subprocess
+from time import time
+
 import h5py
+import numpy as np
+from mpi4py import MPI
+
+from diffmah.fit_mah_helpers import (
+    get_header,
+    get_loss_data,
+    get_outline,
+    get_outline_bad_fit,
+    log_mah_mse_loss_and_grads,
+)
+from diffmah.load_mah_data import (
+    BEBOP,
+    TASSO,
+    load_bolshoi_data,
+    load_mdpl2_data,
+    load_tng_data,
+)
+from diffmah.utils import jax_adam_wrapper
 
 TMP_OUTPAT = "_tmp_mah_fits_rank_{0}.dat"
 TODAY = 13.8

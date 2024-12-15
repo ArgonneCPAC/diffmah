@@ -6,8 +6,8 @@ import warnings
 import numpy as np
 from jax import random as jran
 
-from .. import diffmah_kernels as dk
-from .. import fitting_helpers as fithelp
+from ... import diffmah_kernels as dk
+from .. import diffmah_fitter_helpers as fithelp
 from ..bfgs_wrapper import bfgs_adam_fallback
 
 
