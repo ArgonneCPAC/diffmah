@@ -2,10 +2,7 @@
 """
 
 import numpy as np
-from jax import jit as jax_jit
-from jax import numpy as jax_np
 from jax import random as jran
-from jax import value_and_grad
 from scipy.stats import random_correlation
 
 from ..utils import (
