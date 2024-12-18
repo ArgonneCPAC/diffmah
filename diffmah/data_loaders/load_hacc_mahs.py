@@ -69,6 +69,16 @@ def _load_forest(fn_data, sim_name, chunknum, nchunks):
     return sim, forest_matrices, zarr
 
 
+def get_cosmic_time_hacc(sim_name):
+    sim = HACCSim.simulations[sim_name]
+    zarr = sim.step2z(np.array(sim.cosmotools_steps))
+    cosmo_dsps = flat_wcdm.CosmoParams(
+        *(sim.cosmo.Omega_m, sim.cosmo.w0, sim.cosmo.wa, sim.cosmo.h)
+    )
+    tarr = flat_wcdm.age_at_z(zarr, *cosmo_dsps)
+    return zarr, tarr
+
+
 def load_mahs(fn_data, sim_name, chunknum, nchunks, mass_colname=MASS_COLNAME):
 
     sim, forest_matrices, zarr = _load_forest(fn_data, sim_name, chunknum, nchunks)
