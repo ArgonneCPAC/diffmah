@@ -9,7 +9,7 @@ The main function is minimize_alternate_wrappers.
 import numpy as np
 from scipy.optimize import minimize
 
-from .utils import jax_adam_wrapper
+from .fit_utils import jax_adam_wrapper
 
 
 def scipy_lbfgs_wrapper(val_and_grads, p_init, loss_data):

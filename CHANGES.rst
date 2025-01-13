@@ -1,3 +1,8 @@
+0.7.0 (unreleased)
+------------------
+- Remove old and obsolete code (https://github.com/ArgonneCPAC/diffmah/pull/159)
+
+
 0.6.3 (2024-12-14)
 ------------------
 - Require python>=3.11 (https://github.com/ArgonneCPAC/diffmah/pull/158)

@@ -7,7 +7,7 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad, vmap
 
-from ...bfgs_wrapper import bfgs_adam_fallback
+from ...fitting_helpers.bfgs_wrapper import bfgs_adam_fallback
 from ...utils import _inverse_sigmoid, _sigmoid
 from . import utp_pdf_kernels as tpk
 

@@ -11,8 +11,10 @@ from jax import jit as jjit
 from jax import numpy as jnp
 from jax import value_and_grad, vmap
 
-from . import diffmah_kernels as dk
+from .. import diffmah_kernels as dk
 from .bfgs_wrapper import bfgs_adam_fallback
+
+__all__ = ("diffmah_fitter",)
 
 DLOGM_CUT = 2.5
 T_FIT_MIN = 1.0
