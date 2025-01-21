@@ -1,4 +1,4 @@
-0.7.0 (unreleased)
+0.7.0 (2025-01-13)
 ------------------
 - Remove old and obsolete code (https://github.com/ArgonneCPAC/diffmah/pull/159)
 
