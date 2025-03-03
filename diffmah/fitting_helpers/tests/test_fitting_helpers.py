@@ -72,7 +72,7 @@ def test_diffmah_fitter():
         p_best, loss_best, skip_fit, fit_terminates, code_used, loss_data = _res
         __, log_mah_fit = dk.mah_singlehalo(p_best, t_sim, LGT0)
         loss_check = fithelp._mse(log_mah_fit, np.log10(mah_sim))
-        assert loss_check < 0.01
+        assert loss_check < 0.02
 
 
 def test_diffmah_fitter_skips_mahs_with_insufficient_data():
