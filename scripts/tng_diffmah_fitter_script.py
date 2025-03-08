@@ -9,7 +9,7 @@ from time import time
 import numpy as np
 from mpi4py import MPI
 
-from diffmah import fitting_helpers as cfh
+from diffmah.fitting_helpers import diffmah_fitter_helpers as cfh
 from diffmah.data_loaders.load_tng_mahs import load_tng_data
 
 TMP_OUTPAT = "tmp_mah_fits_rank_{0}.dat"
