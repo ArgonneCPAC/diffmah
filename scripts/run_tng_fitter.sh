@@ -13,5 +13,6 @@
 
 # Load software
 source ~/.bash_profile
+cd ~/source/diffmah/scripts/
 
 mpirun -n 100 python tng_diffmah_fitter_script.py /lcrc/project/halotools/alarcon/data/ /lcrc/project/halotools/alarcon/results/tng_diffmah_tpeak/
