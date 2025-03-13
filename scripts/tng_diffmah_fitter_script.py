@@ -68,9 +68,7 @@ if __name__ == "__main__":
 
     chunknum = rank
 
-    chunknum_str = f"{chunknum:0{nchar_chunks}d}"
-    outbase_chunk = f"chunk_{chunknum_str}"
-    rank_basepat = "_".join((outbase_chunk, TMP_OUTPAT))
+    rank_basepat = TMP_OUTPAT
     rank_outname = os.path.join(args.outdir, rank_basepat).format(rank)
 
     comm.Barrier()
