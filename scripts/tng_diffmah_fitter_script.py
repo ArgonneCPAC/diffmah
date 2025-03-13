@@ -60,56 +60,56 @@ if __name__ == "__main__":
     mahs_for_rank = mahs[indx]
     nhalos_for_rank = len(mahs_for_rank)
 
-    for chunknum in chunks:
-        comm.Barrier()
-        ichunk_start = time()
+    comm.Barrier()
+    ichunk_start = time()
 
-        nhalos_for_rank = mahs_for_rank.shape[0]
-        nhalos_tot = comm.reduce(nhalos_for_rank, op=MPI.SUM)
+    nhalos_for_rank = mahs_for_rank.shape[0]
+    nhalos_tot = comm.reduce(nhalos_for_rank, op=MPI.SUM)
 
-        chunknum_str = f"{chunknum:0{nchar_chunks}d}"
-        outbase_chunk = f"chunk_{chunknum_str}"
-        rank_basepat = "_".join((outbase_chunk, TMP_OUTPAT))
-        rank_outname = os.path.join(args.outdir, rank_basepat).format(rank)
+    chunknum = rank
 
-        comm.Barrier()
-        with open(rank_outname, "w") as fout:
-            fout.write(cfh.HEADER)
+    chunknum_str = f"{chunknum:0{nchar_chunks}d}"
+    outbase_chunk = f"chunk_{chunknum_str}"
+    rank_basepat = "_".join((outbase_chunk, TMP_OUTPAT))
+    rank_outname = os.path.join(args.outdir, rank_basepat).format(rank)
 
-            for i in range(nhalos_for_rank):
-                mah = mahs_for_rank[i, :]
-                fit_results = cfh.diffmah_fitter(tarr, mah)
-                outline = cfh.get_outline(fit_results)
-                fout.write(outline)
+    comm.Barrier()
+    with open(rank_outname, "w") as fout:
+        fout.write(cfh.HEADER)
 
-        comm.Barrier()
-        ichunk_end = time()
+        for i in range(nhalos_for_rank):
+            mah = mahs_for_rank[i, :]
+            fit_results = cfh.diffmah_fitter(tarr, mah)
+            outline = cfh.get_outline(fit_results)
+            fout.write(outline)
 
-        msg = "\n\nWallclock runtime to fit {0} halos with {1} ranks = {2:.1f} seconds\n\n"
-        if rank == 0:
-            print("\nFinished with chunk {}".format(chunknum))
-            runtime = ichunk_end - ichunk_start
-            print(msg.format(nhalos_tot, nranks, runtime))
+    comm.Barrier()
+    ichunk_end = time()
 
-            #  collate data from ranks and rewrite to disk
-            pat = os.path.join(args.outdir, rank_basepat)
-            fit_data_fnames = [pat.format(i) for i in range(nranks)]
-            collector = []
-            for fit_fn in fit_data_fnames:
-                assert os.path.isfile(fit_fn)
-                fit_data = np.genfromtxt(fit_fn, dtype="str")
-                collector.append(fit_data)
-            chunk_fit_results = np.concatenate(collector)
+    msg = "\n\nWallclock runtime to fit {0} halos with {1} ranks = {2:.1f} seconds\n\n"
+    if rank == 0:
+        runtime = ichunk_end - ichunk_start
+        print(msg.format(nhalos_tot, nranks, runtime))
 
-            fit_data_bnames = [os.path.basename(fn) for fn in fit_data_fnames]
-            outbn = "_".join(fit_data_bnames[0].split("_")[:4]) + ".hdf5"
-            outfn = os.path.join(outdir, outbn)
+        #  collate data from ranks and rewrite to disk
+        pat = os.path.join(args.outdir, rank_basepat)
+        fit_data_fnames = [pat.format(i) for i in range(nranks)]
+        collector = []
+        for fit_fn in fit_data_fnames:
+            assert os.path.isfile(fit_fn)
+            fit_data = np.genfromtxt(fit_fn, dtype="str")
+            collector.append(fit_data)
+        chunk_fit_results = np.concatenate(collector)
 
-            cfh.write_collated_data(outfn, chunk_fit_results)
+        fit_data_bnames = [os.path.basename(fn) for fn in fit_data_fnames]
+        outbn = "diffmah_tng_fits.hdf5"
+        outfn = os.path.join(outdir, outbn)
 
-            # clean up ASCII data for subvol_i
-            bn = fit_data_bnames[0]
-            bnpat = "_".join(bn.split("_")[:-1]) + "_*.dat"
-            fnpat = os.path.join(outdir, bnpat)
-            command = "rm " + fnpat
-            subprocess.os.system(command)
+        cfh.write_collated_data(outfn, chunk_fit_results)
+
+        # clean up ASCII data for subvol_i
+        bn = fit_data_bnames[0]
+        bnpat = "_".join(bn.split("_")[:-1]) + "_*.dat"
+        fnpat = os.path.join(outdir, bnpat)
+        command = "rm " + fnpat
+        subprocess.os.system(command)
