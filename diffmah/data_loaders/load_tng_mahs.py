@@ -3,7 +3,6 @@
 
 import numpy as np
 import os
-import warnings
 
 BEBOP_TNG = "/lcrc/project/halotools/alarcon/data/"
 
