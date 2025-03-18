@@ -89,16 +89,13 @@ if __name__ == "__main__":
 
         mahs_for_rank = mahs[indx]
 
-        chunknum = rank
-
         comm.Barrier()
         ichunk_start = time()
 
         nhalos_for_rank = mahs_for_rank.shape[0]
         nhalos_tot = comm.reduce(nhalos_for_rank, op=MPI.SUM)
 
-        chunknum_str = f"{chunknum:0{nchar_chunks}d}"
-        outbase_chunk = f"subvol_{subvol_str}_chunk_{chunknum_str}"
+        outbase_chunk = f"subvol_{subvol_str}"
         rank_basepat = "_".join((outbase_chunk, TMP_OUTPAT))
         rank_outname = os.path.join(args.outdir, rank_basepat).format(rank)
 
@@ -117,7 +114,7 @@ if __name__ == "__main__":
 
         msg = "\n\nWallclock runtime to fit {0} halos with {1} ranks = {2:.1f} seconds\n\n"
         if rank == 0:
-            print("\nFinished with subvolume {} chunk {}".format(isubvol, chunknum))
+            print("\nFinished with subvolume {}".format(isubvol))
             runtime = ichunk_end - ichunk_start
             print(msg.format(nhalos_tot, nranks, runtime))
 
