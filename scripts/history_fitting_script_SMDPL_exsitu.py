@@ -44,7 +44,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    sim_name = args.sim_name
     nstep = args.nstep
     istart, iend = args.istart, args.iend
 
