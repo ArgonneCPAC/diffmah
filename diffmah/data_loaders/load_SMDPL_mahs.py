@@ -44,6 +44,7 @@ def load_SMDPL_data(subvols, data_drn=BEBOP_SMDPL_DR1):
         raise ImportError("Must have umachine_pyio installed to load this dataset")
 
     galprops = ["halo_id", "mpeak_history_main_prog"]
+    subvols = np.atleast_1d(subvols)
     mock = load_mock_from_binaries(subvols, root_dirname=data_drn, galprops=galprops)
 
     SMDPL_t = np.loadtxt(os.path.join(data_drn, "smdpl_cosmic_time.txt"))
