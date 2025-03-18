@@ -15,4 +15,4 @@
 source ~/.bash_profile
 cd ~/source/diffmah/scripts/
 
-mpirun -n 20 python history_fitting_script_SMDPL_exsitu.py DR1 /lcrc/project/halotools/UniverseMachine/SMDPL/sfh_binaries_dr1_bestfit/diffmah_tpeak_fits/ -istart 0 -iend 10
+mpirun -n 20 python history_fitting_script_SMDPL_exsitu.py DR1 /lcrc/project/halotools/UniverseMachine/SMDPL/sfh_binaries_dr1_bestfit/diffmah_tpeak_fits/ -istart 100 -iend 200
