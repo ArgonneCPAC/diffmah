@@ -1,3 +1,8 @@
+0.7.1 (2025-03-24)
+------------------
+- Include convenience function mc_select to choose MC realization of MAH (https://github.com/ArgonneCPAC/diffmah/pull/165)
+
+
 0.7.0 (2025-01-13)
 ------------------
 - Remove old and obsolete code (https://github.com/ArgonneCPAC/diffmah/pull/159)
