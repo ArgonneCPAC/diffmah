@@ -1,6 +1,4 @@
-"""Module implements diffmah_fitter for fitting MAHs with diffmah
-
-"""
+"""Module implements diffmah_fitter for fitting MAHs with diffmah"""
 
 from collections import namedtuple
 from copy import deepcopy
@@ -51,9 +49,11 @@ def diffmah_fitter(
     ----------
     t_sim : array, shape (n_t, )
         Age of the universe in Gyr
+        diffmah_fitter assumes t_sim[-1] corresponds to the age of the universe at z=0
 
     mah_sim : array, shape (n_t, )
         Halo mass in units of Msun/h
+        Note that this input array stores Mhalo(t), not log10(Mhalo(t))
 
     lgm_min : float, optional
         Minimum halo mass to use input halo data in the fitter. Default is -inf.
