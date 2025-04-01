@@ -42,6 +42,7 @@ def diffmah_fitter(
     t_fit_min=T_FIT_MIN,
     nstep=200,
     n_warmup=1,
+    tpeak_fixed=None,
 ):
     """Fit simulated MAH with diffmah
 
@@ -65,13 +66,17 @@ def diffmah_fitter(
     t_fit_min : float, optional
         Minimum time to use input halo data in the fitter. Default is T_FIT_MIN.
 
-    nstep : int
+    nstep : int, optional
         Number of gradient descent steps to use in fitter. Default is 200.
         Only applies to cases where BFGS fails and Adam is used.
 
-    n_warmup : int
+    n_warmup : int, optional
         Number of warmup iterations in gradient descent. Default is 1.
         Only applies to cases where BFGS fails and Adam is used.
+
+    tpeak_fixed : float, optional
+        Value of t_peak assumed in the fitter.
+        Default is None, in which case value in the simulated MAH will be used.
 
     Returns
     -------
@@ -106,7 +111,12 @@ def diffmah_fitter(
     _check_for_logmah_vs_mah_mistake(mah_sim)
 
     u_p_init, loss_data, skip_fit = get_loss_data(
-        t_sim, mah_sim, lgm_min, dlogm_cut, t_fit_min
+        t_sim,
+        mah_sim,
+        lgm_min=lgm_min,
+        dlogm_cut=dlogm_cut,
+        t_fit_min=t_fit_min,
+        tpeak_fixed=tpeak_fixed,
     )
     if skip_fit:
         p_best = np.zeros(len(dk.DEFAULT_MAH_PARAMS)) + NOFIT_FILL
@@ -210,6 +220,7 @@ def get_loss_data(
     dlogm_cut=DLOGM_CUT,
     t_fit_min=T_FIT_MIN,
     npts_min=NPTS_FIT_MIN,
+    tpeak_fixed=None,
 ):
     _check_for_logmah_vs_mah_mistake(mah_sim)
 
@@ -237,11 +248,14 @@ def get_loss_data(
 
         logt0 = np.log10(t_sim[-1])
 
-        indx_t_peak = compute_indx_t_peak_singlehalo(log_mah_sim)
-        t_peak = t_sim[indx_t_peak]
+        if tpeak_fixed is None:
+            indx_t_peak = compute_indx_t_peak_singlehalo(log_mah_sim)
+            t_peak = t_sim[indx_t_peak]
+        else:
+            t_peak = tpeak_fixed
 
         p_init = np.array(dk.DEFAULT_MAH_PARAMS).astype("f4")
-        p_init[0] = log_mah_sim[indx_t_peak]
+        p_init[0] = log_mah_sim[-1]
         p_init[4] = t_peak
         p_init = dk.DiffmahParams(*p_init)
         u_p_init_all = dk.get_unbounded_mah_params(p_init)
