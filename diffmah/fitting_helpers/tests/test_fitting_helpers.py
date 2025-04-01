@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 import warnings
 
@@ -178,6 +177,21 @@ def test_get_loss_data():
     )
     assert skip_fit is False
 
+    # Use tpeak_fixed feature when passing tpeak_fixed argument
+    tpeak_test = 11.8
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(
+        t_sim, mah_sim, tpeak_fixed=tpeak_test
+    )
+    u_t_peak = loss_data.u_t_peak
+    t_peak_fitter = dk._get_bounded_diffmah_param(u_t_peak, dk.MAH_PBOUNDS.t_peak)
+    assert np.allclose(t_peak_fitter, tpeak_test, atol=0.01)
+
+    # Ensure above tpeak_fixed test is non-trivial
+    u_p_init, loss_data, skip_fit = fithelp.get_loss_data(t_sim, mah_sim)
+    u_t_peak = loss_data.u_t_peak
+    t_peak_fitter = dk._get_bounded_diffmah_param(u_t_peak, dk.MAH_PBOUNDS.t_peak)
+    assert not np.allclose(t_peak_fitter, tpeak_test, atol=0.01)
+
 
 def test_diffmah_fitter_raises_warning_when_passed_log_mah_instead_of_mah():
     t_sim = np.linspace(0.1, 13.8, 100)
@@ -245,3 +259,46 @@ def test_get_outline_bad_fit():
 
     assert outdata.n_points_per_fit == 2, fit_results.loss_data.log_mah_target
     assert outdata.fit_algo == -1
+
+
+def test_diffmah_fitter_tpeak_fixed_feature():
+    ran_key = jran.key(0)
+    LGT0 = np.log10(13.79)
+
+    t_sim = np.linspace(0.5, 13.8, 100)
+    lgm_min = 7.0
+
+    n_tests = 10
+    for __ in range(n_tests):
+        test_key, noise_key, tp_key, ran_key = jran.split(ran_key, 4)
+
+        u_p = np.array(dk.DEFAULT_MAH_U_PARAMS)
+        uran = jran.uniform(test_key, minval=-10, maxval=10, shape=u_p.shape)
+        u_p = dk.DEFAULT_MAH_U_PARAMS._make(u_p + uran)
+        mah_params = dk.get_bounded_mah_params(u_p)
+
+        mah_sim = 10 ** dk.mah_singlehalo(mah_params, t_sim, LGT0)[1]
+
+        log_mah_noise = jran.uniform(
+            noise_key, minval=-0.1, maxval=0.1, shape=mah_sim.shape
+        )
+        mah_target = 10 ** (np.log10(mah_sim) + log_mah_noise)
+
+        fit_results = fithelp.diffmah_fitter(t_sim, mah_target, lgm_min=lgm_min)
+
+        tpeak_fixed = jran.uniform(tp_key, minval=3, maxval=13, shape=())
+        fit_results_fixed_tpeak = fithelp.diffmah_fitter(
+            t_sim, mah_target, lgm_min=lgm_min, tpeak_fixed=tpeak_fixed
+        )
+
+        assert not np.allclose(fit_results.p_best.t_peak, tpeak_fixed)
+        assert np.allclose(fit_results_fixed_tpeak.p_best.t_peak, tpeak_fixed)
+
+        __, log_mah_fit = dk.mah_singlehalo(fit_results.p_best, t_sim, LGT0)
+        __, log_mah_fit_fixed_tpeak = dk.mah_singlehalo(
+            fit_results_fixed_tpeak.p_best, t_sim, LGT0
+        )
+        loss = fithelp._mse(log_mah_fit, np.log10(mah_sim))
+        loss_fixed_tp = fithelp._mse(log_mah_fit_fixed_tpeak, np.log10(mah_sim))
+        epsilon = 0.01
+        assert loss < loss_fixed_tp + epsilon
