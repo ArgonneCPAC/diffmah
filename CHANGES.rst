@@ -1,3 +1,7 @@
+0.7.2 (unreleased)
+- Include optional keyword argument `tpeak_fixed` to `diffmah_fitter` (https://github.com/ArgonneCPAC/diffmah/pull/168)
+
+
 0.7.1 (2025-03-24)
 ------------------
 - Include convenience function mc_select to choose MC realization of MAH (https://github.com/ArgonneCPAC/diffmah/pull/165)
