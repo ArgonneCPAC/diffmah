@@ -302,3 +302,13 @@ def test_diffmah_fitter_tpeak_fixed_feature():
         loss_fixed_tp = fithelp._mse(log_mah_fit_fixed_tpeak, np.log10(mah_sim))
         epsilon = 0.01
         assert loss < loss_fixed_tp + epsilon
+
+
+def test_force_skip_fit_feature():
+    t_sim = np.linspace(0.1, 13.8, 100)
+    mah_sim = 10 ** np.linspace(1, 14, t_sim.size)
+    fit_results = fithelp.diffmah_fitter(t_sim, mah_sim)
+    assert fit_results.skip_fit is False
+
+    fit_results = fithelp.diffmah_fitter(t_sim, mah_sim, force_skip_fit=True)
+    assert fit_results.skip_fit is True
