@@ -43,6 +43,7 @@ def diffmah_fitter(
     nstep=200,
     n_warmup=1,
     tpeak_fixed=None,
+    force_skip_fit=False,
 ):
     """Fit simulated MAH with diffmah
 
@@ -77,6 +78,9 @@ def diffmah_fitter(
     tpeak_fixed : float, optional
         Value of t_peak assumed in the fitter.
         Default is None, in which case value in the simulated MAH will be used.
+
+    force_skip_fit : bool, optional
+        If True, fitter will be skipped and default no-fit results will be returned
 
     Returns
     -------
@@ -118,6 +122,8 @@ def diffmah_fitter(
         t_fit_min=t_fit_min,
         tpeak_fixed=tpeak_fixed,
     )
+    skip_fit = skip_fit | force_skip_fit
+
     if skip_fit:
         p_best = np.zeros(len(dk.DEFAULT_MAH_PARAMS)) + NOFIT_FILL
         p_best = dk.DEFAULT_MAH_PARAMS._make(p_best)
