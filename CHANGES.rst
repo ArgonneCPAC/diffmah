@@ -1,4 +1,5 @@
-0.7.3 (2025-05-19)
+0.7.2 (2025-05-19)
+------------------
 - Include optional keyword argument `tpeak_fixed` to `diffmah_fitter` (https://github.com/ArgonneCPAC/diffmah/pull/168)
 - Add new convenience kernel `logmh_at_t_obs` for calculating masses of halos on a lightcone (https://github.com/ArgonneCPAC/diffmah/pull/171)
 
