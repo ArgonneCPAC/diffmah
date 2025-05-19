@@ -31,18 +31,21 @@ MAH_PBOUNDS = DiffmahParams(*list(MAH_PBDICT.values()))
 
 @jjit
 def mah_singlehalo(mah_params, tarr, lgt0):
+    """Calculate MAH of a single halo"""
     dmhdt, log_mah = _diffmah_kern(mah_params, tarr, lgt0)
     return dmhdt, log_mah
 
 
 @jjit
 def mah_halopop(mah_params, tarr, lgt0):
+    """Calculate MAHs of a halo population"""
     dmhdt, log_mah = _diffmah_kern_vmap(mah_params, tarr, lgt0)
     return dmhdt, log_mah
 
 
 @jjit
 def logmh_at_t_obs(mah_params, t_obs, lgt0):
+    """Calculate halo mass at a single time"""
     logmh_at_t_obs = _log_mah_kern(mah_params, t_obs, lgt0)
     return logmh_at_t_obs
 
