@@ -13,6 +13,10 @@ from .. import mah_singlehalo as old_mah_singlehalo
 TOL = 1e-3
 
 
+def test_all_convenience_kernels_import_from_toplevel():
+    from .. import logmh_at_t_obs, mah_halopop, mah_singlehalo  # noqa
+
+
 def test_dk_kern_agrees_with_old_diffmah():
     tarr = np.linspace(0.1, 13.8, 200)
     logt0 = np.log10(tarr[-1])
