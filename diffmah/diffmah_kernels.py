@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from collections import OrderedDict, namedtuple
 
@@ -32,14 +31,85 @@ MAH_PBOUNDS = DiffmahParams(*list(MAH_PBDICT.values()))
 
 @jjit
 def mah_singlehalo(mah_params, tarr, lgt0):
+    """Calculate MAH of a single halo
+
+    Parameters
+    ----------
+    mah_params : namedtuple
+        mah_params = (logm0, logtc, early_index, late_index, t_peak)
+
+    tarr : array, shape (n_times, )
+        Age of the Universe in Gyr at which to compute the MAH
+
+    lgt0 : float
+        log10 of the z=0 age of the Universe in Gyr
+
+    Returns
+    -------
+    dmdht : array, shape (n_times, )
+        Mass accretion rate in Msun/yr
+
+    log_mah : array, shape (n_times, )
+        log10 of halo mass in Msun
+
+    """
     dmhdt, log_mah = _diffmah_kern(mah_params, tarr, lgt0)
     return dmhdt, log_mah
 
 
 @jjit
 def mah_halopop(mah_params, tarr, lgt0):
+    """Calculate MAHs of a halo population
+
+    Parameters
+    ----------
+    mah_params : namedtuple of arrays with shape (n_halos, )
+        mah_params = (logm0, logtc, early_index, late_index, t_peak)
+
+    tarr : array, shape (n_times, )
+        Age of the Universe in Gyr at which to compute the MAH
+
+    lgt0 : float
+        log10 of the z=0 age of the Universe in Gyr
+
+    Returns
+    -------
+    dmdht : array, shape (n_halos, n_times)
+        Mass accretion rate in Msun/yr
+
+    log_mah : array, shape (n_halos, n_times)
+        log10 of halo mass in Msun
+
+    """
+
     dmhdt, log_mah = _diffmah_kern_vmap(mah_params, tarr, lgt0)
     return dmhdt, log_mah
+
+
+@jjit
+def logmh_at_t_obs(mah_params, t_obs, lgt0):
+    """Calculate halo mass at a single time
+
+    Parameters
+    ----------
+    mah_params : namedtuple
+        mah_params = (logm0, logtc, early_index, late_index, t_peak)
+        Each tuple entry should be a float or array of shape (n_halos, )
+
+    t_obs : float or array of shape (n_halos, )
+        Age of the Universe in Gyr at which to compute the MAH
+
+    lgt0 : float
+        log10 of the z=0 age of the Universe in Gyr
+
+    Returns
+    -------
+    log_mah : float or array of shape (n_halos, )
+        log10 of halo mass in Msun
+
+    """
+    logmh_at_t_obs = _log_mah_kern(mah_params, t_obs, lgt0)
+    return logmh_at_t_obs
 
 
 @jjit
