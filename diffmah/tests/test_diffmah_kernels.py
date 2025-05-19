@@ -1,7 +1,10 @@
-"""
-"""
+""" """
 
 import numpy as np
+from jax import jit as jjit
+from jax import numpy as jnp
+from jax import random as jran
+from jax import vmap
 
 from .. import DEFAULT_MAH_PARAMS as OLD_DEFAULT_MAH_PARAMS
 from .. import diffmah_kernels as dk
@@ -125,3 +128,39 @@ def test_log_mah_kern_u_params():
     log_mah2 = dk._log_mah_kern_u_params(mah_u_params, tarr, logt0)
 
     assert np.allclose(log_mah, log_mah2, rtol=1e-3)
+
+
+def test_logmh_at_t_obs_singlehalo():
+    mah_params = dk.DEFAULT_MAH_PARAMS
+    lgt0 = 1.14
+
+    # single halo
+    t_obs = 13.0
+    logmh_at_t_obs = dk.logmh_at_t_obs(mah_params, t_obs, lgt0)
+    assert logmh_at_t_obs.shape == ()
+
+    t_table = np.linspace(0.1, 13.8, 500)
+
+    log_mah = dk.mah_singlehalo(mah_params, t_table, lgt0)[1]
+    logmh_at_t_obs_interp = np.interp(t_obs, t_table, log_mah)
+    assert np.allclose(logmh_at_t_obs, logmh_at_t_obs_interp, rtol=0.01)
+
+
+def test_logmh_at_t_obs_halopop():
+    ran_key = jran.key(0)
+    lgt0 = 1.14
+
+    t_table = np.linspace(0.1, 13.8, 500)
+
+    # halo population
+    n_halos = 500
+    ZZ = np.zeros(n_halos)
+    mah_params = dk.DEFAULT_MAH_PARAMS._make([ZZ + x for x in dk.DEFAULT_MAH_PARAMS])
+    t_obs_halopop = jran.uniform(ran_key, minval=3, maxval=13, shape=(n_halos,))
+    logmh_at_t_obs = dk.logmh_at_t_obs(mah_params, t_obs_halopop, lgt0)
+
+    log_mah_halopop = dk.mah_halopop(mah_params, t_table, lgt0)[1]
+
+    interp_vmap = jjit(vmap(jnp.interp, in_axes=(0, None, 0)))
+    logmh_at_t_obs_interp = interp_vmap(t_obs_halopop, t_table, log_mah_halopop)
+    assert np.allclose(logmh_at_t_obs, logmh_at_t_obs_interp, rtol=0.01)

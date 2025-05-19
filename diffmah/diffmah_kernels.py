@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 from collections import OrderedDict, namedtuple
 
@@ -40,6 +39,12 @@ def mah_singlehalo(mah_params, tarr, lgt0):
 def mah_halopop(mah_params, tarr, lgt0):
     dmhdt, log_mah = _diffmah_kern_vmap(mah_params, tarr, lgt0)
     return dmhdt, log_mah
+
+
+@jjit
+def logmh_at_t_obs(mah_params, t_obs, lgt0):
+    logmh_at_t_obs = _log_mah_kern(mah_params, t_obs, lgt0)
+    return logmh_at_t_obs
 
 
 @jjit
