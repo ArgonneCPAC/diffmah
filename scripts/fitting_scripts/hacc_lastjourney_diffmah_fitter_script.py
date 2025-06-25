@@ -54,7 +54,6 @@ if __name__ == "__main__":
     nchunks = args.nchunks
 
     nchar_chunks = len(str(nchunks))
-    nchar_subvols = len(str(num_subvols_tot))
 
     os.makedirs(outdir, exist_ok=True)
 
@@ -86,8 +85,7 @@ if __name__ == "__main__":
     for isubvol in subvolumes:
         isubvol_start = time()
 
-        nchar_subvol = len(str(num_subvols_tot))
-        subvol_str = f"{isubvol:0{nchar_subvol}d}"
+        subvol_str = f"{isubvol}"
         bname = BNPAT.format(isubvol)
         fn_data = os.path.join(indir, bname)
 

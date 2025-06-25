@@ -87,8 +87,6 @@ if __name__ == "__main__":
     for isubvol in subvolumes:
         isubvol_start = time()
 
-        nchar_subvol = len(str(num_subvols_tot))
-
         subvol_str = f"{isubvol}"
         bname = BNPAT.format(subvol_str)
         fn_data = os.path.join(indir, bname)
