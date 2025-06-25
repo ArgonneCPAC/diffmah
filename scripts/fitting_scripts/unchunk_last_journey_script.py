@@ -54,6 +54,7 @@ if __name__ == "__main__":
 
     os.makedirs(outdir, exist_ok=True)
 
+    nchar_subvol = len(str(NUM_SUBVOLS_LJ))
     nchar_chunks = len(str(NCHUNKS))
 
     start_script = time()
@@ -61,7 +62,7 @@ if __name__ == "__main__":
         start_subvol = time()
         print(f"...collating subvolume {isubvol}")
 
-        subvol_str = f"{isubvol}"
+        subvol_str = f"{isubvol:0{nchar_subvol}d}"
 
         subvol_collector = []
         for chunknum in range(NCHUNKS):
