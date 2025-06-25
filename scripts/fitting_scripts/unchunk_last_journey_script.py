@@ -3,6 +3,7 @@
 import argparse
 import gc
 import os
+import subprocess
 from time import time
 
 import h5py
@@ -54,15 +55,15 @@ if __name__ == "__main__":
 
     os.makedirs(outdir, exist_ok=True)
 
-    nchar_subvol = len(str(NUM_SUBVOLS_LJ))
     nchar_chunks = len(str(NCHUNKS))
 
     start_script = time()
+    fname_to_delete_list = []
     for isubvol in range(istart, iend):
         start_subvol = time()
         print(f"...collating subvolume {isubvol}")
 
-        subvol_str = f"{isubvol:0{nchar_subvol}d}"
+        subvol_str = f"{isubvol}"
 
         subvol_collector = []
         for chunknum in range(NCHUNKS):
@@ -74,6 +75,7 @@ if __name__ == "__main__":
 
             chunk_data = _load_flat_hdf5(fname_in)
             subvol_collector.append(chunk_data)
+            fname_to_delete_list.append(fname_in)
 
         data_out = dict()
         colnames = list(subvol_collector[0].keys())
@@ -98,3 +100,7 @@ if __name__ == "__main__":
     script_runtime = end_script - start_script
     msg = f"Total runtime for {n_subvols} = {script_runtime:.2f} seconds"
     print(msg)
+
+    for fname in fname_to_delete_list:
+        command = f"rm {fname}"
+        raw_result = subprocess.check_output(command, shell=True)
