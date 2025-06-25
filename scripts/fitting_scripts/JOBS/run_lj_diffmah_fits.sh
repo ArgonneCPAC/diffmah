@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# join error into standard out file <job_name>.o<job_id>
+#PBS -j oe
+
+# account to charge
+#PBS -A galsampler
+
+# allocate {select} nodes, each with {mpiprocs} MPI processes
+#PBS -l select=4:mpiprocs=30
+
+#PBS -l walltime=6:00:00
+
+# Load software
+source ~/.bash_profile
+conda activate improv311
+
+cd /home/ahearin/work/random/1219
+mpirun -n 120 python hacc_lastjourney_diffmah_fitter_script.py /lcrc/group/cosmodata/simulations/LastJourney/coretrees/forest /lcrc/project/halotools/LastJourney/diffmah_fits_littleh diffmah_fits.h5 -istart 0 -iend 10

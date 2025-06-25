@@ -15,6 +15,7 @@ TMP_OUTPAT = "tmp_mah_fits_rank_{0}.dat"
 
 LCRC = None
 POBOY_ROOT_DRN = "/Users/aphearin/work/DATA/LastJourney"
+LCRC_ROOT_DRN = "/lcrc/group/cosmodata/simulations/LastJourney/coretrees/forest"
 
 BNPAT = "m000p.coreforest.{}.hdf5"
 
