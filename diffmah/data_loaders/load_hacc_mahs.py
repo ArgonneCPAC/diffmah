@@ -1,5 +1,4 @@
-"""Module loads mass assembly history data for diffmah
-"""
+"""Module loads mass assembly history data for diffmah"""
 
 import numpy as np
 
@@ -80,12 +79,45 @@ def get_cosmic_time_hacc(sim_name):
 
 
 def load_mahs(fn_data, sim_name, chunknum, nchunks, mass_colname=MASS_COLNAME):
+    """Load HACC core MAHs in units of Msun
+
+    Parameters
+    ----------
+    fn_data : string
+        absolute path to core data
+
+    sim_name : string
+        name of the simulation
+
+    chunknum : int
+
+    nchunks : int
+
+    mass_colname : string, optional
+        Column name of the mass of the simulation
+
+    Returns
+    -------
+    tarr : ndarray, shape (n_t, )
+        Age of the Universe in Gyr
+
+    mahs : ndarray, shape (n_halos, n_t)
+        Halo mass assembly history in units of Msun
+        Note that HACC core masses are supplied in units of Msun/h
+        So they are converted by this function to Msun before running diffmah
+
+    """
 
     sim, forest_matrices, zarr = _load_forest(fn_data, sim_name, chunknum, nchunks)
     mahs = forest_matrices[mass_colname]
 
     # Ensure the target MAHs are cumulative peak masses
     mahs = np.maximum.accumulate(mahs, axis=1)
+
+    # HACC core data masses are in Msun/h
+    # Diffmah fits should be run in units of Msun
+    # Convert to units of Msun
+    mahs = mahs / sim.cosmo.h
 
     if not HAS_DSPS:
         raise ImportError("Must have dsps installed to use this data loader")
