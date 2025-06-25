@@ -20,4 +20,4 @@ rsync /home/ahearin/work/repositories/python/diffmah/scripts/fitting_scripts/hac
 mpirun -n 120 python hacc_lastjourney_diffmah_fitter_script.py /lcrc/group/cosmodata/simulations/LastJourney/coretrees/forest /lcrc/project/halotools/LastJourney/diffmah_fits_littleh diffmah_fits.h5 -istart 0 -iend 10
 
 rsync /home/ahearin/work/repositories/python/diffmah/scripts/fitting_scripts/unchunk_last_journey_script.py ./
-python unchunk_last_journey_script.py 0 10 /lcrc/project/halotools/LastJourney/diffmah_fits_littleh /lcrc/project/halotools/LastJourney/diffmah_fits_littleh/unchunked
+python unchunk_last_journey_script.py 0 10 -indir /lcrc/project/halotools/LastJourney/diffmah_fits_littleh -outdir /lcrc/project/halotools/LastJourney/diffmah_fits_littleh/unchunked
