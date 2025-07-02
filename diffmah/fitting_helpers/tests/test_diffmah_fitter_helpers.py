@@ -1,13 +1,22 @@
 """ """
 
 import warnings
+from pathlib import Path
 
 import numpy as np
+import pytest
 from jax import random as jran
 
 from ... import diffmah_kernels as dk
 from .. import diffmah_fitter_helpers as fithelp
 from ..bfgs_wrapper import bfgs_adam_fallback
+
+aph_home = "/Users/aphearin"
+detected_home = Path.home()
+if aph_home == detected_home:
+    APH_MACHINE = True
+else:
+    APH_MACHINE = False
 
 
 def test_fitting_helpers_component_functions():
@@ -193,6 +202,7 @@ def test_get_loss_data():
     assert not np.allclose(t_peak_fitter, tpeak_test, atol=0.01)
 
 
+@pytest.mark.skipif("not APH_MACHINE")
 def test_diffmah_fitter_raises_warning_when_passed_log_mah_instead_of_mah():
     t_sim = np.linspace(0.1, 13.8, 100)
     log_mah_sim = np.linspace(5, 15, t_sim.size)
@@ -311,4 +321,5 @@ def test_force_skip_fit_feature():
     assert fit_results.skip_fit is False
 
     fit_results = fithelp.diffmah_fitter(t_sim, mah_sim, force_skip_fit=True)
+    assert fit_results.skip_fit is True
     assert fit_results.skip_fit is True
