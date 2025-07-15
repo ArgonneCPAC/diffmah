@@ -20,7 +20,7 @@ LCRC_ROOT_DRN = "/lcrc/group/cosmodata/simulations/LastJourney/coretrees/forest"
 BNPAT = "m000p.coreforest.{}.hdf5"
 
 NCHUNKS = 20
-NUM_SUBVOLS_LASTJOURNEY = 192
+NUM_SUBVOLS_LASTJOURNEY = 256
 SIM_NAME = "LastJourney"
 
 
