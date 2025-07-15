@@ -96,7 +96,7 @@ if __name__ == "__main__":
     msg = f"Total runtime for {n_subvols} = {script_runtime:.2f} seconds"
     print(msg)
 
-    # print("...deleting chunked files\n")
-    # for fname in fname_to_delete_list:
-    #     command = f"rm {fname}"
-    #     raw_result = subprocess.check_output(command, shell=True)
+    print("...deleting chunked files\n")
+    for fname in fname_to_delete_list:
+        command = f"rm {fname}"
+        raw_result = subprocess.check_output(command, shell=True)
