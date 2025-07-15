@@ -8,27 +8,22 @@ from time import time
 
 import h5py
 import numpy as np
+from diffsky.data_loaders import load_flat_hdf5
 
 TMP_OUTPAT = "tmp_mah_fits_rank_{0}.dat"
 
 DRN_LJ_POBOY = "/Users/aphearin/work/DATA/LastJourney/coretrees"
 DRN_LJ_LCRC = "/lcrc/group/cosmodata/simulations/LastJourney/coretrees/forest"
-DRN_LJ_LCRC_DIFFMAH = "/lcrc/project/halotools/LastJourney/diffmah_fits"
-DRN_LJ_LCRC_DIFFMAH_OUT = "/lcrc/project/halotools/LastJourney/diffmah_fits_unchunked"
+DRN_LJ_LCRC_DIFFMAH = "/lcrc/project/halotools/LastJourney/diffmah_fits_lc4"
+DRN_LJ_LCRC_DIFFMAH_OUT = (
+    "/lcrc/project/halotools/LastJourney/diffmah_fits_lc4_unchunked"
+)
 
 BNPAT_DIFFMAH_FITS = "subvol_{0}_chunk_{1}.hdf5"
 BNPAT_DIFFMAH_OUT = "subvol_{0}_diffmah_fits.hdf5"
 
 NCHUNKS = 20
-NUM_SUBVOLS_LJ = 192
-
-
-def _load_flat_hdf5(fn):
-    data = dict()
-    with h5py.File(fn, "r") as hdf:
-        for key in hdf.keys():
-            data[key] = hdf[key][...]
-    return data
+NUM_SUBVOLS_LJ = 256
 
 
 if __name__ == "__main__":
@@ -73,7 +68,7 @@ if __name__ == "__main__":
 
             fname_in = os.path.join(indir, bname_in)
 
-            chunk_data = _load_flat_hdf5(fname_in)
+            chunk_data = load_flat_hdf5(fname_in)
             subvol_collector.append(chunk_data)
             fname_to_delete_list.append(fname_in)
 
