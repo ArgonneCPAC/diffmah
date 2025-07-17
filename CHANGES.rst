@@ -1,3 +1,8 @@
+0.7.3 (2025-07-17)
+------------------
+- Update fitter scripts for HACC simulations
+
+
 0.7.2 (2025-05-19)
 ------------------
 - Include optional keyword argument `tpeak_fixed` to `diffmah_fitter` (https://github.com/ArgonneCPAC/diffmah/pull/168)
