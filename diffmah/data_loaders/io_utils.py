@@ -1,5 +1,7 @@
 """Utility functions for reading and writing data"""
 
+# flake8: noqa: E402
+
 from collections import namedtuple
 
 try:
