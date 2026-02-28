@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         for i in range(nhalos_for_rank):
             halo_id = halo_ids_for_rank[i]
-            mah_i = mahs[i, :]
+            mah_i = mahs_for_rank[i, :]
 
             fit_results = cfh.diffmah_fitter(
                 bpl_t_table,
