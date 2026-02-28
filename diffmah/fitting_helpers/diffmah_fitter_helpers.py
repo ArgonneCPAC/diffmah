@@ -24,6 +24,8 @@ HEADER = "# logm0 logtc early_index late_index t_peak loss n_points_per_fit fit_
 FIT_COLNAMES = HEADER[1:].strip().split()
 DiffmahFitData = namedtuple("DiffmahFitData", FIT_COLNAMES)
 
+HEADER_HALO_ID = "# halo_id" + HEADER[1:]
+
 
 VARIED_MAH_PDICT = deepcopy(dk.DEFAULT_MAH_PDICT)
 VARIED_MAH_PDICT.pop("t_peak")
@@ -167,27 +169,50 @@ def _check_for_logmah_vs_mah_mistake(mah_sim):
         warn(msg)
 
 
-def write_collated_data(outname, fit_data_strings, chunk_arr=None):
+def write_collated_data(outname, fit_data_strings):
     import h5py
 
-    logm0 = fit_data_strings[:, 0].astype(float)
-    logtc = fit_data_strings[:, 1].astype(float)
-    early_index = fit_data_strings[:, 2].astype(float)
-    late_index = fit_data_strings[:, 3].astype(float)
-    t_peak = fit_data_strings[:, 4].astype(float)
-    loss = fit_data_strings[:, 5].astype(float)
-    n_points_per_fit = fit_data_strings[:, 6].astype(int)
-    fit_algo = fit_data_strings[:, 7].astype(int)
+    if fit_data_strings.shape[1] == 8:
+        logm0 = fit_data_strings[:, 0].astype(float)
+        logtc = fit_data_strings[:, 1].astype(float)
+        early_index = fit_data_strings[:, 2].astype(float)
+        late_index = fit_data_strings[:, 3].astype(float)
+        t_peak = fit_data_strings[:, 4].astype(float)
+        loss = fit_data_strings[:, 5].astype(float)
+        n_points_per_fit = fit_data_strings[:, 6].astype(int)
+        fit_algo = fit_data_strings[:, 7].astype(int)
 
-    with h5py.File(outname, "w") as hdf:
-        hdf["logm0"] = logm0
-        hdf["logtc"] = logtc
-        hdf["early_index"] = early_index
-        hdf["late_index"] = late_index
-        hdf["t_peak"] = t_peak
-        hdf["loss"] = loss
-        hdf["n_points_per_fit"] = n_points_per_fit
-        hdf["fit_algo"] = fit_algo
+        with h5py.File(outname, "w") as hdf:
+            hdf["logm0"] = logm0
+            hdf["logtc"] = logtc
+            hdf["early_index"] = early_index
+            hdf["late_index"] = late_index
+            hdf["t_peak"] = t_peak
+            hdf["loss"] = loss
+            hdf["n_points_per_fit"] = n_points_per_fit
+            hdf["fit_algo"] = fit_algo
+
+    elif fit_data_strings.shape[1] == 9:
+        halo_id = fit_data_strings[:, 0].astype(int)
+        logm0 = fit_data_strings[:, 1].astype(float)
+        logtc = fit_data_strings[:, 2].astype(float)
+        early_index = fit_data_strings[:, 3].astype(float)
+        late_index = fit_data_strings[:, 4].astype(float)
+        t_peak = fit_data_strings[:, 5].astype(float)
+        loss = fit_data_strings[:, 6].astype(float)
+        n_points_per_fit = fit_data_strings[:, 7].astype(int)
+        fit_algo = fit_data_strings[:, 8].astype(int)
+
+        with h5py.File(outname, "w") as hdf:
+            hdf["halo_id"] = halo_id
+            hdf["logm0"] = logm0
+            hdf["logtc"] = logtc
+            hdf["early_index"] = early_index
+            hdf["late_index"] = late_index
+            hdf["t_peak"] = t_peak
+            hdf["loss"] = loss
+            hdf["n_points_per_fit"] = n_points_per_fit
+            hdf["fit_algo"] = fit_algo
 
 
 @jjit
@@ -308,7 +333,7 @@ def _compute_non_trivial_npts_in_log_mah_target(log_mah_target):
     return npts_non_trivial_mah
 
 
-def get_outline(fit_results):
+def get_outline(fit_results, *, halo_id=None):
     """Transform return of diffmah_fitter into ASCII"""
     _floats = (*fit_results.p_best, fit_results.loss_best)
     out_list = ["{:.5e}".format(float(x)) for x in _floats]
@@ -319,6 +344,9 @@ def get_outline(fit_results):
     )
 
     out_list = [*out_list, str(npts_mah), str(fit_results.code_used)]
+    if halo_id is not None:
+        out_list = [str(halo_id), *out_list]
+
     outline = " ".join(out_list) + "\n"
     return outline
 
