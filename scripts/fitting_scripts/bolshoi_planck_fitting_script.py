@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # Write target MAHs to disk
     if rank == 0:
-        with h5py.File(os.join(outdir, BN_TARGET_OUT), "w") as hdf_out:
+        with h5py.File(os.path.join(outdir, BN_TARGET_OUT), "w") as hdf_out:
             hdf_out["halo_id"] = halo_ids
             hdf_out["mpeak_history"] = mahs
             hdf_out["bpl_t_table"] = bpl_t_table
