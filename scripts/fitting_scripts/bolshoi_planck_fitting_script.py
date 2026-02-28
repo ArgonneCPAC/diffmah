@@ -1,4 +1,6 @@
-""""""
+"""Script to fit the Bolshoi-Planck simulation with diffmah
+Input MAH data for BPl is stored in the umachine_pyio format.
+"""
 
 import argparse
 import os
