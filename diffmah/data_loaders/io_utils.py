@@ -2,7 +2,12 @@
 
 from collections import namedtuple
 
-import h5py
+try:
+    import h5py
+
+    HAS_H5PY = True
+except ImportError:
+    HAS_H5PY = False
 import numpy as np
 
 
@@ -30,6 +35,7 @@ def load_flat_hdf5(fn, istart=0, iend=None, keys=None, dataset=None):
     data : dict
 
     """
+    assert HAS_H5PY, "Must have h5py installed to use this function"
 
     data = dict()
     with h5py.File(fn, "r") as hdf:
