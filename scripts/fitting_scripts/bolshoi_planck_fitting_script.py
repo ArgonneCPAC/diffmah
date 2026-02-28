@@ -13,7 +13,8 @@ from diffmah.data_loaders import load_bpl_um_data
 from diffmah.fitting_helpers import diffmah_fitter_helpers as cfh
 
 TMP_OUTPAT = "tmp_mah_fits_rank_{0}.dat"
-
+BN_OUT = "diffmah_fits.hdf5"
+BN_TARGET_OUT = "bpl_mpeak_histories.hdf5"
 
 DT_FIT_MIN = 0.5  # Minimum halo lifetime in Gyr to bother running fitter
 
@@ -28,10 +29,6 @@ if __name__ == "__main__":
     parser.add_argument("-istart", help="First subvolume", type=int, default=0)
     parser.add_argument("-iend", help="Last subvolume", type=int, default=0)
 
-    parser.add_argument(
-        "-outbn", help="Basename of the output hdf5 file", default="diffmah_fits.h5"
-    )
-
     parser.add_argument("-test", help="Short test run?", type=bool, default=False)
     parser.add_argument(
         "-dt_fit_min",
@@ -43,7 +40,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     indir = args.indir
     outdir = os.path.abspath(args.outdir)
-    outbn = args.outbn
     is_test = args.test
     dt_fit_min = args.dt_fit_min
     istart = args.istart
@@ -57,6 +53,13 @@ if __name__ == "__main__":
     t0 = 10**lgt0
     # Ensure the target MAHs are cumulative peak masses
     mahs = np.maximum.accumulate(mahs, axis=1)
+
+    # Write target MAHs to disk
+    if rank == 0:
+        with h5py.File(os.join(outdir, BN_TARGET_OUT), "w") as hdf_out:
+            hdf_out["halo_id"] = halo_ids
+            hdf_out["mpeak_history"] = mahs
+            hdf_out["bpl_t_table"] = bpl_t_table
 
     # Get data for rank
     if args.test:
