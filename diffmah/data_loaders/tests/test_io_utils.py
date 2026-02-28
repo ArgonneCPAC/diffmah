@@ -4,11 +4,13 @@ import os
 from collections import namedtuple
 
 import numpy as np
+import pytest
 from jax import random as jran
 
 from .. import io_utils as iou
 
 
+@pytest.mark.skipif(not iou.HAS_H5PY, reason=iou.MSG_HAS_H5PY)
 def test_namedtuple_to_hdf5(tmp_path):
     ran_key = jran.key(0)
     KEYS = ("a", "b", "c", "d", "e", "f", "g")
