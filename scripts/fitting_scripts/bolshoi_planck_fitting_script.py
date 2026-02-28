@@ -82,7 +82,7 @@ if __name__ == "__main__":
     start = time()
 
     with open(rank_outname, "w") as fout:
-        fout.write(cfh.HEADER)
+        fout.write(cfh.HEADER_HALO_ID)
 
         for i in range(nhalos_for_rank):
             halo_id = halo_ids_for_rank[i]
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                 n_warmup=1,
             )
 
-            outline = cfh.get_outline(fit_results)
+            outline = cfh.get_outline(fit_results, halo_id=halo_id)
             fout.write(outline)
 
     comm.Barrier()
