@@ -117,7 +117,7 @@ if __name__ == "__main__":
         chunk_fit_results = np.concatenate(collector)
 
         fit_data_bnames = [os.path.basename(fn) for fn in fit_data_fnames]
-        outfn = os.path.join(outdir, outbn)
+        outfn = os.path.join(outdir, BN_OUT)
 
         cfh.write_collated_data(outfn, chunk_fit_results)
 
