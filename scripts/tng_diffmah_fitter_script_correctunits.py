@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     start = time()
 
-    tarr, mahs = load_tng_data(data_drn=indir)
+    tarr, mahs = load_tng_data_correctunits(data_drn=indir)
 
     if args.test:
         chunks = [0, 1, 2]
