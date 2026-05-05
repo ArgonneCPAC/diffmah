@@ -1,10 +1,10 @@
-"""Module loads mass assembly history data for diffmah
-"""
+"""Module loads mass assembly history data for diffmah"""
 
 import numpy as np
 import os
 
 BEBOP_TNG = "/lcrc/project/halotools/alarcon/data/"
+H_TNG = 0.6774
 
 
 def load_tng_data(data_drn=BEBOP_TNG):
@@ -14,5 +14,6 @@ def load_tng_data(data_drn=BEBOP_TNG):
     log_mahs = _halos["mpeakh"]
     log_mahs = np.maximum.accumulate(log_mahs, axis=1)
     mahs = np.where(log_mahs == 0.0, 0.0, 10**log_mahs)
+    mahs = mahs * (1 / H_TNG)
     assert mahs.max() > 1e5
     return tng_t, mahs
